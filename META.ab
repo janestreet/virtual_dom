@@ -1,0 +1,8 @@
+version = "$(pkg_version)"
+description = "OCaml bindings for the virtual-dom library"
+requires = "core_kernel js_of_ocaml tyxml"
+archive(byte  ) = "virtual_dom.cma"
+archive(native) = "virtual_dom.cmxa"
+plugin(byte  ) = "virtual_dom.cma"
+plugin(native) = "virtual_dom.cmxs"
+exists_if = "virtual_dom.cma"
