@@ -9,19 +9,37 @@ let text (s : string) =
   let vtext = Js.Unsafe.global##.VirtualDom##.VText in
   new%js vtext (Js.string s)
 
-let create tag (attrs : Attr.t list) children =
-  let vnode = Js.Unsafe.global##.VirtualDom##.VNode in
-  new%js vnode
-    (Js.string tag)
-    (Attr.list_to_obj attrs)
-    (Js.array (Array.of_list children))
+type node_creator = ?key:string -> Attr.t list -> t list -> t
 
-let svg tag (attrs : Attr.t list) children =
+let create tag ?key (attrs : Attr.t list) children =
+  let vnode = Js.Unsafe.global##.VirtualDom##.VNode in
+  match key with
+  | None ->
+    new%js vnode
+      (Js.string tag)
+      (Attr.list_to_obj attrs)
+      (Js.array (Array.of_list children))
+  | Some key ->
+    new%js vnode
+      (Js.string tag)
+      (Attr.list_to_obj attrs)
+      (Js.array (Array.of_list children))
+      (Js.string key)
+
+let svg tag ?key (attrs : Attr.t list) children =
   let vnode = Js.Unsafe.global##.VirtualDom##.svg in
-  new%js vnode
-    (Js.string tag)
-    (Attr.list_to_obj attrs)
-    (Js.array (Array.of_list children))
+  match key with
+  | None ->
+    new%js vnode
+      (Js.string tag)
+      (Attr.list_to_obj attrs)
+      (Js.array (Array.of_list children))
+  | Some key ->
+    new%js vnode
+      (Js.string tag)
+      (Attr.list_to_obj attrs)
+      (Js.array (Array.of_list children))
+      (Js.string key)
 
 let to_dom t =
   Js.Unsafe.global##.VirtualDom##createElement t
@@ -124,9 +142,9 @@ module Lazy = struct
   let thunk =
     let thunk =
       Js.Unsafe.js_expr "(function(params, thunk) { \
-        this.params = params; \
-        this.thunk  = thunk; \
-      })"
+                         this.params = params; \
+                         this.thunk  = thunk; \
+                         })"
     in
     thunk##.prototype##.type_ := Js.string "Thunk";
     thunk##.prototype##.render :=
@@ -134,9 +152,9 @@ module Lazy = struct
         Js.Opt.case previous
           (fun () -> this##thunk())
           (fun previous ->
-            if should_update previous this
-            then this##thunk()
-            else previous##.vnode)
+             if should_update previous this
+             then this##thunk()
+             else previous##.vnode)
       );
     thunk
   ;;

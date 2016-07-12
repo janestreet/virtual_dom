@@ -19,9 +19,11 @@ module type S = sig
     -> ('e Dom.event Js.t -> unit)
     -> t
 
-  val class_ : string -> t
-  val id     : string -> t
-  val style  : (string * string) list -> t
+  val class_    : string -> t
+  val classes   : string list -> t
+  val id        : string -> t
+  val style     : (string * string) list -> t
+  val style_css : string -> t
 
   val on_focus  : (Dom_html.event Js.t -> unit) -> t
   val on_blur   : (Dom_html.event Js.t -> unit) -> t
@@ -49,5 +51,4 @@ module type S = sig
   val on_keypress : (Dom_html.keyboardEvent Js.t -> unit) -> t
   val on_keydown  : (Dom_html.keyboardEvent Js.t -> unit) -> t
 end
-
 

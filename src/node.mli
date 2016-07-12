@@ -2,35 +2,39 @@ open Js_of_ocaml
 open Core_kernel.Std
 
 type t
+type node_creator = ?key:string -> Attr.t list -> t list -> t
 
 val text : string -> t
 
-val body   : Attr.t list -> t list -> t
-val button : Attr.t list -> t list -> t
-val div    : Attr.t list -> t list -> t
-val input  : Attr.t list -> t list -> t
-val span   : Attr.t list -> t list -> t
-val table  : Attr.t list -> t list -> t
-val td     : Attr.t list -> t list -> t
-val th     : Attr.t list -> t list -> t
-val tr     : Attr.t list -> t list -> t
-val thead  : Attr.t list -> t list -> t
-val tbody  : Attr.t list -> t list -> t
-val h1     : Attr.t list -> t list -> t
-val h2     : Attr.t list -> t list -> t
-val h3     : Attr.t list -> t list -> t
-val h4     : Attr.t list -> t list -> t
-val h5     : Attr.t list -> t list -> t
+val body   : node_creator
+val button : node_creator
+val div    : node_creator
+val input  : node_creator
+val span   : node_creator
+val table  : node_creator
+val td     : node_creator
+val th     : node_creator
+val tr     : node_creator
+val thead  : node_creator
+val tbody  : node_creator
+val h1     : node_creator
+val h2     : node_creator
+val h3     : node_creator
+val h4     : node_creator
+val h5     : node_creator
 
 
+(** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create
   :  string
+  -> ?key:string
   -> Attr.t list
   -> t list
   -> t
 
 val svg
   :  string
+  -> ?key:string
   -> Attr.t list
   -> t list
   -> t
