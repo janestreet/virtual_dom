@@ -1,5 +1,4 @@
 open Js_of_ocaml
-open Core_kernel.Std
 
 type t
 type node_creator = ?key:string -> Attr.t list -> t list -> t
@@ -41,13 +40,15 @@ val svg
 
 val to_dom : t -> Dom_html.element Js.t
 
+type object_id = int (* TODO *)
+
 (* If you want a widget to be diffed against another (by calling the update
    function of the new widget), the two widgets must have physically equal
    ids. *)
 val widget
   :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
-  -> id:('s * 'e Js.t) Type_equal.Id.t
+  -> id:object_id
   -> init:(unit -> 's * 'e Js.t)
   -> unit
   -> t

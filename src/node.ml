@@ -1,5 +1,4 @@
 open Js_of_ocaml
-open Core_kernel.Std
 
 type node
 
@@ -61,6 +60,8 @@ let h3     = create "h3"
 let h4     = create "h4"
 let h5     = create "h5"
 
+type object_id = int (* TODO *)
+
 class type ['s, 'element] widget = object
   constraint 'element = #Dom_html.element Js.t
   method type_   : Js.js_string Js.t Js.writeonly_prop
@@ -79,7 +80,7 @@ class type ['s, 'element] widget = object
      So, we go with option 1 and must have a trivial field called [name].
   *)
   method name    : unit Js.writeonly_prop
-  method id      : ('s * 'element) Type_equal.Id.t Js.prop
+  method id      : Js.number Js.t Js.prop
 
   method state   : 's Js.prop
   method destroy : ('element -> unit) Js.callback Js.writeonly_prop
@@ -92,14 +93,14 @@ external t_of_widget : (_, _) widget Js.t -> t = "%identity"
 let widget (type s)
       ?(destroy : s -> 'element -> unit = fun _ _ -> ())
       ?(update : s -> 'element -> s * 'element = fun s elt -> (s, elt))
-      ~(id : (s * 'element) Type_equal.Id.t)
+      ~(id : object_id)
       ~(init : unit -> s * 'element)
       ()
   =
   let obj : (s, _) widget Js.t = Js.Unsafe.obj [||] in
   obj##.type_ := Js.string "Widget";
   obj##.name := ();
-  obj##.id := id;
+  obj##.id := (Js.number_of_float (float_of_int id));
   obj##.init :=
     Js.wrap_callback (fun () ->
       let (s0, dom_node) = init () in
@@ -107,12 +108,8 @@ let widget (type s)
       dom_node);
   obj##.update :=
     Js.wrap_callback (fun prev dom_node ->
-      (* The [update] method of [obj] is only called by virtual-dom after it has checked
-         that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
-         never raise.
-      *)
-      match Type_equal.Id.same_witness_exn prev##.id id with
-      | Type_equal.T ->
+      (* match Type_equal.Id.same_witness_exn prev##.id id with *)
+      (* | Type_equal.T -> *)
         let (state', dom_node') = update prev##.state dom_node in
         obj##.state := state';
         dom_node');
@@ -121,6 +118,8 @@ let widget (type s)
       destroy obj##.state dom_node);
   t_of_widget obj
 ;;
+
+let phys_equal = (==)
 
 module Lazy = struct
 

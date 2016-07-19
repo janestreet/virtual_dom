@@ -1,4 +1,3 @@
-open Core_kernel.Std
 open Js_of_ocaml
 
 type t =
@@ -9,7 +8,7 @@ let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
 let property  name value = Property (name, value)
 
 let class_ c = create "class" c
-let classes classes = class_ (String.concat classes ~sep:" ")
+let classes classes = class_ (String.concat " " classes)
 
 let id s = create "id" s
 
@@ -22,7 +21,7 @@ let on event handler : t =
 
 let style props =
   let obj = Js.Unsafe.obj [||] in
-  List.iter ~f:(fun (k, v) ->
+  List.iter (fun (k, v) ->
     Js.Unsafe.set obj (Js.string k) (Js.string v))
     props;
   Property ("style", obj)
@@ -59,7 +58,7 @@ let on_input  = on_input_event "input"
 
 let list_to_obj attrs =
   let attrs_obj = Js.Unsafe.obj [||] in
-  List.iter ~f:(function
+  List.iter (function
     | Property (name, value) ->
       Js.Unsafe.set attrs_obj
         (Js.string name)
