@@ -32,6 +32,5 @@ Library virtual_dom
                 Std,
                 Tyxml,
                 Vdom
-  BuildDepends: core_kernel,
-                js_of_ocaml,
+  BuildDepends: js_of_ocaml,
                 tyxml
