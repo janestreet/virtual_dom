@@ -11,7 +11,14 @@ let property  name value = Property (name, value)
 let class_ c = create "class" c
 let classes classes = class_ (String.concat classes ~sep:" ")
 
-let id s = create "id" s
+let id s          = create "id" s
+let href r        = create "href" r
+let checked s     = create "checked" s
+let placeholder x = create "placeholder" x
+let autofocus b   = create "autofocus" (Bool.to_string b)
+let for_ x        = create "for" x
+let type_ x       = create "type" x
+let value x       = create "value" x
 
 let string_property name value =
   Property (name,Js.Unsafe.inject (Js.string value))
@@ -33,14 +40,15 @@ let style_css css =
 let on_focus = on "focus"
 let on_blur  = on "blur"
 
-let on_click      = on "click"
-let on_mousemove  = on "mousemove"
-let on_mouseup    = on "mouseup"
-let on_mousedown  = on "mousedown"
-let on_mouseenter = on "mouseenter"
-let on_mouseleave = on "mouseleave"
-let on_mouseover  = on "mouseover"
-let on_mouseout   = on "mouseout"
+let on_click        = on "click"
+let on_double_click = on "dblclick"
+let on_mousemove    = on "mousemove"
+let on_mouseup      = on "mouseup"
+let on_mousedown    = on "mousedown"
+let on_mouseenter   = on "mouseenter"
+let on_mouseleave   = on "mouseleave"
+let on_mouseover    = on "mouseover"
+let on_mouseout     = on "mouseout"
 
 let on_keyup    = on "keyup"
 let on_keypress = on "keypress"

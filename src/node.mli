@@ -6,22 +6,32 @@ type node_creator = ?key:string -> Attr.t list -> t list -> t
 
 val text : string -> t
 
-val body   : node_creator
-val button : node_creator
-val div    : node_creator
-val input  : node_creator
-val span   : node_creator
-val table  : node_creator
-val td     : node_creator
-val th     : node_creator
-val tr     : node_creator
-val thead  : node_creator
-val tbody  : node_creator
-val h1     : node_creator
-val h2     : node_creator
-val h3     : node_creator
-val h4     : node_creator
-val h5     : node_creator
+val a       : node_creator
+val body    : node_creator
+val button  : node_creator
+val div     : node_creator
+val footer  : node_creator
+val h1      : node_creator
+val h2      : node_creator
+val h3      : node_creator
+val h4      : node_creator
+val h5      : node_creator
+val header  : node_creator
+val html    : node_creator
+val input   : node_creator
+val label   : node_creator
+val li      : node_creator
+val p       : node_creator
+val section : node_creator
+val span    : node_creator
+val strong  : node_creator
+val table   : node_creator
+val tbody   : node_creator
+val td      : node_creator
+val th      : node_creator
+val thead   : node_creator
+val tr      : node_creator
+val ul      : node_creator
 
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
