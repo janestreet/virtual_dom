@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "bundle": "browserify --standalone VirtualDom --no-browser-field virtualdom.js -o virtualdom.compiled.js"
+  },
+  "devDependencies": {
+      "browserify": "^13.1.0",
+      "virtual-dom": "^2.1.1"
+  }
+}
