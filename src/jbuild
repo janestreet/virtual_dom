@@ -1,0 +1,12 @@
+(library (
+  (name virtual_dom)
+  (public_name virtual_dom)
+  (inline_tests ((native dont_build_dont_run)))
+  (preprocess (((pps (ppx_js_driver JANE_KERNEL)) All)))
+  (js_of_ocaml ())
+  (libraries (
+    tyxml_f
+    js_of_ocaml
+    core_kernel
+  ))
+))

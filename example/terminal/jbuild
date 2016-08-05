@@ -1,0 +1,15 @@
+(executables
+ ((names (terminal))
+  (libraries (virtual_dom
+              js_of_ocaml_async
+              core_kernel
+              async_kernel
+              js_of_ocaml))
+  (js_of_ocaml ((flags (--pretty
+                       --disable shortvar
+                       --disable inline
+                       --enable debuginfo
+                       --source-map-inline
+                      ))))
+  (preprocess (((pps (ppx_js_driver JANE)) All)))
+  ))
