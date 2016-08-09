@@ -10,5 +10,5 @@
                        --enable debuginfo
                        --source-map
                        ))))
-  (preprocess (((pps (ppx_js_driver JANE)) All)))
+  (preprocess (((pps (ppx_js_driver JANE_KERNEL)) All)))
   ))
