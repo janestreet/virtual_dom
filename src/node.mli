@@ -80,4 +80,6 @@ module Patch : sig
     -> t
 
   val apply : t -> Dom.element Js.t -> Dom.element Js.t
+
+  val is_empty : t -> bool
 end

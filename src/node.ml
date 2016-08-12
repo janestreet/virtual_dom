@@ -217,4 +217,16 @@ module Patch = struct
     Js.Unsafe.global##.VirtualDom##patch elt t
   ;;
 
+  let is_empty =
+    let f =
+      Js.Unsafe.pure_js_expr {js|
+        (function (patch) {
+          for (var key in patch) {
+            if (key !== 'a') return false
+          }
+          return true
+        })
+      |js}
+    in
+    fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
 end
