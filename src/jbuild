@@ -3,7 +3,7 @@
   (public_name virtual_dom)
   (inline_tests ((native dont_build_dont_run)))
   (preprocess (((pps (ppx_js_driver JANE_KERNEL)) All)))
-  (js_of_ocaml ())
+  (js_of_ocaml ((javascript_files (../lib/virtualdom.compiled.js))))
   (libraries (
     tyxml_f
     js_of_ocaml
