@@ -16,7 +16,7 @@ let view =
     div ~a:[ a_style ("background-color:blue")
            ; a_onclick (fun _e ->
                Firebug.console##log (Js.string "hi");
-               true
+               Vdom.Event.Ignore
              )
            ]
       [ pcdata "Virtual dom test"

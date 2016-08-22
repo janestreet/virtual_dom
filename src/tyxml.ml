@@ -4,9 +4,9 @@ open Tyxml_f
 module type XML =
   Xml_sigs.T
   with type uri = string
-   and type event_handler = Dom_html.event Js.t -> bool
-   and type mouse_event_handler = Dom_html.mouseEvent Js.t -> bool
-   and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> bool
+   and type event_handler = Dom_html.event Js.t -> Event.t
+   and type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
+   and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
    and type elt = Vdom.Node.t
 
 module Xml = struct
@@ -20,16 +20,9 @@ module Xml = struct
   let string_of_uri s = s
   type aname = string
 
-  class type biggest_event = object
-    inherit Dom_html.event
-    inherit Dom_html.mouseEvent
-    inherit Dom_html.keyboardEvent
-  end
-
-  type biggest_event_handler = biggest_event Js.t -> bool
-  type event_handler = Dom_html.event Js.t -> bool
-  type mouse_event_handler = Dom_html.mouseEvent Js.t -> bool
-  type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> bool
+  type event_handler = Dom_html.event Js.t -> Event.t
+  type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
+  type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
   type attrib = Attr.t
 
   let attr name value =
@@ -39,8 +32,9 @@ module Xml = struct
     | name ->
       Attr.create name value
 
-  let attr_ev name value =
-    Attr.property name (Js.Unsafe.inject (fun ev -> Js.bool (value ev)))
+  let attr_ev name cvt_to_vdom_event =
+    let f e = Event.handle e (cvt_to_vdom_event e); Js._true in
+    Attr.property name (Js.Unsafe.inject (Dom.handler f))
 
   let float_attrib name value : attrib = attr name (string_of_float value)
   let int_attrib name value = attr name (string_of_int value)
@@ -48,11 +42,11 @@ module Xml = struct
   let space_sep_attrib name values = attr name (String.concat " " values)
   let comma_sep_attrib name values = attr name (String.concat "," values)
   let event_handler_attrib name (value : event_handler) =
-    attr_ev name (value :> (biggest_event_handler))
+    attr_ev name value
   let mouse_event_handler_attrib name (value : mouse_event_handler) =
-    attr_ev name (value :> (biggest_event_handler))
+    attr_ev name value
   let keyboard_event_handler_attrib name (value : keyboard_event_handler) =
-    attr_ev name (value :> (biggest_event_handler))
+    attr_ev name value
   let uri_attrib name value = attr name value
   let uris_attrib name values = attr name (String.concat " " values)
 

@@ -23,8 +23,8 @@ let value x       = create "value" x
 let string_property name value =
   Property (name,Js.Unsafe.inject (Js.string value))
 
-let on event handler : t =
-  let f e = handler e; Js._true in
+let on event convert_to_vdom_event : t =
+  let f e = Event.handle e (convert_to_vdom_event e); Js._true in
   Property ("on" ^ event, Js.Unsafe.inject (Dom.handler f))
 
 let style props =
@@ -54,13 +54,38 @@ let on_keyup    = on "keyup"
 let on_keypress = on "keypress"
 let on_keydown  = on "keydown"
 
+let const_ignore _ = Event.Ignore
+
+class type value_element = object
+  inherit Dom_html.element
+
+  method value : Js.js_string Js.t Js.prop
+end
+
+type value_coercion = Dom_html.element Js.t -> value_element Js.t Js.opt
+
+let run_coercion coercion target prev =
+  match prev with
+  | Some _ -> prev
+  | None   -> Js.Opt.to_option (coercion target)
+
+let coerce_value_element target =
+  let open Dom_html.CoerceTo in
+  None
+  |> run_coercion (input    :> value_coercion) target
+  |> run_coercion (select   :> value_coercion) target
+  |> run_coercion (textarea :> value_coercion) target
+
 let on_input_event event handler =
   on event (fun ev ->
-    Js.Opt.iter (ev##.target) (fun target ->
-      Js.Opt.iter (Dom_html.CoerceTo.input target) (fun input ->
-        let text = Js.to_string (input##.value) in
-        handler input text
-      )))
+    Js.Opt.case (ev##.target) const_ignore (fun target ->
+      Option.value_map (coerce_value_element target)
+        ~default:Event.Ignore
+        ~f:(fun target ->
+          let text = Js.to_string (target##.value) in
+          handler ev text
+        )
+    ))
 
 let on_change = on_input_event "change"
 let on_input  = on_input_event "input"
@@ -78,6 +103,6 @@ let list_to_obj attrs =
       Js.Unsafe.set (attrs_obj##.attributes)
         (Js.string name)
         value
-    )
+  )
     attrs;
   attrs_obj
