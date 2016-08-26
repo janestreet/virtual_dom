@@ -20,7 +20,7 @@ module type S = sig
     -> t
 
   val autofocus   : bool -> t
-  val checked     : string -> t
+  val checked     : t
   val class_      : string -> t
   val classes     : string list -> t
   val for_        : string -> t

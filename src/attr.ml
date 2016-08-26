@@ -13,7 +13,7 @@ let classes classes = class_ (String.concat classes ~sep:" ")
 
 let id s          = create "id" s
 let href r        = create "href" r
-let checked s     = create "checked" s
+let checked       = create "checked" ""
 let placeholder x = create "placeholder" x
 let autofocus b   = create "autofocus" (Bool.to_string b)
 let for_ x        = create "for" x

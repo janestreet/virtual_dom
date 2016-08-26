@@ -74,7 +74,6 @@ let thead    = create "thead"
 let tr       = create "tr"
 let ul       = create "ul"
 
-
 class type ['s, 'element] widget = object
   constraint 'element = #Dom_html.element Js.t
   method type_   : Js.js_string Js.t Js.writeonly_prop
