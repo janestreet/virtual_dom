@@ -91,9 +91,26 @@ let on_change = on_input_event "change"
 let on_input  = on_input_event "input"
 
 let list_to_obj attrs =
+  (* When input elements have their value set to what it already is
+     the cursor gets moved to the end of the field even when the user
+     is editing in the middle. SoftSetHook (from ./soft-set-hook.js)
+     compares before setting, avoiding the problem just like in
+     https://github.com/Matt-Esch/virtual-dom/blob/947ecf92b67d25bb693a0f625fa8e90c099887d5/virtual-hyperscript/index.js#L43-L51
+
+     note that Elm's virtual-dom includes a workaround for this so
+     if we switch to that the workaround here will be unnecessary.
+     https://github.com/elm-lang/virtual-dom/blob/17b30fb7de48672565d6227d33c0176f075786db/src/Native/VirtualDom.js#L434-L439
+  *)
+  let softSetHook x = Js.Unsafe.global##SoftSetHook x in
   let attrs_obj = Js.Unsafe.obj [||] in
   List.iter ~f:(function
     | Property (name, value) ->
+      let value =
+        if name = "value" then
+          softSetHook value
+        else
+          value
+      in
       Js.Unsafe.set attrs_obj
         (Js.string name)
         value

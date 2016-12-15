@@ -1,8 +1,0 @@
-version = "$(pkg_version)"
-description = "OCaml bindings for the virtual-dom library"
-requires = "bin_prot core_kernel fieldslib js_of_ocaml ppx_assert.runtime-lib ppx_bench.runtime-lib ppx_hash.runtime-lib ppx_inline_test.runtime-lib sexplib typerep tyxml variantslib"
-archive(byte  ) = "virtual_dom.cma"
-archive(native) = "virtual_dom.cmxa"
-plugin(byte  ) = "virtual_dom.cma"
-plugin(native) = "virtual_dom.cmxs"
-exists_if = "virtual_dom.cma"

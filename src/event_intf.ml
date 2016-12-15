@@ -68,6 +68,6 @@ module type Event_internal = sig
       functions, unwraps the [Event.t] back into its underlying [Action.t], and applies
       the two.  This is only intended for internal use by this library, specifically by
       the attribute code. *)
-  val handle : 'a #Dom.event Js.t -> t -> unit
+  val handle : #Dom_html.event Js.t -> t -> unit
 end
 

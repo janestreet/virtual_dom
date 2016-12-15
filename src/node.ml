@@ -1,5 +1,4 @@
 open Js_of_ocaml
-open Core_kernel.Std
 
 type node
 
@@ -73,6 +72,10 @@ let th       = create "th"
 let thead    = create "thead"
 let tr       = create "tr"
 let ul       = create "ul"
+
+
+module Type_equal = Core_kernel.Std.Type_equal
+let phys_equal = Core_kernel.Std.phys_equal
 
 class type ['s, 'element] widget = object
   constraint 'element = #Dom_html.element Js.t

@@ -16,7 +16,7 @@ module type S = sig
 
   val on
     : string
-    -> ('e Dom.event Js.t -> Event.t)
+    -> (#Dom_html.event Js.t -> Event.t)
     -> t
 
   val autofocus   : bool -> t

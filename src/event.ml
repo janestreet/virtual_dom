@@ -53,7 +53,7 @@ let handle evt =
     | Stop_propagation ->
       (* Safe to do because [stopPropagation] is defined equivalently to
          [preventDefault] *)
-      Dom_html.stopPropagation (Js.Unsafe.coerce evt)
+      Dom_html.stopPropagation evt
     | Prevent_default -> Dom.preventDefault evt
     | t -> handle_registered_event t
   in

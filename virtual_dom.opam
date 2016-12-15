@@ -6,28 +6,20 @@ bug-reports: "https://github.com/janestreet/virtual_dom/issues"
 dev-repo: "https://github.com/janestreet/virtual_dom.git"
 license: "Apache-2.0"
 build: [
-  ["./configure" "--prefix" prefix]
-  [make]
+  ["jbuilder" "build-package" "virtual_dom" "-j" jobs]
 ]
 depends: [
-  "ocamlbuild"      {build}
-  "oasis"           {build & >= "0.4"}
-  "ocamlfind"       {build & >= "1.3.2"}
-  "bin_prot"
   "core_kernel"
-  "fieldslib"
-  "js-build-tools"  {build}
-  "js_of_ocaml"
-  "ppx_assert"
-  "ppx_bench"
+  "jbuilder"
   "ppx_driver"
-  "ppx_hash"
-  "ppx_inline_test"
   "ppx_jane"
-  "sexplib"
-  "typerep"
+  "js_of_ocaml"
   "tyxml"
-  "variantslib"
 ]
 available: [ ocaml-version >= "4.03.0" ]
-conflicts: [ "oasis" {= "0.4.7"} ]
+descr: "
+OCaml bindings for the virtual-dom library
+
+The library itself may be found at
+https://github.com/Matt-Esch/virtual-dom.
+"
