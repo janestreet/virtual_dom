@@ -1,6 +1,6 @@
 (library (
   (name virtual_dom_test)
-  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane.kernel)))
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane)))
   (inline_tests ((javascript build_and_run) (native dont_build_dont_run)))
   (js_of_ocaml ())
   (libraries (

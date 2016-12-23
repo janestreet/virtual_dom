@@ -6,5 +6,5 @@
               async_js_extended
               js_of_ocaml))
   (js_of_ocaml ())
-  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane.kernel)))
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane)))
   ))
