@@ -1,6 +1,4 @@
-open Virtual_dom.Std
-
-open Vdom
+open Virtual_dom.Vdom
 
 let%test "empty patch succeeds" =
   let previous = Node.div [] [] in

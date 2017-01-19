@@ -9,7 +9,7 @@ build: [
   ["jbuilder" "build-package" "virtual_dom" "-j" jobs]
 ]
 depends: [
-  "core_kernel"
+  "base"
   "jbuilder"
   "ppx_driver"
   "ppx_jane"

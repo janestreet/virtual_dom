@@ -59,15 +59,13 @@ module type Event = sig
   (** For registering a handler for Viewport_changed events. Note that if this functor is
       called multiple times, each handler will see all of the events. *)
   module Define_visibility (VH : Visibility_handler) : sig end
+
+  module Expert : sig
+    (** [handle t] looks up the [Handler.handle] function in the table of [Define]d
+        functions, unwraps the [Event.t] back into its underlying [Action.t], and applies
+        the two.  This is only intended for internal use by this library, specifically by
+        the attribute code. *)
+    val handle : #Dom_html.event Js.t -> t -> unit
+  end
+
 end
-
-module type Event_internal = sig
-  include Event
-
-  (** [handle t] looks up the [Handler.handle] function in the table of [Define]d
-      functions, unwraps the [Event.t] back into its underlying [Action.t], and applies
-      the two.  This is only intended for internal use by this library, specifically by
-      the attribute code. *)
-  val handle : #Dom_html.event Js.t -> t -> unit
-end
-

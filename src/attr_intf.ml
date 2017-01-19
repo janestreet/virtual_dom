@@ -8,6 +8,9 @@ module type S = sig
   (** [create name value] creates a simple string-only attribute *)
   val create : string -> string -> t
 
+  (** [create_float name float] creates a simple float-only attribute *)
+  val create_float : string -> float -> t
+
   (** [string_property name value] creates a simple string-only property *)
   val string_property : string -> string -> t
 

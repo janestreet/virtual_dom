@@ -1,5 +1,5 @@
 open Js_of_ocaml
-open Core_kernel.Std
+open Base
 
 type t
 type node_creator = ?key:string -> Attr.t list -> t list -> t

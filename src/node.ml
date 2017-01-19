@@ -1,3 +1,4 @@
+open Base
 open Js_of_ocaml
 
 type node
@@ -73,10 +74,6 @@ let thead    = create "thead"
 let tr       = create "tr"
 let ul       = create "ul"
 
-
-module Type_equal = Core_kernel.Std.Type_equal
-let phys_equal = Core_kernel.Std.phys_equal
-
 class type ['s, 'element] widget = object
   constraint 'element = #Dom_html.element Js.t
   method type_   : Js.js_string Js.t Js.writeonly_prop
@@ -99,7 +96,8 @@ class type ['s, 'element] widget = object
 
   method state   : 's Js.prop
   method destroy : ('element -> unit) Js.callback Js.writeonly_prop
-  method update  : (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback Js.writeonly_prop
+  method update  : (('other_state, 'other_element) widget Js.t -> 'element -> 'element)
+                     Js.callback Js.writeonly_prop
   method init    : (unit -> 'element) Js.callback Js.writeonly_prop
 end
 

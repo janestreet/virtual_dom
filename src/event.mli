@@ -1,2 +1,2 @@
-include Event_intf.Event_internal
+include Event_intf.Event
 

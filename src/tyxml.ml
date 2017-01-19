@@ -33,7 +33,7 @@ module Xml = struct
       Attr.create name value
 
   let attr_ev name cvt_to_vdom_event =
-    let f e = Event.handle e (cvt_to_vdom_event e); Js._true in
+    let f e = Event.Expert.handle e (cvt_to_vdom_event e); Js._true in
     Attr.property name (Js.Unsafe.inject (Dom.handler f))
 
   let float_attrib name value : attrib = attr name (string_of_float value)

@@ -1,5 +1,5 @@
 open Js_of_ocaml
-open Virtual_dom.Std
+open Virtual_dom
 open Core_kernel.Std
 open Vdom
 

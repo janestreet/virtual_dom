@@ -1,5 +1,4 @@
-open! Virtual_dom.Std
-open! Vdom
+open! Virtual_dom.Vdom
 
 (* This test doesn't do anything apart from testing that we can run actually run tests for
    virtual_dom *)

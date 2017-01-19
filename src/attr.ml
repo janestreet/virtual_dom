@@ -1,4 +1,4 @@
-open Core_kernel.Std
+open Base
 open Js_of_ocaml
 
 type t =
@@ -7,6 +7,9 @@ type t =
 
 let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
 let property  name value = Property (name, value)
+
+let create_float name value =
+  Attribute (name, Js.Unsafe.inject ((Js.number_of_float value)##toString))
 
 let class_ c = create "class" c
 let classes classes = class_ (String.concat classes ~sep:" ")
@@ -24,7 +27,7 @@ let string_property name value =
   Property (name,Js.Unsafe.inject (Js.string value))
 
 let on event convert_to_vdom_event : t =
-  let f e = Event.handle e (convert_to_vdom_event e); Js._true in
+  let f e = Event.Expert.handle e (convert_to_vdom_event e); Js._true in
   Property ("on" ^ event, Js.Unsafe.inject (Dom.handler f))
 
 let style props =
@@ -106,7 +109,7 @@ let list_to_obj attrs =
   List.iter ~f:(function
     | Property (name, value) ->
       let value =
-        if name = "value" then
+        if String.(=) name "value" then
           softSetHook value
         else
           value
