@@ -1,6 +1,6 @@
 open Js_of_ocaml
 open Virtual_dom
-open Core_kernel.Std
+open Core_kernel
 open Vdom
 
 let colors =
