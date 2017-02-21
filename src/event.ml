@@ -60,4 +60,19 @@ module Expert = struct
       | t -> handle_registered_event t
     in
     handle
+
+
+  let rec handle_non_dom_event_exn t =
+    match t with
+    | Ignore -> ()
+    | Many l -> List.iter ~f:handle_non_dom_event_exn l
+    | Viewport_changed -> List.iter !visibility_handlers ~f:(fun f -> f ())
+    | Stop_propagation ->
+      failwith "[handle_non_dom_event_exn] called with [Stop_propagation] \
+        which requires a dom event"
+    | Prevent_default ->
+      failwith "[handle_non_dom_event_exn] called with [Prevent_default] \
+        which requires a dom event"
+    | t -> handle_registered_event t
+
 end

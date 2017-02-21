@@ -26,12 +26,14 @@ module type S = sig
   val checked     : t
   val class_      : string -> t
   val classes     : string list -> t
+  val disabled    : t
   val for_        : string -> t
   val href        : string -> t
   val id          : string -> t
   val placeholder : string -> t
   val style       : (string * string) list -> t
   val style_css   : string -> t
+  val tabindex    : int -> t
   val type_       : string -> t
   val value       : string -> t
 

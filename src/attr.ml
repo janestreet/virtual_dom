@@ -17,11 +17,13 @@ let classes classes = class_ (String.concat classes ~sep:" ")
 let id s          = create "id" s
 let href r        = create "href" r
 let checked       = create "checked" ""
+let disabled      = create "disabled" ""
 let placeholder x = create "placeholder" x
 let autofocus b   = create "autofocus" (Bool.to_string b)
 let for_ x        = create "for" x
 let type_ x       = create "type" x
 let value x       = create "value" x
+let tabindex x    = create "tabindex" (Int.to_string x)
 
 let string_property name value =
   Property (name,Js.Unsafe.inject (Js.string value))

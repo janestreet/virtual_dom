@@ -66,6 +66,12 @@ module type Event = sig
         the two.  This is only intended for internal use by this library, specifically by
         the attribute code. *)
     val handle : #Dom_html.event Js.t -> t -> unit
+
+    (** [handle_non_dom_event_exn] is the same as [handle] except that it raises in any
+        case that would have required the [#Dom_html.event Js.t]. In particular, this
+        can be to feed Actions back to the system that are not triggered by events from
+        the DOM and do not have a corresponding [#Dom_html.event Js.t]. *)
+    val handle_non_dom_event_exn : t -> unit
   end
 
 end
