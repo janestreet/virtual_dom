@@ -9,3 +9,5 @@
     virtual_dom
   ))
 ))
+
+(jbuild_version jane_street)
