@@ -5,7 +5,6 @@
               core_kernel
               async_kernel
               js_of_ocaml))
-  (js_of_ocaml ())
   (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane)))
   ))
 
