@@ -9,4 +9,7 @@
   ))
 ))
 
+(install
+ ((section lib) (files (../lib/virtualdom.compiled.js ./soft-set-hook.js))))
+
 (jbuild_version 1)
