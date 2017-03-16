@@ -1,4 +1,5 @@
 opam-version: "1.2"
+version: "v0.9.0"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/virtual_dom"
@@ -9,11 +10,11 @@ build: [
   ["jbuilder" "build" "--only-packages" "virtual_dom" "--root" "." "-j" jobs "@install"]
 ]
 depends: [
-  "async_js"
-  "base"
+  "async_js"                {>= "v0.9" & < "v0.10"}
+  "base"                    {>= "v0.9" & < "v0.10"}
   "jbuilder"                {build & >= "1.0+beta2"}
-  "ppx_driver"
-  "ppx_jane"
+  "ppx_driver"              {>= "v0.9" & < "v0.10"}
+  "ppx_jane"                {>= "v0.9" & < "v0.10"}
   "js_of_ocaml"
   "ocaml-migrate-parsetree" {>= "0.4"}
   "tyxml"
