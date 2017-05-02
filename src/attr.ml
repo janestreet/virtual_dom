@@ -46,6 +46,7 @@ let on_focus = on "focus"
 let on_blur  = on "blur"
 
 let on_click        = on "click"
+let on_contextmenu  = on "contextmenu"
 let on_double_click = on "dblclick"
 let on_mousemove    = on "mousemove"
 let on_mouseup      = on "mouseup"

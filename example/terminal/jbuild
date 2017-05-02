@@ -5,7 +5,7 @@
               core_kernel
               async_kernel
               js_of_ocaml))
-  (preprocess (pps (async_js.ppx ppx_jane ppx_driver.runner)))
+  (preprocess (pps (js_of_ocaml-ppx  ppx_jane ppx_driver.runner)))
   ))
 
 (jbuild_version 1)

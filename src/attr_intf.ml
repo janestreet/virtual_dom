@@ -51,6 +51,7 @@ module type S = sig
   val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
 
   val on_click        : (Dom_html.mouseEvent Js.t -> Event.t) -> t
+  val on_contextmenu  : (Dom_html.mouseEvent Js.t -> Event.t) -> t
   val on_double_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
   val on_mousemove    : (Dom_html.mouseEvent Js.t -> Event.t) -> t
   val on_mouseup      : (Dom_html.mouseEvent Js.t -> Event.t) -> t
