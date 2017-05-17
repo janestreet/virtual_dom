@@ -50,7 +50,9 @@ let terminal =
       end
     in
     let init () =
-      let div = Js.Unsafe.global##jQuery (Js.string "<div width='400px' height='300px'>") in
+      let div : < terminal : _ -> _ -> unit Js.meth; get : int -> _ Js.meth > Js.t =
+        Js.Unsafe.global##jQuery (Js.string "<div width='400px' height='300px'>")
+      in
       div##terminal (Js.wrap_callback interpret) options;
       ((), div##get 0)
     in
