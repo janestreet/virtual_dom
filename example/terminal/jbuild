@@ -1,9 +1,7 @@
 (executables
  ((names (terminal))
   (libraries (virtual_dom
-              async_js_extended
               core_kernel
-              async_kernel
               js_of_ocaml))
   (preprocess (pps (js_of_ocaml-ppx  ppx_jane ppx_driver.runner)))
   ))

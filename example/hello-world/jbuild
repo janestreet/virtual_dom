@@ -2,8 +2,6 @@
  ((names (example))
   (libraries (virtual_dom
               core_kernel
-              async_kernel
-              async_js_extended
               js_of_ocaml))
   (preprocess (pps (js_of_ocaml-ppx ppx_jane ppx_driver.runner)))
   ))
