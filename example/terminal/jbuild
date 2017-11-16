@@ -3,6 +3,7 @@
   (libraries (virtual_dom
               core_kernel
               js_of_ocaml))
+  (flags (:standard -safe-string))
   (preprocess (pps (js_of_ocaml-ppx  ppx_jane ppx_driver.runner)))
   ))
 

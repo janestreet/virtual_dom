@@ -12,6 +12,7 @@ let view =
     for i = 0 to n - 1 do
       Bytes.set s i chars.((i + k) mod n)
     done;
+    let s = Bytes.to_string s in
     let open Tyxml.Html in
     div ~a:[ a_style ("background-color:blue")
            ; a_onclick (fun _e ->
