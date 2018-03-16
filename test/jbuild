@@ -1,6 +1,6 @@
 (library (
   (name virtual_dom_test)
-  (preprocess (pps (js_of_ocaml-ppx ppx_jane ppx_driver.runner)))
+  (preprocess (pps (js_of_ocaml-ppx ppx_jane ppxlib.runner)))
   (flags (:standard -safe-string))
   (libraries (
     core_kernel

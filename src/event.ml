@@ -13,7 +13,7 @@ type t +=
 
 (* We use this table for dispatching to the appropriate handler in an efficient way.  *)
 let handlers : (t -> unit) Hashtbl.M(Int).t =
-  Hashtbl.create (module Int) ~size:8 ()
+  Hashtbl.create (module Int) ~size:8
 
 (* All visibility handlers see all events, so a simple list is enough.  *)
 let visibility_handlers : (unit -> unit) list ref = ref []
