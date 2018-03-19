@@ -1,4 +1,5 @@
 opam-version: "1.2"
+version: "v0.11.0"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/virtual_dom"
@@ -9,8 +10,8 @@ build: [
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "base"
-  "ppx_jane"
+  "base"                    {>= "v0.11" & < "v0.12"}
+  "ppx_jane"                {>= "v0.11" & < "v0.12"}
   "jbuilder"                {build & >= "1.0+beta18.1"}
   "js_of_ocaml"             {>= "3.0"}
   "js_of_ocaml-ppx"
