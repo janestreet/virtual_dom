@@ -29,6 +29,7 @@ module type S = sig
 end
 
 module type Event = sig
+
   type t = ..
   type t +=
     (** [Ignore] events are dropped, so no handler is called *)

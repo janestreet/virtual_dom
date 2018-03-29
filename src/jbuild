@@ -3,7 +3,6 @@
   (public_name virtual_dom)
   (preprocess (pps (js_of_ocaml-ppx ppx_jane ppxlib.runner)))
   (js_of_ocaml ((javascript_files (../lib/virtualdom.compiled.js ./soft-set-hook.js))))
-  (flags (:standard -safe-string))
   (libraries (
     tyxml.functor
     js_of_ocaml
