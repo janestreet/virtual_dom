@@ -18,7 +18,7 @@ depends: [
   "ppxlib"                  {>= "0.1.0"}
   "tyxml"
 ]
-available: [ ocaml-version >= "4.04.1" ]
+available: [ ocaml-version >= "4.06.1" ]
 descr: "
 OCaml bindings for the virtual-dom library
 
