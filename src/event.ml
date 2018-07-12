@@ -1,27 +1,20 @@
 open Base
 open Js_of_ocaml
-
 include Event_intf
 
 type t = ..
+
 type t +=
-  | Ignore
-  | Viewport_changed
-  | Stop_propagation
-  | Prevent_default
-  | Many of t list
+  | Ignore | Viewport_changed | Stop_propagation | Prevent_default | Many of t list
 
 (* We use this table for dispatching to the appropriate handler in an efficient way.  *)
-let handlers : (t -> unit) Hashtbl.M(Int).t =
-  Hashtbl.create (module Int) ~size:8
+let handlers : (t -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:8
 
 (* All visibility handlers see all events, so a simple list is enough.  *)
 let visibility_handlers : (unit -> unit) list ref = ref []
 
-module Define (Handler : Handler)
-  : S with type action := Handler.Action.t
-       and type t := t
-= struct
+module Define (Handler : Handler) :
+  S with type action := Handler.Action.t and type t := t = struct
   type t += C : Handler.Action.t -> t
 
   let key = Caml.Obj.extension_id [%extension_constructor C]
@@ -30,15 +23,14 @@ module Define (Handler : Handler)
     Hashtbl.add_exn handlers ~key ~data:(fun inp ->
       match inp with
       | C value -> Handler.handle value
-      | _ -> raise_s [%message "Unrecognized variant"]
-    )
+      | _ -> raise_s [%message "Unrecognized variant"])
+  ;;
 
   let inject v = C v
 end
 
 module Define_visibility (VH : Visibility_handler) = struct
-  let () =
-    visibility_handlers := VH.handle :: !visibility_handlers
+  let () = visibility_handlers := VH.handle :: !visibility_handlers
 end
 
 let get_key t = Caml.Obj.extension_id (Caml.Obj.extension_constructor t)
@@ -60,6 +52,7 @@ module Expert = struct
       | t -> handle_registered_event t
     in
     handle
+  ;;
 
 
   let rec handle_non_dom_event_exn t =
@@ -68,11 +61,13 @@ module Expert = struct
     | Many l -> List.iter ~f:handle_non_dom_event_exn l
     | Viewport_changed -> List.iter !visibility_handlers ~f:(fun f -> f ())
     | Stop_propagation ->
-      failwith "[handle_non_dom_event_exn] called with [Stop_propagation] \
-        which requires a dom event"
+      failwith
+        "[handle_non_dom_event_exn] called with [Stop_propagation] which requires a dom \
+         event"
     | Prevent_default ->
-      failwith "[handle_non_dom_event_exn] called with [Prevent_default] \
-        which requires a dom event"
+      failwith
+        "[handle_non_dom_event_exn] called with [Prevent_default] which requires a dom \
+         event"
     | t -> handle_registered_event t
-
+  ;;
 end

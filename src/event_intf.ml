@@ -22,7 +22,9 @@ end
 module type S = sig
   type action
 
+
   type t = ..
+
   type t += C : action -> t
 
   val inject : action -> t
@@ -31,31 +33,32 @@ end
 module type Event = sig
 
   type t = ..
+
   type t +=
-    (** [Ignore] events are dropped, so no handler is called *)
-    | Ignore
-    (** [Viewport_changed] events are delivered to all visibility handlers  *)
+    | Ignore  (** [Ignore] events are dropped, so no handler is called *)
     | Viewport_changed
+    (** [Viewport_changed] events are delivered to all visibility handlers  *)
+    | Stop_propagation
     (** [Stop_propagation] prevents the underlying DOM event from propagating up to the
         parent elements *)
-    | Stop_propagation
+    | Prevent_default
     (** [Prevent_default] prevents the default browser action from occurring as a result
         of this event *)
-    | Prevent_default
+    | Many of t list
     (** Allows one to represent a list of handlers, which will be individually dispatched
         to their respective handlers. This is so callbacks can return multiple events of
         whatever kind. *)
-    | Many of t list
 
   module type Handler = Handler
+
   module type Visibility_handler = Visibility_handler
+
   module type S = S
 
   (** For registering a new handler and a corresponding new constructor of the Event.t
       type *)
-  module Define (Handler : Handler)
-    : S with type action := Handler.Action.t
-         and type t := t
+  module Define (Handler : Handler) :
+    S with type action := Handler.Action.t and type t := t
 
   (** For registering a handler for Viewport_changed events. Note that if this functor is
       called multiple times, each handler will see all of the events. *)
@@ -74,5 +77,4 @@ module type Event = sig
         the DOM and do not have a corresponding [#Dom_html.event Js.t]. *)
     val handle_non_dom_event_exn : t -> unit
   end
-
 end

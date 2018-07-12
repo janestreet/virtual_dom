@@ -7,4 +7,4 @@ let%test _ =
   let current = Node.div [] [] in
   let _patch = Node.Patch.create ~previous ~current in
   true
-
+;;

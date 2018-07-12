@@ -11,8 +11,6 @@ module type XML =
 
 module Xml : XML with module W = Xml_wrap.NoWrap
 
-module Svg : Svg_sigs.Make(Xml).T
-  with module Xml.W = Xml_wrap.NoWrap
+module Svg : Svg_sigs.Make(Xml).T with module Xml.W = Xml_wrap.NoWrap
 
-module Html : Html_sigs.Make(Xml)(Svg).T
-  with module Xml.W = Xml_wrap.NoWrap
+module Html : Html_sigs.Make(Xml)(Svg).T with module Xml.W = Xml_wrap.NoWrap
