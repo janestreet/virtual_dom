@@ -25,7 +25,11 @@ module type S = sig
 
   val class_ : string -> t
 
+  val to_class : t -> Base.Set.M(Base.String).t option
+
   val classes : string list -> t
+
+  val classes' : Base.Set.M(Base.String).t -> t
 
   val disabled : t
 
@@ -37,9 +41,10 @@ module type S = sig
 
   val placeholder : string -> t
 
-  val style : (string * string) list -> t
+  val style : Css.t -> t
 
-  val style_css : string -> t
+  (** [to_style (style c) = Some c], [None] otherwise *)
+  val to_style : t -> Css.t option
 
   val tabindex : int -> t
 

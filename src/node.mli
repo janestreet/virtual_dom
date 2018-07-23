@@ -1,7 +1,35 @@
 open Js_of_ocaml
 open Base
 
-type t
+(** The values associated with an Element and element like nodes.
+    (that is in practice all nodes that aren't just text). *)
+module Element : sig
+  type t
+
+  val tag : t -> string
+
+  val attrs : t -> Attr.t list
+
+  val key : t -> string option
+
+  val map_attrs : t -> f:(Attr.t list -> Attr.t list) -> t
+
+  (** If the node had no style attribute the empty Css.t will be passed to f.
+      Most of the time you probably want to use add_style instead. *)
+  val map_style : t -> f:(Css.t -> Css.t) -> t
+
+  val add_style : t -> Css.t -> t
+
+  (** if the node had no class attribute the empty Set will be passed to f.
+      Most of the time you probably want to use add_class instead. *)
+  val map_class : t -> f:(Set.M(String).t -> Set.M(String).t) -> t
+
+  val add_class : t -> string -> t
+end
+
+type t =
+  | Text of string
+  | Element of Element.t
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 
@@ -83,19 +111,6 @@ val widget
   -> init:(unit -> 's * 'e Js.t)
   -> unit
   -> t
-
-
-module Lazy : sig
-  val create : ('a -> t) -> 'a -> t
-
-  val create2 : ('a -> 'b -> t) -> 'a -> 'b -> t
-
-  val create3 : ('a -> 'b -> 'c -> t) -> 'a -> 'b -> 'c -> t
-
-  val create4 : ('a -> 'b -> 'c -> 'd -> t) -> 'a -> 'b -> 'c -> 'd -> t
-
-  val create5 : ('a -> 'b -> 'c -> 'd -> 'e -> t) -> 'a -> 'b -> 'c -> 'd -> 'e -> t
-end
 
 module Patch : sig
   type node = t

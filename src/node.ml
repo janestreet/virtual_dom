@@ -1,50 +1,161 @@
 open Base
 open Js_of_ocaml
 
-type node
+type virtual_dom_node
 
-type t = node Js.t
+module T : sig
+  module Element : sig
+    type t
 
-let text (s : string) =
-  let vtext = Js.Unsafe.global ##. VirtualDom ##. VText in
-  (new%js vtext) (Js.string s)
-;;
+    val tag : t -> string
+
+    val attrs : t -> Attr.t list
+
+    val key : t -> string option
+
+    val map_attrs : t -> f:(Attr.t list -> Attr.t list) -> t
+
+    val map_class : t -> f:(Set.M(String).t -> Set.M(String).t) -> t
+
+    val add_class : t -> string -> t
+
+    val map_style : t -> f:(Css.t -> Css.t) -> t
+
+    val add_style : t -> Css.t -> t
+  end
+
+  type t =
+    | Text of string
+    | Element of Element.t
+
+  val text : string -> t
+
+  val create : string -> ?key:string -> Attr.t list -> t list -> t
+
+  val svg : string -> ?key:string -> Attr.t list -> t list -> t
+
+  val to_js : t -> virtual_dom_node Js.t
+end = struct
+  type element =
+    { tag : string
+    ; key :
+        string option
+    ; attrs : Attr.t list
+    ; children : virtual_dom_node Js.t list
+    ; kind : [`Vnode | `Svg]
+    }
+
+  and t =
+    | Text of string
+    | Element of element
+
+  module Element = struct
+    type t = element
+
+    let tag t = t.tag
+
+    let attrs t = t.attrs
+
+    let key t = t.key
+
+    let map_attrs t ~f = { t with attrs = f t.attrs }
+
+    let make_map_special ~extract ~combine ~is_empty ~make_attr t ~f =
+      let convert attrs =
+        let specials, other =
+          List.partition_map attrs ~f:(fun a ->
+            match extract a with
+            | Some c -> `Fst c
+            | None -> `Snd a)
+        in
+        let cl = f (combine specials) in
+        if is_empty cl then other else make_attr cl :: other
+      in
+      map_attrs t ~f:convert
+    ;;
+
+    let map_class =
+      make_map_special
+        ~extract:Attr.to_class
+        ~combine:(Set.union_list (module String))
+        ~is_empty:Set.is_empty
+        ~make_attr:Attr.classes'
+    ;;
+
+    let add_class t c = map_class t ~f:(fun cs -> Set.add cs c)
+
+    let map_style =
+      make_map_special
+        ~extract:Attr.to_style
+        ~combine:Css.concat
+        ~is_empty:([%compare.equal: Css.t] Css.empty)
+        ~make_attr:Attr.style
+    ;;
+
+    let add_style t s = map_style t ~f:(fun ss -> Css.combine ss s)
+  end
+
+  let to_js = function
+    | Text s ->
+      let vtext = Js.Unsafe.global ##. VirtualDom ##. VText in
+      (new%js vtext) (Js.string s)
+    | Element { tag; key; attrs; children; kind = `Vnode } ->
+      let vnode = Js.Unsafe.global ##. VirtualDom ##. VNode in
+      (match key with
+       | None ->
+         (new%js vnode)
+           (Js.string tag)
+           (Attr.list_to_obj attrs)
+           (Js.array (Array.of_list children))
+       | Some key ->
+         (new%js vnode)
+           (Js.string tag)
+           (Attr.list_to_obj attrs)
+           (Js.array (Array.of_list children))
+           (Js.string key))
+    | Element { tag; key; attrs; children; kind = `Svg } ->
+      let vnode = Js.Unsafe.global ##. VirtualDom##.svg in
+      (match key with
+       | None ->
+         (new%js vnode)
+           (Js.string tag)
+           (Attr.list_to_obj attrs)
+           (Js.array (Array.of_list children))
+       | Some key ->
+         (new%js vnode)
+           (Js.string tag)
+           (Attr.list_to_obj attrs)
+           (Js.array (Array.of_list children))
+           (Js.string key))
+  ;;
+
+  let element kind ~tag ~key attrs children =
+    let children = List.map children ~f:to_js in
+    { kind; tag; key; attrs; children }
+  ;;
+
+  let text s = Text s
+
+  let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
+
+  let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
+end
+
+module Element = T.Element
+
+type t = T.t =
+  | Text of string
+  | Element of Element.t
+
+let text = T.text
+
+let create = T.create
+
+let svg = T.svg
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 
-let create tag ?key (attrs : Attr.t list) children =
-  let vnode = Js.Unsafe.global ##. VirtualDom ##. VNode in
-  match key with
-  | None ->
-    (new%js vnode)
-      (Js.string tag)
-      (Attr.list_to_obj attrs)
-      (Js.array (Array.of_list children))
-  | Some key ->
-    (new%js vnode)
-      (Js.string tag)
-      (Attr.list_to_obj attrs)
-      (Js.array (Array.of_list children))
-      (Js.string key)
-;;
-
-let svg tag ?key (attrs : Attr.t list) children =
-  let vnode = Js.Unsafe.global ##. VirtualDom##.svg in
-  match key with
-  | None ->
-    (new%js vnode)
-      (Js.string tag)
-      (Attr.list_to_obj attrs)
-      (Js.array (Array.of_list children))
-  | Some key ->
-    (new%js vnode)
-      (Js.string tag)
-      (Attr.list_to_obj attrs)
-      (Js.array (Array.of_list children))
-      (Js.string key)
-;;
-
-let to_dom t = Js.Unsafe.global ##. VirtualDom##createElement t
+let to_dom t = Js.Unsafe.global ##. VirtualDom##createElement (T.to_js t)
 
 let a = create "a"
 
@@ -166,83 +277,14 @@ let widget
   t_of_widget obj
 ;;
 
-module Lazy = struct
-  class type thunk =
-    object
-      method params : Js.Unsafe.any Js.js_array Js.t Js.prop
-      method thunk : unit -> t Js.meth
-      method vnode : t Js.prop
-    end
-
-  let should_update (previous : thunk Js.t) (current : thunk Js.t) =
-    let rec loop i =
-      if i < 0
-      then false
-      else
-        not
-          (phys_equal
-             (Js.array_get current##.params i)
-             (Js.array_get previous##.params i))
-        || loop (i - 1)
-    in
-    loop (current##.params##.length - 1)
-  ;;
-
-  let thunk =
-    let thunk =
-      Js.Unsafe.js_expr
-        "(function(params, thunk) { this.params = params; this.thunk  = thunk; })"
-    in
-    thunk##.prototype##.type_ := Js.string "Thunk";
-    thunk##.prototype##.render
-    := Js.wrap_meth_callback (fun (this : thunk Js.t) (previous : thunk Js.t Js.Opt.t) ->
-      Js.Opt.case
-        previous
-        (fun () -> this##thunk ())
-        (fun previous ->
-           if should_update previous this then this##thunk () else previous##.vnode));
-    thunk
-  ;;
-
-  let create f x1 : t =
-    let open Js.Unsafe in
-    let args = Js.array [|inject f; inject x1|] in
-    (new%js thunk) args (fun () -> f x1)
-  ;;
-
-  let create2 f x1 x2 : t =
-    let open Js.Unsafe in
-    let args = Js.array [|inject f; inject x1; inject x2|] in
-    (new%js thunk) args (fun () -> f x1 x2)
-  ;;
-
-  let create3 f x1 x2 x3 : t =
-    let open Js.Unsafe in
-    let args = Js.array [|inject f; inject x1; inject x2; inject x3|] in
-    (new%js thunk) args (fun () -> f x1 x2 x3)
-  ;;
-
-  let create4 f x1 x2 x3 x4 : t =
-    let open Js.Unsafe in
-    let args = Js.array [|inject f; inject x1; inject x2; inject x3; inject x4|] in
-    (new%js thunk) args (fun () -> f x1 x2 x3 x4)
-  ;;
-
-  let create5 f x1 x2 x3 x4 x5 : t =
-    let open Js.Unsafe in
-    let args =
-      Js.array [|inject f; inject x1; inject x2; inject x3; inject x4; inject x5|]
-    in
-    (new%js thunk) args (fun () -> f x1 x2 x3 x4 x5)
-  ;;
-end
-
 module Patch = struct
   type node = t
 
   type t
 
-  let create ~previous ~current = Js.Unsafe.global ##. VirtualDom##diff previous current
+  let create ~previous ~current =
+    Js.Unsafe.global ##. VirtualDom##diff (T.to_js previous) (T.to_js current)
+  ;;
 
   let apply t elt = Js.Unsafe.global ##. VirtualDom##patch elt t
 
