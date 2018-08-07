@@ -6,7 +6,7 @@
   (libraries (
     tyxml.functor
     js_of_ocaml
-    incr_dom_widgets.css
+    css
     base
   ))
 ))

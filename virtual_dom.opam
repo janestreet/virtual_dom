@@ -10,7 +10,7 @@ build: [
 ]
 depends: [
   "base"
-  "incr_dom_widgets"
+  "core_kernel"
   "ppx_jane"
   "jbuilder"                {build & >= "1.0+beta18.1"}
   "js_of_ocaml"             {>= "3.0"}

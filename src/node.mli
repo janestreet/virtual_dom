@@ -8,28 +8,37 @@ module Element : sig
 
   val tag : t -> string
 
-  val attrs : t -> Attr.t list
+  val attrs : t -> Attrs.t
 
   val key : t -> string option
 
-  val map_attrs : t -> f:(Attr.t list -> Attr.t list) -> t
-
-  (** If the node had no style attribute the empty Css.t will be passed to f.
-      Most of the time you probably want to use add_style instead. *)
-  val map_style : t -> f:(Css.t -> Css.t) -> t
+  val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
 
   val add_style : t -> Css.t -> t
 
-  (** if the node had no class attribute the empty Set will be passed to f.
-      Most of the time you probably want to use add_class instead. *)
-  val map_class : t -> f:(Set.M(String).t -> Set.M(String).t) -> t
-
   val add_class : t -> string -> t
+end
+
+module Widget : sig
+  (* If you want a widget to be diffed against another (by calling the update
+     function of the new widget), the two widgets must have physically equal
+     ids. *)
+
+  type t
+
+  val create
+    :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
+    -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
+    -> id:('s * 'e Js.t) Type_equal.Id.t
+    -> init:(unit -> 's * 'e Js.t)
+    -> unit
+    -> t
 end
 
 type t =
   | Text of string
   | Element of Element.t
+  | Widget of Widget.t
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 
@@ -100,10 +109,7 @@ val svg : string -> ?key:string -> Attr.t list -> t list -> t
 
 val to_dom : t -> Dom_html.element Js.t
 
-(* If you want a widget to be diffed against another (by calling the update
-   function of the new widget), the two widgets must have physically equal
-   ids. *)
-
+(** convenience wrapper [widget ... = Widget (Widget.create ...)] *)
 val widget
   :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)

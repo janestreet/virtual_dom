@@ -102,16 +102,18 @@ let%test "invalid-empty" = not (valid_class_name "")
 
 let%test "invalid-space" = not (valid_class_name "foo bar")
 
-let class_ c =
-  assert (valid_class_name c);
-  Class (Set.singleton (module String) c)
+let class_ classname =
+  if not (valid_class_name classname)
+  then raise_s [%message "invalid classname" (classname : string)];
+  Class (Set.singleton (module String) classname)
 ;;
 
 let classes' classes = Class classes
 
-let classes classes =
-  assert (List.for_all ~f:valid_class_name classes);
-  classes' (Set.of_list (module String) classes)
+let classes classnames =
+  if not (List.for_all ~f:valid_class_name classnames)
+  then raise_s [%message "invalid classnames" (classnames : string list)];
+  classes' (Set.of_list (module String) classnames)
 ;;
 
 let to_class = function

@@ -1,0 +1,12 @@
+(library
+ ((name css)
+  (public_name virtual_dom.css)
+  (preprocess (pps (ppx_jane -ite-check ppxlib.runner)))
+  (libraries (
+    core_kernel
+    ))
+  ))
+
+
+
+(jbuild_version 1)
