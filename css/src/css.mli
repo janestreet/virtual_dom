@@ -31,6 +31,7 @@ end
 module Length : sig
   type t =
     [ `Ch of float
+    | `Rem of float
     | `Em of int
     | `Percent of Percent.t
     | `Pt of float
@@ -52,6 +53,8 @@ module Auto_or_length : sig
     | Length.t
     ]
   [@@deriving sexp, compare]
+
+  val to_string_css : t -> string
 end
 
 type t [@@deriving sexp, compare, bin_io]
@@ -81,10 +84,13 @@ val position
 
 (** Add the top property alone. *)
 val top : Length.t -> t
+
 (** Add the bottom property alone. *)
 val bottom : Length.t -> t
+
 (** Add the left property alone. *)
 val left : Length.t -> t
+
 (** Add the right property alone. *)
 val right : Length.t -> t
 
@@ -111,7 +117,13 @@ val display
   -> t
 
 val visibility : [ `Visible | `Hidden | `Collapse | css_global_values ] -> t
-val overflow : [ `Visible | `Hidden | `Scroll | `Auto | css_global_values ] -> t
+
+type overflow = [ `Visible | `Hidden | `Scroll | `Auto | css_global_values ]
+
+val overflow   : overflow -> t
+val overflow_x : overflow -> t
+val overflow_y : overflow -> t
+
 val z_index : int -> t
 val opacity : int -> t
 
@@ -211,10 +223,13 @@ val text_decoration
   -> unit
   -> t
 
+type item_alignment = [ `Auto | `Flex_start | `Flex_end | `Center | `Baseline | `Stretch ]
+
 val flex_container
   :  ?inline:bool
   -> ?direction:[ `Row | `Row_reverse | `Column | `Column_reverse ]
   -> ?wrap:[ `Nowrap | `Wrap | `Wrap_reverse ]
+  -> ?align_items:item_alignment
   -> unit
   -> t
 
@@ -225,6 +240,8 @@ val flex_item
   -> grow:float
   -> unit
   -> t
+
+val align_self : item_alignment -> t
 
 (** Note: You must include the [name]s @keyframes in the stylesheet *)
 val animation

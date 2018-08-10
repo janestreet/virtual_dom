@@ -42,6 +42,8 @@ type t =
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 
+type node_creator_childless = ?key:string -> Attr.t list -> t
+
 val text : string -> t
 
 val a : node_creator
@@ -102,12 +104,19 @@ val tr : node_creator
 
 val ul : node_creator
 
+val br : node_creator_childless
+
+val hr : node_creator_childless
+
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create : string -> ?key:string -> Attr.t list -> t list -> t
 
 val svg : string -> ?key:string -> Attr.t list -> t list -> t
 
 val to_dom : t -> Dom_html.element Js.t
+
+(** [to_string] calls [to_dom] under the hood and returns its outer HTML. *)
+val to_string : t -> string
 
 (** convenience wrapper [widget ... = Widget (Widget.create ...)] *)
 val widget

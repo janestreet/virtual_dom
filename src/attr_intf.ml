@@ -39,6 +39,8 @@ module type S = sig
 
   val id : string -> t
 
+  val name : string -> t
+
   val placeholder : string -> t
 
   val style : Css.t -> t

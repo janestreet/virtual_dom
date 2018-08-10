@@ -3,6 +3,36 @@ open Js_of_ocaml
 
 type virtual_dom_node
 
+type virtual_dom_patch
+
+class type virtual_dom =
+  object
+    method _VNode :
+      (Js.js_string Js.t
+       -> < > Js.t
+       -> virtual_dom_node Js.t Js.js_array Js.t
+       -> Js.js_string Js.t Js.optdef
+       -> virtual_dom_node Js.t)
+        Js.constr
+        Js.readonly_prop
+    method _VText :
+      (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
+    method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
+    method diff :
+      virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
+    method patch : Dom.element Js.t -> virtual_dom_patch Js.t -> Dom.element Js.t Js.meth
+    method svg :
+      (Js.js_string Js.t
+       -> < > Js.t
+       -> virtual_dom_node Js.t Js.js_array Js.t
+       -> Js.js_string Js.t Js.optdef
+       -> virtual_dom_node Js.t)
+        Js.constr
+        Js.readonly_prop
+  end
+
+let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
+
 module Widget = struct
   class type ['s, 'element] widget =
     object
@@ -113,6 +143,8 @@ module T : sig
 
   val create : string -> ?key:string -> Attr.t list -> t list -> t
 
+  val create_childless : string -> ?key:string -> Attr.t list -> t
+
   val svg : string -> ?key:string -> Attr.t list -> t list -> t
 
   val to_js : t -> virtual_dom_node Js.t
@@ -148,36 +180,38 @@ end = struct
 
   let to_js = function
     | Text s ->
-      let vtext = Js.Unsafe.global ##. VirtualDom ##. VText in
+      let vtext = virtual_dom##._VText in
       (new%js vtext) (Js.string s)
     | Element { tag; key; attrs; children; kind = `Vnode } ->
-      let vnode = Js.Unsafe.global ##. VirtualDom ##. VNode in
+      let vnode = virtual_dom##._VNode in
       (match key with
        | None ->
          (new%js vnode)
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
+           Js.Optdef.empty
        | Some key ->
          (new%js vnode)
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
-           (Js.string key))
+           (Js.Optdef.return (Js.string key)))
     | Element { tag; key; attrs; children; kind = `Svg } ->
-      let vnode = Js.Unsafe.global ##. VirtualDom##.svg in
+      let vnode = virtual_dom##.svg in
       (match key with
        | None ->
          (new%js vnode)
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
+           Js.Optdef.empty
        | Some key ->
          (new%js vnode)
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
-           (Js.string key))
+           (Js.Optdef.return (Js.string key)))
     | Widget w -> Widget.to_js w
   ;;
 
@@ -194,6 +228,8 @@ end = struct
 
   let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
 
+  let create_childless tag ?key attrs = create tag ?key attrs []
+
   let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
 end
 
@@ -208,13 +244,19 @@ let text = T.text
 
 let create = T.create
 
+let create_childless = T.create_childless
+
 let widget = T.widget
 
 let svg = T.svg
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 
-let to_dom t = Js.Unsafe.global ##. VirtualDom##createElement (T.to_js t)
+type node_creator_childless = ?key:string -> Attr.t list -> t
+
+let to_dom t : Dom_html.element Js.t = virtual_dom##createElement (T.to_js t)
+
+let to_string t = Js.to_string (to_dom t)##.outerHTML
 
 let a = create "a"
 
@@ -274,16 +316,18 @@ let tr = create "tr"
 
 let ul = create "ul"
 
+let br = create_childless "br"
+
+let hr = create_childless "hr"
+
 module Patch = struct
   type node = t
 
-  type t
+  type t = virtual_dom_patch Js.t
 
-  let create ~previous ~current =
-    Js.Unsafe.global ##. VirtualDom##diff (T.to_js previous) (T.to_js current)
-  ;;
+  let create ~previous ~current = virtual_dom##diff (T.to_js previous) (T.to_js current)
 
-  let apply t elt = Js.Unsafe.global ##. VirtualDom##patch elt t
+  let apply t elt = virtual_dom##patch elt t
 
   let is_empty =
     let f =

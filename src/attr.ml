@@ -135,6 +135,8 @@ let string_property name value = Raw (Raw.string_property name value)
 
 let id s = create "id" s
 
+let name s = create "name" s
+
 let href r = create "href" r
 
 let checked = create "checked" ""
