@@ -43,6 +43,8 @@ module type S = sig
 
   val placeholder : string -> t
 
+  val selected : t
+
   val style : Css.t -> t
 
   (** [to_style (style c) = Some c], [None] otherwise *)

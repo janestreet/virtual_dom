@@ -141,6 +141,8 @@ let href r = create "href" r
 
 let checked = create "checked" ""
 
+let selected = create "selected" ""
+
 let disabled = create "disabled" ""
 
 let placeholder x = create "placeholder" x
