@@ -125,7 +125,7 @@ val overflow_x : overflow -> t
 val overflow_y : overflow -> t
 
 val z_index : int -> t
-val opacity : int -> t
+val opacity : float -> t
 
 type font_style = [ `Normal | `Italic | `Oblique | css_global_values ]
 type font_weight = [ `Normal | `Bold | `Bolder | `Lighter | `Number of int | css_global_values ]
