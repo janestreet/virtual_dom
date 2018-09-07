@@ -2,7 +2,6 @@ open Base
 open Js_of_ocaml
 
 type virtual_dom_node
-
 type virtual_dom_patch
 
 class type virtual_dom =
@@ -15,12 +14,17 @@ class type virtual_dom =
        -> virtual_dom_node Js.t)
         Js.constr
         Js.readonly_prop
+
     method _VText :
       (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
+
     method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
+
     method diff :
       virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
+
     method patch : Dom.element Js.t -> virtual_dom_patch Js.t -> Dom.element Js.t Js.meth
+
     method svg :
       (Js.js_string Js.t
        -> < > Js.t
@@ -37,7 +41,9 @@ module Widget = struct
   class type ['s, 'element] widget =
     object
       constraint 'element = #Dom_html.element Js.t
+
       method type_ : Js.js_string Js.t Js.writeonly_prop
+
       (* virtual-dom considers two widgets of being of the same "kind" if either
          of the following holds:
 
@@ -53,12 +59,17 @@ module Widget = struct
          So, we go with option 1 and must have a trivial field called [name].
       *)
       method name : unit Js.writeonly_prop
+
       method id : ('s * 'element) Type_equal.Id.t Js.prop
+
       method state : 's Js.prop
+
       method destroy : ('element -> unit) Js.callback Js.writeonly_prop
+
       method update :
         (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
           Js.writeonly_prop
+
       method init : (unit -> 'element) Js.callback Js.writeonly_prop
     end
 
@@ -76,8 +87,8 @@ module Widget = struct
 
   let create
         (type s)
-        ?destroy:((destroy : s -> 'element -> unit) = fun _ _ -> ())
-        ?update:((update : s -> 'element -> s * 'element) = fun s elt -> s, elt)
+        ?(destroy : s -> 'element -> unit = fun _ _ -> ())
+        ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
         ~(id : (s * 'element) Type_equal.Id.t)
         ~(init : unit -> s * 'element)
         ()
@@ -114,15 +125,10 @@ module T : sig
     type t
 
     val tag : t -> string
-
     val attrs : t -> Attrs.t
-
     val key : t -> string option
-
     val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
-
     val add_class : t -> string -> t
-
     val add_style : t -> Css.t -> t
   end
 
@@ -142,11 +148,8 @@ module T : sig
     -> t
 
   val create : string -> ?key:string -> Attr.t list -> t list -> t
-
   val create_childless : string -> ?key:string -> Attr.t list -> t
-
   val svg : string -> ?key:string -> Attr.t list -> t list -> t
-
   val to_js : t -> virtual_dom_node Js.t
 end = struct
   type element =
@@ -166,33 +169,28 @@ end = struct
     type t = element
 
     let tag t = t.tag
-
     let attrs t = t.attrs
-
     let key t = t.key
-
     let map_attrs t ~f = { t with attrs = f t.attrs }
-
     let add_class t c = map_attrs t ~f:(fun a -> Attrs.add_class a c)
-
     let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
   end
 
   let to_js = function
     | Text s ->
       let vtext = virtual_dom##._VText in
-      (new%js vtext) (Js.string s)
+      new%js vtext (Js.string s)
     | Element { tag; key; attrs; children; kind = `Vnode } ->
       let vnode = virtual_dom##._VNode in
       (match key with
        | None ->
-         (new%js vnode)
+         new%js vnode
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
            Js.Optdef.empty
        | Some key ->
-         (new%js vnode)
+         new%js vnode
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
@@ -201,13 +199,13 @@ end = struct
       let vnode = virtual_dom##.svg in
       (match key with
        | None ->
-         (new%js vnode)
+         new%js vnode
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
            Js.Optdef.empty
        | Some key ->
-         (new%js vnode)
+         new%js vnode
            (Js.string tag)
            (Attr.list_to_obj (Attrs.to_list attrs))
            (Js.array (Array.of_list children))
@@ -227,9 +225,7 @@ end = struct
   ;;
 
   let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
-
   let create_childless tag ?key attrs = create tag ?key attrs []
-
   let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
 end
 
@@ -241,92 +237,53 @@ type t = T.t =
   | Widget of Widget.t
 
 let text = T.text
-
 let create = T.create
-
 let create_childless = T.create_childless
-
 let widget = T.widget
-
 let svg = T.svg
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
-
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
 let to_dom t : Dom_html.element Js.t = virtual_dom##createElement (T.to_js t)
-
 let to_string t = Js.to_string (to_dom t)##.outerHTML
-
 let a = create "a"
-
 let body = create "body"
-
 let button = create "button"
-
 let div = create "div"
-
 let footer = create "footer"
-
 let h1 = create "h1"
-
 let h2 = create "h2"
-
 let h3 = create "h3"
-
 let h4 = create "h4"
-
 let h5 = create "h5"
-
 let header = create "header"
-
 let html = create "html"
-
 let input = create "input"
-
 let textarea = create "textarea"
-
 let select = create "select"
-
 let option = create "option"
-
 let label = create "label"
-
 let li = create "li"
-
 let p = create "p"
-
 let section = create "section"
-
 let span = create "span"
-
 let strong = create "strong"
-
 let table = create "table"
-
 let tbody = create "tbody"
-
 let td = create "td"
-
 let th = create "th"
-
 let thead = create "thead"
-
 let tr = create "tr"
-
 let ul = create "ul"
-
 let br = create_childless "br"
-
 let hr = create_childless "hr"
 
 module Patch = struct
   type node = t
-
   type t = virtual_dom_patch Js.t
 
   let create ~previous ~current = virtual_dom##diff (T.to_js previous) (T.to_js current)
-
   let apply t elt = virtual_dom##patch elt t
 
   let is_empty =
@@ -341,6 +298,6 @@ module Patch = struct
         })
       |js}
     in
-    fun (t : t) -> Js.Unsafe.fun_call f [|Js.Unsafe.inject t|] |> Js.to_bool
+    fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
   ;;
 end

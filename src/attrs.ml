@@ -3,7 +3,6 @@ open Base
 type t = Attr.t list
 
 let to_list t = t
-
 let of_list t = t
 
 let make_map ~extract ~combine ~is_empty ~make_attr t ~f =
@@ -36,5 +35,4 @@ let map_style =
 ;;
 
 let add_style t s = map_style t ~f:(fun ss -> Css.combine ss s)
-
 let merge t1 t2 = List.append t1 t2 |> map_style ~f:Fn.id |> map_class ~f:Fn.id

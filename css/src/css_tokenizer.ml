@@ -40,15 +40,10 @@ type t =
   }
 
 let source t = t.s
-
 let next_pos t = t.off + t.len
-
 let is_next_eof t = next_pos t >= String.length t.s
-
-let next_char t = (t.s).[next_pos t]
-
+let next_char t = t.s.[next_pos t]
 let consume_1 t = t.len <- t.len + 1
-
 let consume_n t n = t.len <- t.len + n
 
 let one_char_token t tok =
@@ -87,7 +82,6 @@ let accept_string t str =
 ;;
 
 let expect t f = if accept t f then () else error t
-
 let expect_char t ch = expect t (Char.equal ch)
 
 let many t f =
@@ -128,7 +122,8 @@ let quoted_string' t ~quote =
   let rec loop () =
     many t (function
       | '\n' | '\r' | '\x0c' | '\\' -> false
-      | c when Char.equal c quote -> false
+      | c
+        when Char.equal c quote -> false
       | _ -> true);
     if accept_char t '\\'
     then
@@ -247,7 +242,8 @@ let next t =
   then t.current <- Eof
   else (
     match next_char t with
-    | c when is_whitespace c ->
+    | c
+      when is_whitespace c ->
       many t is_whitespace;
       t.current <- White_space
     | ':' -> one_char_token t Colon
@@ -281,7 +277,11 @@ let next t =
 
 let next t =
   (* Make sure we are idempotent when we get into the error state *)
-  if Token.equal t.current Error then () else (try next t with Error_happened -> ())
+  if Token.equal t.current Error
+  then ()
+  else (
+    try next t with
+    | Error_happened -> ())
 ;;
 
 let create s =
@@ -292,7 +292,6 @@ let create s =
 ;;
 
 let slice t = t.off, t.len
-
 let current t = t.current
 
 let current_text t =

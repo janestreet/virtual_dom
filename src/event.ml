@@ -34,7 +34,6 @@ module Define_visibility (VH : Visibility_handler) = struct
 end
 
 let get_key t = Caml.Obj.extension_id (Caml.Obj.extension_constructor t)
-
 let handle_registered_event t = Hashtbl.find_exn handlers (get_key t) t
 
 module Expert = struct

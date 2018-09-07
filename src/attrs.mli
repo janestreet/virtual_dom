@@ -4,7 +4,6 @@ open Base
 type t
 
 val to_list : t -> Attr.t list
-
 val of_list : Attr.t list -> t
 
 (** merge tries to do sensible things for style and class, e.g.  {v

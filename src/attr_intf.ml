@@ -17,47 +17,30 @@ module type S = sig
   val property : string -> Js.Unsafe.any -> t
 
   val on : string -> (#Dom_html.event Js.t -> Event.t) -> t
-
   val autofocus : bool -> t
 
 
   val checked : t
-
   val class_ : string -> t
-
   val to_class : t -> Base.Set.M(Base.String).t option
-
   val classes : string list -> t
-
   val classes' : Base.Set.M(Base.String).t -> t
-
   val disabled : t
-
   val for_ : string -> t
-
   val href : string -> t
-
   val id : string -> t
-
   val name : string -> t
-
   val placeholder : string -> t
-
   val selected : t
-
   val style : Css.t -> t
 
   (** [to_style (style c) = Some c], [None] otherwise *)
   val to_style : t -> Css.t option
 
   val tabindex : int -> t
-
   val type_ : string -> t
-
   val value : string -> t
-
   val on_focus : (Dom_html.event Js.t -> Event.t) -> t
-
   val on_blur : (Dom_html.event Js.t -> Event.t) -> t
 
   (** [on_input] fires every time the input changes, i.e., whenever a key is pressed in
@@ -71,29 +54,17 @@ module type S = sig
   val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
 
   val on_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_contextmenu : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_double_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mousemove : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mouseup : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mousedown : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mouseenter : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mouseleave : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mouseover : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_mouseout : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-
   val on_keyup : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
-
   val on_keypress : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
-
   val on_keydown : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
 end
 

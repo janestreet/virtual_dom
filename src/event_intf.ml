@@ -24,7 +24,6 @@ module type S = sig
 
 
   type t = ..
-
   type t += C : action -> t
 
   val inject : action -> t
@@ -50,9 +49,7 @@ module type Event = sig
         whatever kind. *)
 
   module type Handler = Handler
-
   module type Visibility_handler = Visibility_handler
-
   module type S = S
 
   (** For registering a new handler and a corresponding new constructor of the Event.t

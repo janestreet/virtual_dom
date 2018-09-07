@@ -28,7 +28,6 @@ module Raw : sig
   val property : string -> Js.Unsafe.any -> t
 
   val string_property : string -> string -> t
-
   val list_to_obj : t list -> < > Js.t
 end = struct
   type t =
@@ -42,7 +41,6 @@ end = struct
   ;;
 
   let property name value = Property (name, value)
-
   let string_property name value = Property (name, Js.Unsafe.inject (Js.string value))
 
   let list_to_obj attrs =
@@ -97,9 +95,7 @@ let valid_class_name s =
 ;;
 
 let%test "valid" = valid_class_name "foo-bar"
-
 let%test "invalid-empty" = not (valid_class_name "")
-
 let%test "invalid-space" = not (valid_class_name "foo bar")
 
 let class_ classname =
@@ -126,35 +122,20 @@ let class_to_raw classes =
 ;;
 
 let create name value = Raw (Raw.create name value)
-
 let create_float name value = Raw (Raw.create_float name value)
-
 let property name value = Raw (Raw.property name value)
-
 let string_property name value = Raw (Raw.string_property name value)
-
 let id s = create "id" s
-
 let name s = create "name" s
-
 let href r = create "href" r
-
 let checked = create "checked" ""
-
 let selected = create "selected" ""
-
 let disabled = create "disabled" ""
-
 let placeholder x = create "placeholder" x
-
 let autofocus b = create "autofocus" (Bool.to_string b)
-
 let for_ x = create "for" x
-
 let type_ x = create "type" x
-
 let value x = create "value" x
-
 let tabindex x = create "tabindex" (Int.to_string x)
 
 let on event convert_to_vdom_event : t =
@@ -166,40 +147,26 @@ let on event convert_to_vdom_event : t =
 ;;
 
 let on_focus = on "focus"
-
 let on_blur = on "blur"
-
 let on_click = on "click"
-
 let on_contextmenu = on "contextmenu"
-
 let on_double_click = on "dblclick"
-
 let on_mousemove = on "mousemove"
-
 let on_mouseup = on "mouseup"
-
 let on_mousedown = on "mousedown"
-
 let on_mouseenter = on "mouseenter"
-
 let on_mouseleave = on "mouseleave"
-
 let on_mouseover = on "mouseover"
-
 let on_mouseout = on "mouseout"
-
 let on_keyup = on "keyup"
-
 let on_keypress = on "keypress"
-
 let on_keydown = on "keydown"
-
 let const_ignore _ = Event.Ignore
 
 class type value_element =
   object
     inherit Dom_html.element
+
     method value : Js.js_string Js.t Js.prop
   end
 
@@ -231,7 +198,6 @@ let on_input_event event handler =
 ;;
 
 let on_change = on_input_event "change"
-
 let on_input = on_input_event "input"
 
 let to_raw = function

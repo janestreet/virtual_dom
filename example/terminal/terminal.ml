@@ -3,11 +3,12 @@ open Virtual_dom
 open Core_kernel
 open Vdom
 
-let colors = [|"red"; "green"; "blue"|]
+let colors = [| "red"; "green"; "blue" |]
 
 class type terminal =
   object
     method get_command_ : Js.js_string Js.t Js.meth
+
     method echo : Js.js_string Js.t -> unit Js.meth
   end
 
@@ -35,18 +36,21 @@ let terminal =
         | _ -> []
       in
       let completions = Js.array (Array.of_list_rev_map ~f:Js.string completions) in
-      Js.Unsafe.(fun_call k [|inject completions|])
+      Js.Unsafe.(fun_call k [| inject completions |])
     in
     let options =
       object%js
         val prompt = Js.string "> "
+
         val completion = Js.wrap_callback completion
+
         val exit = Js._false
+
         val clear = Js._false
       end
     in
     let init () =
-      let div : < terminal: _ -> _ -> unit Js.meth ; get: int -> _ Js.meth > Js.t =
+      let div : < terminal : _ -> _ -> unit Js.meth ; get : int -> _ Js.meth > Js.t =
         Js.Unsafe.global##jQuery (Js.string "<div width='400px' height='300px'>")
       in
       div##terminal (Js.wrap_callback interpret) options;

@@ -85,7 +85,9 @@ let rec any ct : bool =
   in
   if res then skip_white_space ct else ();
   res
+
 and expect_any ct = if any ct then () else raise_s [%message "Expected <any>"]
+
 and value0 ct =
   any ct
   || block ct
@@ -95,7 +97,9 @@ and value0 ct =
     skip_white_space ct;
     true)
   else false
+
 and value ct = many1 ct value0
+
 and block ct : bool =
   if accept ct Lcurly
   then (
@@ -112,8 +116,8 @@ and block ct : bool =
     skip_white_space ct;
     true)
   else false
+
 and expect_value ct = if value ct then () else raise_s [%message "Expected <value>"]
-;;
 
 let declaration ct =
   let ident_start, ident_len = Css_tokenizer.slice ct in
@@ -175,7 +179,6 @@ let parse parser_f s =
 ;;
 
 let validate_value = parse expect_value
-
 let parse_declaration_list s = parse expect_declaration_list s
 
 let test_parser p sexp_of_arg s =

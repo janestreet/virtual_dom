@@ -6,7 +6,10 @@ let sanitize_sexp s =
   |> String.substr_replace_all ~pattern:"_" ~with_:"-"
 ;;
 
-type css_global_values = [`Inherit | `Initial] [@@deriving sexp, bin_io, compare]
+type css_global_values =
+  [ `Inherit
+  | `Initial ]
+[@@deriving sexp, bin_io, compare]
 
 module Color = struct
   module T = struct
@@ -22,7 +25,10 @@ module Color = struct
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
 
-    type t = [`RGBA of RGBA.t | `Name of string | css_global_values]
+    type t =
+      [ `RGBA of RGBA.t
+      | `Name of string
+      | css_global_values ]
     [@@deriving sexp, bin_io, compare]
   end
 
@@ -87,7 +93,10 @@ module Length = struct
 end
 
 module Auto_or_length = struct
-  type t = [`Auto | Length.t] [@@deriving bin_io, compare, sexp]
+  type t =
+    [ `Auto
+    | Length.t ]
+  [@@deriving bin_io, compare, sexp]
 
   let to_string_css = function
     | `Auto -> "auto"
@@ -102,11 +111,8 @@ let value_map o ~f = Option.value_map o ~default:"" ~f
 type t = (string * string) list [@@deriving sexp, compare, bin_io]
 
 let combine t1 t2 = t1 @ t2
-
 let ( @> ) = combine
-
 let concat l = List.concat l
-
 let to_string_list = Fn.id
 
 let to_string_css t =
@@ -121,7 +127,6 @@ let of_string_css_exn s = Css_parser.parse_declaration_list s |> Or_error.ok_exn
     vast majority of combinators in this module it is the right thing to use, as we know
     by construction that the values do not need quoting / escaping. *)
 let create_raw ~field ~value = [ field, value ]
-;;
 
 let create ~field ~value =
   Css_parser.validate_value value |> Or_error.ok_exn;
@@ -129,7 +134,6 @@ let create ~field ~value =
 ;;
 
 let empty = []
-
 let is_empty = List.is_empty
 
 let create_placement name length =
@@ -137,11 +141,8 @@ let create_placement name length =
 ;;
 
 let left = create_placement "left"
-
 let top = create_placement "top"
-
 let bottom = create_placement "bottom"
-
 let right = create_placement "right"
 
 let position ?top:tp ?bottom:bt ?left:lt ?right:rt pos =
@@ -169,18 +170,19 @@ let box_sizing v =
 
 let display v =
   let value =
-    [%sexp_of: [ `Inline
-               | `Block
-               | `Inline_block
-               | `List_item
-               | `Table
-               | `Inline_table
-               | `None
-               | (* [ `Flex | `Inline_flex ] are intentionally left out of the mli to force the user
-                    to use [flex_container] below *)
-                 `Flex
-               | `Inline_flex
-               | css_global_values ]]
+    [%sexp_of:
+      [ `Inline
+      | `Block
+      | `Inline_block
+      | `List_item
+      | `Table
+      | `Inline_table
+      | `None
+      | (* [ `Flex | `Inline_flex ] are intentionally left out of the mli to force the user
+           to use [flex_container] below *)
+        `Flex
+      | `Inline_flex
+      | css_global_values ]]
       v
     |> sanitize_sexp
   in
@@ -194,7 +196,12 @@ let visibility v =
   create_raw ~field:"visibility" ~value
 ;;
 
-type overflow = [`Visible | `Hidden | `Scroll | `Auto | css_global_values]
+type overflow =
+  [ `Visible
+  | `Hidden
+  | `Scroll
+  | `Auto
+  | css_global_values ]
 
 let make_overflow field v =
   let value =
@@ -205,13 +212,9 @@ let make_overflow field v =
 ;;
 
 let overflow = make_overflow "overflow"
-
 let overflow_x = make_overflow "overflow-x"
-
 let overflow_y = make_overflow "overflow-y"
-
 let z_index i = create_raw ~field:"z-index" ~value:(Int.to_string i)
-
 let opacity i = create_raw ~field:"opacity" ~value:(Float.to_string i)
 
 let create_length_field field l =
@@ -232,15 +235,26 @@ let white_space v =
   create ~field:"white-space" ~value
 ;;
 
-type font_style = [`Normal | `Italic | `Oblique | css_global_values]
+type font_style =
+  [ `Normal
+  | `Italic
+  | `Oblique
+  | css_global_values ]
 
 type font_weight =
-  [`Normal | `Bold | `Bolder | `Lighter | `Number of int | css_global_values]
+  [ `Normal
+  | `Bold
+  | `Bolder
+  | `Lighter
+  | `Number of int
+  | css_global_values ]
 
-type font_variant = [`Normal | `Small_caps | css_global_values]
+type font_variant =
+  [ `Normal
+  | `Small_caps
+  | css_global_values ]
 
 let font_size = create_length_field "font-size"
-
 let font_family l = create_raw ~field:"font-family" ~value:(String.concat l ~sep:",")
 
 let font_style s =
@@ -252,7 +266,13 @@ let font_style s =
 
 let font_weight =
   let module Static_weight = struct
-    type t = [`Normal | `Bold | `Bolder | `Lighter | css_global_values] [@@deriving sexp]
+    type t =
+      [ `Normal
+      | `Bold
+      | `Bolder
+      | `Lighter
+      | css_global_values ]
+    [@@deriving sexp]
   end
   in
   fun s ->
@@ -295,9 +315,7 @@ let create_alignment field a =
 ;;
 
 let text_align = create_alignment "text-align"
-
 let horizontal_align = create_alignment "horizontal-align"
-
 let vertical_align = create_alignment "vertical-align"
 
 let float f =
@@ -307,23 +325,14 @@ let float f =
 ;;
 
 let width = create_length_field "width"
-
 let min_width = create_length_field "min-width"
-
 let max_width = create_length_field "max-width"
-
 let height = create_length_field "height"
-
 let min_height = create_length_field "min-height"
-
 let max_height = create_length_field "max-height"
-
 let padding_top = create_length_field "padding-top"
-
 let padding_bottom = create_length_field "padding-bottom"
-
 let padding_left = create_length_field "padding-left"
-
 let padding_right = create_length_field "padding-right"
 
 let padding ?top ?bottom ?left ?right () =
@@ -338,13 +347,9 @@ let padding ?top ?bottom ?left ?right () =
 ;;
 
 let uniform_padding l = padding ~top:l ~bottom:l ~left:l ~right:l ()
-
 let margin_top = create_length_field "margin-top"
-
 let margin_bottom = create_length_field "margin-bottom"
-
 let margin_left = create_length_field "margin-left"
-
 let margin_right = create_length_field "margin-right"
 
 let margin ?top ?bottom ?left ?right () =
@@ -385,7 +390,6 @@ let concat2v v1 v2 =
 
 (** Concat up to 3 values with spaces in between. *)
 let concat3v v1 v2 v3 = concat2v (concat2v v1 v2) v3
-;;
 
 let border_value ?width ?color ~style () =
   let style = [%sexp_of: border_style] style |> sanitize_sexp in
@@ -408,13 +412,9 @@ let create_border ?side () =
 ;;
 
 let border_top = create_border ~side:`Top ()
-
 let border_bottom = create_border ~side:`Bottom ()
-
 let border_left = create_border ~side:`Left ()
-
 let border_right = create_border ~side:`Right ()
-
 let border = create_border ()
 
 let outline ?width ?color ~style () =
@@ -429,15 +429,23 @@ let border_collapse v =
 ;;
 
 let border_spacing = create_length_field "border-spacing"
-
 let border_radius l = create ~field:"border-radius" ~value:(Length.to_string_css l)
 
 type text_decoration_line =
-  [`None | `Underline | `Overline | `Line_through | css_global_values]
+  [ `None
+  | `Underline
+  | `Overline
+  | `Line_through
+  | css_global_values ]
 [@@deriving sexp]
 
 type text_decoration_style =
-  [`Solid | `Double | `Dotted | `Dashed | `Wavy | css_global_values]
+  [ `Solid
+  | `Double
+  | `Dotted
+  | `Dashed
+  | `Wavy
+  | css_global_values ]
 [@@deriving sexp]
 
 let text_decoration ?style ?color ~line () =
@@ -455,7 +463,13 @@ let text_decoration ?style ?color ~line () =
   create_raw ~field:"text-decoration" ~value
 ;;
 
-type item_alignment = [`Auto | `Flex_start | `Flex_end | `Center | `Baseline | `Stretch]
+type item_alignment =
+  [ `Auto
+  | `Flex_start
+  | `Flex_end
+  | `Center
+  | `Baseline
+  | `Stretch ]
 
 let item_alignment_to_string_css = function
   | `Auto -> "auto"
@@ -466,7 +480,13 @@ let item_alignment_to_string_css = function
   | `Stretch -> "stretch"
 ;;
 
-let flex_container ?(inline=false) ?(direction=`Row) ?(wrap=`Nowrap) ?align_items () =
+let flex_container
+      ?(inline = false)
+      ?(direction = `Row)
+      ?(wrap = `Nowrap)
+      ?align_items
+      ()
+  =
   let direction =
     [%sexp_of: [`Row | `Row_reverse | `Column | `Column_reverse]] direction
     |> sanitize_sexp
@@ -485,7 +505,7 @@ let flex_container ?(inline=false) ?(direction=`Row) ?(wrap=`Nowrap) ?align_item
     ]
 ;;
 
-let flex_item ?order ?(basis=`Auto) ?(shrink=1.) ~grow () =
+let flex_item ?order ?(basis = `Auto) ?(shrink = 1.) ~grow () =
   let order =
     Option.map order ~f:(fun i -> create_raw ~field:"order" ~value:(Int.to_string i))
     |> Option.to_list
@@ -519,11 +539,8 @@ let animation
     m direction ~f:(fun d ->
       let value =
         d
-        |> [%sexp_of: [ `Normal
-                      | `Reverse
-                      | `Alternate
-                      | `Alternate_reverse
-                      | css_global_values ]]
+        |> [%sexp_of:
+          [`Normal | `Reverse | `Alternate | `Alternate_reverse | css_global_values]]
         |> sanitize_sexp
       in
       create_raw ~field:"animation-direction" ~value)
