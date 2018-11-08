@@ -246,7 +246,6 @@ type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
 let to_dom t : Dom_html.element Js.t = virtual_dom##createElement (T.to_js t)
-let to_string t = Js.to_string (to_dom t)##.outerHTML
 let a = create "a"
 let body = create "body"
 let button = create "button"

@@ -77,9 +77,6 @@ val create : string -> ?key:string -> Attr.t list -> t list -> t
 val svg : string -> ?key:string -> Attr.t list -> t list -> t
 val to_dom : t -> Dom_html.element Js.t
 
-(** [to_string] calls [to_dom] under the hood and returns its outer HTML. *)
-val to_string : t -> string
-
 (** convenience wrapper [widget ... = Widget (Widget.create ...)] *)
 val widget
   :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
