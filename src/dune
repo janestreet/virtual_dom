@@ -1,0 +1,5 @@
+(library (name virtual_dom) (public_name virtual_dom)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (js_of_ocaml
+  (javascript_files ../lib/virtualdom.compiled.js ./soft-set-hook.js))
+ (libraries tyxml.functor js_of_ocaml css_gen base))

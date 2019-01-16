@@ -1,0 +1,2 @@
+(library (name virtual_dom_test) (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries core_kernel js_of_ocaml virtual_dom))

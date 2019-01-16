@@ -32,10 +32,11 @@ module type S = sig
   val name : string -> t
   val placeholder : string -> t
   val selected : t
-  val style : Css.t -> t
+  val hidden : t
+  val style : Css_gen.t -> t
 
   (** [to_style (style c) = Some c], [None] otherwise *)
-  val to_style : t -> Css.t option
+  val to_style : t -> Css_gen.t option
 
   val tabindex : int -> t
   val type_ : string -> t

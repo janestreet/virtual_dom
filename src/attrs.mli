@@ -1,22 +1,24 @@
 (** A collection of CSS attributes. *)
 open Base
 
-type t
+type t = Attr.t list
 
-val to_list : t -> Attr.t list
-val of_list : Attr.t list -> t
+(** [merge_classes_and_styles] groups together the class attributes and style attributes
+    from the given list into a single style and class attribute, e.g.:
 
-(** merge tries to do sensible things for style and class, e.g.  {v
-      "class=foo;style=color:blue;text-align:center"
-    + "class=bar;background=red"
-    = "class=foo bar;style=color:blue;text-align:center:background=red" v} *)
-val merge : t -> t -> t
+    [ class="foo"; style="color:blue"; class="bar"; id="id"; style="margin:30px;" ]
 
-(** If there is no style attribute the empty Css.t will be passed to f.
+    becomes
+
+    [ class="foo bar"; style="color:blue; margin:30px;"; id="id" ]
+*)
+val merge_classes_and_styles : t -> t
+
+(** If there is no style attribute the empty Css_gen.t will be passed to f.
     Most of the time you probably want to use add_style instead. *)
-val map_style : t -> f:(Css.t -> Css.t) -> t
+val map_style : t -> f:(Css_gen.t -> Css_gen.t) -> t
 
-val add_style : t -> Css.t -> t
+val add_style : t -> Css_gen.t -> t
 
 (** If there is no class attribute the empty Set will be passed to f.
     Most of the time you probably want to use add_class instead. *)

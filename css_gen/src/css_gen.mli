@@ -254,3 +254,9 @@ val animation
   -> ?timing_function:string
   -> unit
   -> t
+
+module Stable : sig
+  module V1 : sig
+    type nonrec t = t [@@deriving sexp, compare, bin_io]
+  end
+end

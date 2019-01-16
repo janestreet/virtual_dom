@@ -6,6 +6,7 @@ module type XML =
   with type uri = string
    and type event_handler = Dom_html.event Js.t -> Event.t
    and type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
+   and type touch_event_handler = Dom_html.touchEvent Js.t -> Event.t
    and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
    and type elt = Vdom.Node.t
 
@@ -22,6 +23,7 @@ module Xml = struct
   type aname = string
   type event_handler = Dom_html.event Js.t -> Event.t
   type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
+  type touch_event_handler = Dom_html.touchEvent Js.t -> Event.t
   type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
   type attrib = Attr.t
 
@@ -47,6 +49,7 @@ module Xml = struct
   let comma_sep_attrib name values = attr name (String.concat "," values)
   let event_handler_attrib name (value : event_handler) = attr_ev name value
   let mouse_event_handler_attrib name (value : mouse_event_handler) = attr_ev name value
+  let touch_event_handler_attrib name (value : touch_event_handler) = attr_ev name value
 
   let keyboard_event_handler_attrib name (value : keyboard_event_handler) =
     attr_ev name value

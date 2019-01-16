@@ -1,4 +1,15 @@
+module Stable = struct
+  open Core_kernel.Core_kernel_stable
+
+  module V1 = struct
+    (** (field * value) list.  Where value should be escaped / quoted
+        as necessary as per https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
+    type t = (string * string) list [@@deriving sexp, compare, bin_io]
+  end
+end
+
 open Core_kernel
+include Stable.V1
 
 let sanitize_sexp s =
   Sexp.to_string s
@@ -105,11 +116,6 @@ module Auto_or_length = struct
 end
 
 let value_map o ~f = Option.value_map o ~default:"" ~f
-
-(** (field * value) list.  Where value should be escaped / quoted
-    as necessary as per https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
-type t = (string * string) list [@@deriving sexp, compare, bin_io]
-
 let combine t1 t2 = t1 @ t2
 let ( @> ) = combine
 let concat l = List.concat l

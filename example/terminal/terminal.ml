@@ -68,7 +68,7 @@ let () =
     Dom.handler (fun _ ->
       let count = ref 0 in
       let vdom = ref (view !count) in
-      let elt = (Node.to_dom !vdom :> Dom.element Js.t) in
+      let elt = Node.to_dom !vdom in
       Dom.appendChild Dom_html.document##.body elt;
       Dom_html.window##setInterval
         (Js.wrap_callback (fun _ ->

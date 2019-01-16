@@ -1,0 +1,2 @@
+(library (name css_gen) (public_name virtual_dom.css_gen)
+ (preprocess (pps ppx_jane)) (libraries core_kernel))

@@ -10,7 +10,7 @@ module Element : sig
   val attrs : t -> Attrs.t
   val key : t -> string option
   val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
-  val add_style : t -> Css.t -> t
+  val add_style : t -> Css_gen.t -> t
   val add_class : t -> string -> t
 end
 
@@ -58,6 +58,7 @@ val option : node_creator
 val label : node_creator
 val li : node_creator
 val p : node_creator
+val pre : node_creator
 val section : node_creator
 val span : node_creator
 val strong : node_creator
@@ -91,6 +92,6 @@ module Patch : sig
   type t
 
   val create : previous:node -> current:node -> t
-  val apply : t -> Dom.element Js.t -> Dom.element Js.t
+  val apply : t -> Dom_html.element Js.t -> Dom_html.element Js.t
   val is_empty : t -> bool
 end

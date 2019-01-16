@@ -2,9 +2,6 @@ open Base
 
 type t = Attr.t list
 
-let to_list t = t
-let of_list t = t
-
 let make_map ~extract ~combine ~is_empty ~make_attr t ~f =
   let specials, other =
     List.partition_map t ~f:(fun a ->
@@ -29,10 +26,10 @@ let add_class t c = map_class t ~f:(fun cs -> Set.add cs c)
 let map_style =
   make_map
     ~extract:Attr.to_style
-    ~combine:Css.concat
-    ~is_empty:([%compare.equal: Css.t] Css.empty)
+    ~combine:Css_gen.concat
+    ~is_empty:([%compare.equal: Css_gen.t] Css_gen.empty)
     ~make_attr:Attr.style
 ;;
 
-let add_style t s = map_style t ~f:(fun ss -> Css.combine ss s)
-let merge t1 t2 = List.append t1 t2 |> map_style ~f:Fn.id |> map_class ~f:Fn.id
+let add_style t s = map_style t ~f:(fun ss -> Css_gen.combine ss s)
+let merge_classes_and_styles t = t |> map_style ~f:Fn.id |> map_class ~f:Fn.id

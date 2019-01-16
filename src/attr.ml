@@ -71,7 +71,7 @@ end = struct
 end
 
 type t =
-  | Style of Css.t
+  | Style of Css_gen.t
   | Class of (string, String.comparator_witness) Set.t
   | Raw of Raw.t
 
@@ -83,7 +83,7 @@ let to_style = function
 let style css = Style css
 
 let style_to_raw css =
-  let props = Css.to_string_list css in
+  let props = Css_gen.to_string_list css in
   let obj = Js.Unsafe.obj [||] in
   List.iter ~f:(fun (k, v) -> Js.Unsafe.set obj (Js.string k) (Js.string v)) props;
   Raw.property "style" obj
@@ -130,6 +130,7 @@ let name s = create "name" s
 let href r = create "href" r
 let checked = create "checked" ""
 let selected = create "selected" ""
+let hidden = create "hidden" ""
 let disabled = create "disabled" ""
 let placeholder x = create "placeholder" x
 let autofocus b = create "autofocus" (Bool.to_string b)

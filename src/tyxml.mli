@@ -6,6 +6,7 @@ module type XML =
   with type uri = string
    and type event_handler = Dom_html.event Js.t -> Event.t
    and type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
+   and type touch_event_handler = Dom_html.touchEvent Js.t -> Event.t
    and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
    and type elt = Vdom.Node.t
 

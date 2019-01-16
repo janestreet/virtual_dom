@@ -7,4 +7,5 @@ module Svg_types  = Svg_types
 module Xml_iter   = Xml_iter
 module Xml_print  = Xml_print
 module Xml_sigs   = Xml_sigs
+module Xml_stream = Xml_stream
 module Xml_wrap   = Xml_wrap

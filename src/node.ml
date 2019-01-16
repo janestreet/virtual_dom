@@ -23,7 +23,8 @@ class type virtual_dom =
     method diff :
       virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
 
-    method patch : Dom.element Js.t -> virtual_dom_patch Js.t -> Dom.element Js.t Js.meth
+    method patch :
+      Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t Js.meth
 
     method svg :
       (Js.js_string Js.t
@@ -129,7 +130,7 @@ module T : sig
     val key : t -> string option
     val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
     val add_class : t -> string -> t
-    val add_style : t -> Css.t -> t
+    val add_style : t -> Css_gen.t -> t
   end
 
   type t =
@@ -186,13 +187,13 @@ end = struct
        | None ->
          new%js vnode
            (Js.string tag)
-           (Attr.list_to_obj (Attrs.to_list attrs))
+           (Attr.list_to_obj attrs)
            (Js.array (Array.of_list children))
            Js.Optdef.empty
        | Some key ->
          new%js vnode
            (Js.string tag)
-           (Attr.list_to_obj (Attrs.to_list attrs))
+           (Attr.list_to_obj attrs)
            (Js.array (Array.of_list children))
            (Js.Optdef.return (Js.string key)))
     | Element { tag; key; attrs; children; kind = `Svg } ->
@@ -201,13 +202,13 @@ end = struct
        | None ->
          new%js vnode
            (Js.string tag)
-           (Attr.list_to_obj (Attrs.to_list attrs))
+           (Attr.list_to_obj attrs)
            (Js.array (Array.of_list children))
            Js.Optdef.empty
        | Some key ->
          new%js vnode
            (Js.string tag)
-           (Attr.list_to_obj (Attrs.to_list attrs))
+           (Attr.list_to_obj attrs)
            (Js.array (Array.of_list children))
            (Js.Optdef.return (Js.string key)))
     | Widget w -> Widget.to_js w
@@ -215,7 +216,7 @@ end = struct
 
   let element kind ~tag ~key attrs children =
     let children = List.map children ~f:to_js in
-    { kind; tag; key; attrs = Attrs.of_list attrs; children }
+    { kind; tag; key; attrs; children }
   ;;
 
   let text s = Text s
@@ -265,6 +266,7 @@ let option = create "option"
 let label = create "label"
 let li = create "li"
 let p = create "p"
+let pre = create "pre"
 let section = create "section"
 let span = create "span"
 let strong = create "strong"
