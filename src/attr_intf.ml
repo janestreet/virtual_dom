@@ -13,6 +13,9 @@ module type S = sig
   (** [string_property name value] creates a simple string-only property *)
   val string_property : string -> string -> t
 
+  (** [bool_property name value] creates a simple bool-only property *)
+  val bool_property : string -> bool -> t
+
   (** [property name value] creates a property with a generic value *)
   val property : string -> Js.Unsafe.any -> t
 

@@ -28,6 +28,7 @@ module Raw : sig
   val property : string -> Js.Unsafe.any -> t
 
   val string_property : string -> string -> t
+  val bool_property : string -> bool -> t
   val list_to_obj : t list -> < > Js.t
 end = struct
   type t =
@@ -42,6 +43,7 @@ end = struct
 
   let property name value = Property (name, value)
   let string_property name value = Property (name, Js.Unsafe.inject (Js.string value))
+  let bool_property name value = Property (name, Js.Unsafe.inject (Js.bool value))
 
   let list_to_obj attrs =
     (* When input elements have their value set to what it already is
@@ -125,6 +127,7 @@ let create name value = Raw (Raw.create name value)
 let create_float name value = Raw (Raw.create_float name value)
 let property name value = Raw (Raw.property name value)
 let string_property name value = Raw (Raw.string_property name value)
+let bool_property name value = Raw (Raw.bool_property name value)
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
