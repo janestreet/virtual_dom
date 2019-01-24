@@ -21,17 +21,14 @@ end
 
 module type S = sig
   type action
-
-
-  type t = ..
+  type t = private ..
   type t += C : action -> t
 
   val inject : action -> t
 end
 
 module type Event = sig
-
-  type t = ..
+  type t = private ..
 
   type t +=
     | Ignore  (** [Ignore] events are dropped, so no handler is called *)
