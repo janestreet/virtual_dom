@@ -134,6 +134,7 @@ module T : sig
   end
 
   type t =
+    | None
     | Text of string
     | Element of Element.t
     | Widget of Widget.t
@@ -162,6 +163,7 @@ end = struct
     }
 
   and t =
+    | None
     | Text of string
     | Element of element
     | Widget of Widget.t
@@ -177,10 +179,19 @@ end = struct
     let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
   end
 
+  let string_to_js_text s =
+    let vtext = virtual_dom##._VText in
+    new%js vtext (Js.string s)
+  ;;
+
   let to_js = function
-    | Text s ->
-      let vtext = virtual_dom##._VText in
-      new%js vtext (Js.string s)
+    | None ->
+      (* We normally filter these out, but if [to_js] is called directly on a [None] node,
+         we use this hack. Aside from having a [Text] node without any text present in the
+         Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
+         can only happen when the root view Incremental is inhabited by a [None]. *)
+      string_to_js_text ""
+    | Text s -> string_to_js_text s
     | Element { tag; key; attrs; children; kind = `Vnode } ->
       let vnode = virtual_dom##._VNode in
       (match key with
@@ -215,7 +226,11 @@ end = struct
   ;;
 
   let element kind ~tag ~key attrs children =
-    let children = List.map children ~f:to_js in
+    let children =
+      List.filter_map children ~f:(function
+        | None -> None
+        | other -> Some (to_js other))
+    in
     { kind; tag; key; attrs; children }
   ;;
 
@@ -233,10 +248,12 @@ end
 module Element = T.Element
 
 type t = T.t =
+  | None
   | Text of string
   | Element of Element.t
   | Widget of Widget.t
 
+let none = None
 let text = T.text
 let create = T.create
 let create_childless = T.create_childless

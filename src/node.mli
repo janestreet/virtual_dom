@@ -31,6 +31,7 @@ module Widget : sig
 end
 
 type t =
+  | None
   | Text of string
   | Element of Element.t
   | Widget of Widget.t
@@ -38,6 +39,7 @@ type t =
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
+val none : t
 val text : string -> t
 val a : node_creator
 val body : node_creator
