@@ -13,7 +13,7 @@
 *)
 
 open Core_kernel
-open! Int_replace_polymorphic_compare
+open! Int.Replace_polymorphic_compare
 
 let rec next ct =
   Css_tokenizer.next ct;
