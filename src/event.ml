@@ -13,11 +13,20 @@ let handlers : (t -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:
 (* All visibility handlers see all events, so a simple list is enough.  *)
 let visibility_handlers : (unit -> unit) list ref = ref []
 
+module Obj = struct
+  module Extension_constructor = struct
+    [@@@ocaml.warning "-3"]
+
+    let id = Caml.Obj.extension_id
+    let of_val = Caml.Obj.extension_constructor
+  end
+end
+
 module Define (Handler : Handler) :
   S with type action := Handler.Action.t and type t := t = struct
   type t += C : Handler.Action.t -> t
 
-  let key = Caml.Obj.extension_id [%extension_constructor C]
+  let key = Obj.Extension_constructor.id [%extension_constructor C]
 
   let () =
     Hashtbl.add_exn handlers ~key ~data:(fun inp ->
@@ -33,7 +42,7 @@ module Define_visibility (VH : Visibility_handler) = struct
   let () = visibility_handlers := VH.handle :: !visibility_handlers
 end
 
-let get_key t = Caml.Obj.extension_id (Caml.Obj.extension_constructor t)
+let get_key t = Obj.Extension_constructor.id (Obj.Extension_constructor.of_val t)
 let handle_registered_event t = Hashtbl.find_exn handlers (get_key t) t
 
 module Expert = struct
