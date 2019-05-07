@@ -44,6 +44,7 @@ val text : string -> t
 val a : node_creator
 val body : node_creator
 val button : node_creator
+val code : node_creator
 val div : node_creator
 val footer : node_creator
 val h1 : node_creator
@@ -51,6 +52,7 @@ val h2 : node_creator
 val h3 : node_creator
 val h4 : node_creator
 val h5 : node_creator
+val h6 : node_creator
 val header : node_creator
 val html : node_creator
 val input : node_creator
@@ -71,6 +73,7 @@ val th : node_creator
 val thead : node_creator
 val tr : node_creator
 val ul : node_creator
+val ol : node_creator
 val br : node_creator_childless
 val hr : node_creator_childless
 

@@ -39,6 +39,7 @@ module Color = struct
     type t =
       [ `RGBA of RGBA.t
       | `Name of string
+      | `Var of string
       | css_global_values ]
     [@@deriving sexp, bin_io, compare]
   end
@@ -53,6 +54,7 @@ module Color = struct
        | None -> sprintf "rgb(%i,%i,%i)" r g b
        | Some p -> sprintf "rgba(%i,%i,%i,%.2f)" r g b (Percent.to_mult p))
     | `Name name -> name
+    | `Var var -> sprintf "var(%s)" var
   ;;
 end
 
