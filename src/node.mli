@@ -21,6 +21,15 @@ module Widget : sig
 
   type t
 
+  (**
+     WARNING: While other Virtual_dom APIs shield the application from script
+     injection attacks, the [Widget.create] function allows a developer to
+     bypass these safeguards and manually create DOM nodes which could allow an
+     attacker to change the behavior of the application or exfiltrate data.
+
+     In using this API, you are being trusted to understand and follow security
+     best-practices.
+  *)
   val create
     :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
     -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
@@ -83,7 +92,16 @@ val create : string -> ?key:string -> Attr.t list -> t list -> t
 val svg : string -> ?key:string -> Attr.t list -> t list -> t
 val to_dom : t -> Dom_html.element Js.t
 
-(** convenience wrapper [widget ... = Widget (Widget.create ...)] *)
+(** convenience wrapper [widget ... = Widget (Widget.create ...)]
+
+    WARNING: While other Virtual_dom APIs shield the application from script
+    injection attacks, the [Widget.create] function allows a developer to
+    bypass these safeguards and manually create DOM nodes which could allow an
+    attacker to change the behavior of the application or exfiltrate data.
+
+    In using this API, you are being trusted to understand and follow security
+    best-practices.
+*)
 val widget
   :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
