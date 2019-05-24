@@ -22,6 +22,7 @@ module Color : sig
   type t =
     [ `RGBA of RGBA.t
     | `Name of string
+    | `Hex of string
     | `Var of string
     | css_global_values
     ] [@@deriving sexp, bin_io, compare]

@@ -256,9 +256,9 @@ type t = T.t =
 let none = None
 let text = T.text
 let create = T.create
+let create_svg = T.svg
 let create_childless = T.create_childless
 let widget = T.widget
-let svg = T.svg
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t

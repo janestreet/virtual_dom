@@ -1,4 +1,4 @@
-open Js_of_ocaml
+open! Js_of_ocaml
 
 module type S = sig
   (** This type covers both properties and attributes, despite the name. *)

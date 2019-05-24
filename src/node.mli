@@ -89,7 +89,11 @@ val hr : node_creator_childless
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create : string -> ?key:string -> Attr.t list -> t list -> t
 
-val svg : string -> ?key:string -> Attr.t list -> t list -> t
+(** Like [create] but for svg nodes (i.e. all to be placed inside <svg> tag). This is
+    needed as browsers maintain separate namespaces for html and svg, and failing to use
+    the correct one may result in delayed redraws. *)
+val create_svg : string -> ?key:string -> Attr.t list -> t list -> t
+
 val to_dom : t -> Dom_html.element Js.t
 
 (** convenience wrapper [widget ... = Widget (Widget.create ...)]

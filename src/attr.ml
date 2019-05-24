@@ -1,4 +1,4 @@
-open Base
+open! Base
 open Js_of_ocaml
 
 (** This has 2 kinds of constructors. {v
@@ -38,7 +38,7 @@ end = struct
   let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
 
   let create_float name value =
-    Attribute (name, Js.Unsafe.inject (Js.number_of_float value)##toString)
+    Attribute (name, Js.Unsafe.inject (Dom_float.to_js_string value))
   ;;
 
   let property name value = Property (name, value)
