@@ -14,30 +14,7 @@ module Element : sig
   val add_class : t -> string -> t
 end
 
-module Widget : sig
-  (* If you want a widget to be diffed against another (by calling the update
-     function of the new widget), the two widgets must have physically equal
-     ids. *)
-
-  type t
-
-  (**
-     WARNING: While other Virtual_dom APIs shield the application from script
-     injection attacks, the [Widget.create] function allows a developer to
-     bypass these safeguards and manually create DOM nodes which could allow an
-     attacker to change the behavior of the application or exfiltrate data.
-
-     In using this API, you are being trusted to understand and follow security
-     best-practices.
-  *)
-  val create
-    :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
-    -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
-    -> id:('s * 'e Js.t) Type_equal.Id.t
-    -> init:(unit -> 's * 'e Js.t)
-    -> unit
-    -> t
-end
+module Widget : Base.T
 
 type t =
   | None
@@ -96,7 +73,28 @@ val create_svg : string -> ?key:string -> Attr.t list -> t list -> t
 
 val to_dom : t -> Dom_html.element Js.t
 
-(** convenience wrapper [widget ... = Widget (Widget.create ...)]
+(** Creates a Node.t that has fine-grained control over the Browser DOM node.
+
+    Callbacks
+    =========
+
+    init: Returns a Browser DOM Node and a widget state object.  The Browser
+    DOM node is mounted into the dom in the location where the Node.t
+    object would otherwise be.
+
+    update: Given the previous Browser DOM Node and state, makes any changes 
+    necessary to either and returns a new state and Browser DOM Node.
+
+    destroy: Called when this Node.t is removed from the Virtual_dom.  
+    Performs any necessary cleanup.
+
+    Other
+    =====
+
+    The [id] is used to compare widgets, and is used to make sure that the 
+    state from one widget doesn't get interpreted as the state for another.
+    Otherwise, you would be able to implement Obj.magic using this API.
+
 
     WARNING: While other Virtual_dom APIs shield the application from script
     injection attacks, the [Widget.create] function allows a developer to
