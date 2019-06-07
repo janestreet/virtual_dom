@@ -70,5 +70,35 @@ module type S = sig
   val on_keyup : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
   val on_keypress : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
   val on_keydown : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
+
+  module Expert : sig
+    val create_basic_hook
+      :  string
+      -> ?hook:(Dom_html.element Js.t -> unit)
+      -> ?unhook:(Dom_html.element Js.t -> unit)
+      -> unit
+      -> t
+    [@@deprecated
+      "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
+
+    val create_stateful_hook
+      :  string
+      -> hook:(Dom_html.element Js.t -> 'a)
+      -> unhook:('a -> Dom_html.element Js.t -> unit)
+      -> id:'a Core_kernel.Type_equal.Id.t
+      -> t
+    [@@deprecated
+      "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
+
+    val create_persistent_hook
+      :  string
+      -> init:(Dom_html.element Js.t -> 'state)
+      -> update:('state -> Dom_html.element Js.t -> 'state)
+      -> destroy:('state -> Dom_html.element Js.t -> unit)
+      -> id:'state Core_kernel.Type_equal.Id.t
+      -> t
+    [@@deprecated
+      "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
+  end
 end
 

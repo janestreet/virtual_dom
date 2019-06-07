@@ -1,20 +1,52 @@
 open! Base
 open Js_of_ocaml
 
-(** This has 2 kinds of constructors. {v
+(** This has 3 kinds of constructors. {v
       - First class constructors for properties / attributes for which we
         have written first class ocaml representations (so far only Style
         and Class)
 
-      - And those which we immediatly convert into Js called Raw, which
-        in turn has to cases:
+      - Those which we immediatly convert into Js called Raw, which
+        in turn has two cases:
         - Property for properties on the DOM
         - Attribute for attributes on the DOM
+
+      - Hooks, which register callbacks on property addition and removal.
     v}
 
     Generally speaking one should avoid creating a property or attribute
     for something for which we have a first class representation.
 *)
+
+module Hook : sig
+  type t
+
+  val create
+    :  init:(Dom_html.element Js.t -> 'state)
+    -> ?update:('state -> Dom_html.element Js.t -> 'state)
+    -> ?destroy:('state -> Dom_html.element Js.t -> unit)
+    -> id:'state Type_equal.Id.t
+    -> t
+
+  val pack : t -> Js.Unsafe.any
+end = struct
+  type t = Js.Unsafe.any
+
+  let generic_hook = lazy Js.Unsafe.(get global (Js.string "GenericHook"))
+
+  let create ~init ?update ?destroy ~id =
+    let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
+    let init = wrap init in
+    let update =
+      update |> Option.map ~f:Js.wrap_callback |> Js.Opt.option |> Js.Unsafe.inject
+    in
+    let destroy = destroy |> Option.value ~default:(fun _ _ -> ()) |> wrap in
+    let generic_hook = Lazy.force generic_hook in
+    Js.Unsafe.fun_call generic_hook [| init; update; destroy; id |> Js.Unsafe.inject |]
+  ;;
+
+  let pack = Fn.id
+end
 
 module Raw : sig
   type t
@@ -23,6 +55,7 @@ module Raw : sig
   val create : string -> string -> t
 
   val create_float : string -> float -> t
+  val create_hook : string -> Hook.t -> t
 
   (** {2 Property creation functions *)
   val property : string -> Js.Unsafe.any -> t
@@ -34,6 +67,7 @@ end = struct
   type t =
     | Property of string * Js.Unsafe.any
     | Attribute of string * Js.Unsafe.any
+    | Hook of string * Hook.t
 
   let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
 
@@ -44,6 +78,7 @@ end = struct
   let property name value = Property (name, value)
   let string_property name value = Property (name, Js.Unsafe.inject (Js.string value))
   let bool_property name value = Property (name, Js.Unsafe.inject (Js.bool value))
+  let create_hook name hook = Hook (name, hook)
 
   let list_to_obj attrs =
     (* When input elements have their value set to what it already is
@@ -60,9 +95,11 @@ end = struct
     let attrs_obj = Js.Unsafe.obj [||] in
     List.iter
       ~f:(function
-        | Property (name, value) ->
-          let value = if String.( = ) name "value" then softSetHook value else value in
-          Js.Unsafe.set attrs_obj (Js.string name) value
+        | Hook (name, hook) -> Js.Unsafe.set attrs_obj (Js.string name) (Hook.pack hook)
+        | Property ("value", value) ->
+          let value = softSetHook value in
+          Js.Unsafe.set attrs_obj (Js.string "value") value
+        | Property (name, value) -> Js.Unsafe.set attrs_obj (Js.string name) value
         | Attribute (name, value) ->
           if not (Js.Optdef.test attrs_obj##.attributes)
           then attrs_obj##.attributes := Js.Unsafe.obj [||];
@@ -211,3 +248,20 @@ let to_raw = function
 ;;
 
 let list_to_obj l = Raw.list_to_obj (List.map l ~f:to_raw)
+
+module Expert = struct
+  let create_basic_hook name ?hook ?unhook () =
+    let hook = Option.value hook ~default:(Fn.const ()) in
+    let unhook = Option.map unhook ~f:(fun f () -> f) in
+    let id = Type_equal.Id.create ~name:"placeholder" [%sexp_of: unit] in
+    Raw (Raw.create_hook name (Hook.create ~init:hook ?update:None ?destroy:unhook ~id))
+  ;;
+
+  let create_stateful_hook name ~hook ~unhook ~id =
+    Raw (Raw.create_hook name (Hook.create ~init:hook ?update:None ~destroy:unhook ~id))
+  ;;
+
+  let create_persistent_hook name ~init ~update ~destroy ~id =
+    Raw (Raw.create_hook name (Hook.create ~init ~update ~destroy ~id))
+  ;;
+end
