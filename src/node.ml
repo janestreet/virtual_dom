@@ -128,6 +128,7 @@ module T : sig
     val tag : t -> string
     val attrs : t -> Attrs.t
     val key : t -> string option
+    val with_key : t -> string -> t
     val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
     val add_class : t -> string -> t
     val add_style : t -> Css_gen.t -> t
@@ -174,6 +175,7 @@ end = struct
     let tag t = t.tag
     let attrs t = t.attrs
     let key t = t.key
+    let with_key t key = { t with key = Some key }
     let map_attrs t ~f = { t with attrs = f t.attrs }
     let add_class t c = map_attrs t ~f:(fun a -> Attrs.add_class a c)
     let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)

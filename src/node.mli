@@ -9,6 +9,7 @@ module Element : sig
   val tag : t -> string
   val attrs : t -> Attrs.t
   val key : t -> string option
+  val with_key : t -> string -> t
   val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
   val add_style : t -> Css_gen.t -> t
   val add_class : t -> string -> t
@@ -82,16 +83,16 @@ val to_dom : t -> Dom_html.element Js.t
     DOM node is mounted into the dom in the location where the Node.t
     object would otherwise be.
 
-    update: Given the previous Browser DOM Node and state, makes any changes 
+    update: Given the previous Browser DOM Node and state, makes any changes
     necessary to either and returns a new state and Browser DOM Node.
 
-    destroy: Called when this Node.t is removed from the Virtual_dom.  
+    destroy: Called when this Node.t is removed from the Virtual_dom.
     Performs any necessary cleanup.
 
     Other
     =====
 
-    The [id] is used to compare widgets, and is used to make sure that the 
+    The [id] is used to compare widgets, and is used to make sure that the
     state from one widget doesn't get interpreted as the state for another.
     Otherwise, you would be able to implement Obj.magic using this API.
 
