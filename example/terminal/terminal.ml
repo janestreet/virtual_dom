@@ -64,20 +64,20 @@ let view count =
 ;;
 
 let () =
-  Dom_html.window##.onload :=
-    Dom.handler (fun _ ->
-      let count = ref 0 in
-      let vdom = ref (view !count) in
-      let elt = Node.to_dom !vdom in
-      Dom.appendChild Dom_html.document##.body elt;
-      Dom_html.window##setInterval
-        (Js.wrap_callback (fun _ ->
-           incr count;
-           let current = view !count in
-           let patch = Node.Patch.create ~previous:!vdom ~current in
-           vdom := current;
-           Node.Patch.apply patch elt |> ignore))
-        30.
-      |> ignore;
-      Js._false)
+  Dom_html.window##.onload
+  := Dom.handler (fun _ ->
+    let count = ref 0 in
+    let vdom = ref (view !count) in
+    let elt = Node.to_dom !vdom in
+    Dom.appendChild Dom_html.document##.body elt;
+    Dom_html.window##setInterval
+      (Js.wrap_callback (fun _ ->
+         incr count;
+         let current = view !count in
+         let patch = Node.Patch.create ~previous:!vdom ~current in
+         vdom := current;
+         Node.Patch.apply patch elt |> ignore))
+      30.
+    |> ignore;
+    Js._false)
 ;;

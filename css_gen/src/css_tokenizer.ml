@@ -60,7 +60,7 @@ let error t =
 ;;
 
 let accept t f =
-  if not (is_next_eof t) && f (next_char t)
+  if (not (is_next_eof t)) && f (next_char t)
   then (
     consume_1 t;
     true)
@@ -85,7 +85,7 @@ let expect t f = if accept t f then () else error t
 let expect_char t ch = expect t (Char.equal ch)
 
 let many t f =
-  while not (is_next_eof t) && f (next_char t) do
+  while (not (is_next_eof t)) && f (next_char t) do
     consume_1 t
   done
 ;;
@@ -122,8 +122,7 @@ let quoted_string' t ~quote =
   let rec loop () =
     many t (function
       | '\n' | '\r' | '\x0c' | '\\' -> false
-      | c
-        when Char.equal c quote -> false
+      | c when Char.equal c quote -> false
       | _ -> true);
     if accept_char t '\\'
     then
@@ -242,8 +241,7 @@ let next t =
   then t.current <- Eof
   else (
     match next_char t with
-    | c
-      when is_whitespace c ->
+    | c when is_whitespace c ->
       many t is_whitespace;
       t.current <- White_space
     | ':' -> one_char_token t Colon
@@ -263,7 +261,7 @@ let next t =
     | 'u' -> uri_or_ident_or_function t
     | '-' ->
       consume_1 t;
-      if not (is_next_eof t) && nmstart (next_char t)
+      if (not (is_next_eof t)) && nmstart (next_char t)
       then ident_or_function t
       else t.current <- Delim
     | ch ->

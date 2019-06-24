@@ -19,7 +19,8 @@ let sanitize_sexp s =
 
 type css_global_values =
   [ `Inherit
-  | `Initial ]
+  | `Initial
+  ]
 [@@deriving sexp, bin_io, compare]
 
 module Color = struct
@@ -41,7 +42,8 @@ module Color = struct
       | `Name of string
       | `Hex of string
       | `Var of string
-      | css_global_values ]
+      | css_global_values
+      ]
     [@@deriving sexp, bin_io, compare]
   end
 
@@ -69,7 +71,8 @@ module Alignment = struct
     | `Bottom
     | `Middle (* vertical *)
     | `Justify (* text-align (in addition to [horizontal]) *)
-    | css_global_values ]
+    | css_global_values
+    ]
   [@@deriving sexp, bin_io, compare]
 
   include Sexpable.To_stringable (struct
@@ -89,7 +92,8 @@ module Length = struct
     | `Px of int
     | `Vh of Percent.t
     | `Vw of Percent.t
-    | css_global_values ]
+    | css_global_values
+    ]
   [@@deriving sexp, bin_io, compare]
 
   let to_string_css = function
@@ -110,7 +114,8 @@ end
 module Auto_or_length = struct
   type t =
     [ `Auto
-    | Length.t ]
+    | Length.t
+    ]
   [@@deriving bin_io, compare, sexp]
 
   let to_string_css = function
@@ -173,7 +178,7 @@ let position ?top:tp ?bottom:bt ?left:lt ?right:rt pos =
 
 let box_sizing v =
   let value =
-    [%sexp_of: [`Content_box | `Border_box | css_global_values]] v |> sanitize_sexp
+    [%sexp_of: [ `Content_box | `Border_box | css_global_values ]] v |> sanitize_sexp
   in
   create_raw ~field:"box-sizing" ~value
 ;;
@@ -192,7 +197,8 @@ let display v =
            to use [flex_container] below *)
         `Flex
       | `Inline_flex
-      | css_global_values ]]
+      | css_global_values
+      ]]
       v
     |> sanitize_sexp
   in
@@ -201,7 +207,7 @@ let display v =
 
 let visibility v =
   let value =
-    [%sexp_of: [`Visible | `Hidden | `Collapse | css_global_values]] v |> sanitize_sexp
+    [%sexp_of: [ `Visible | `Hidden | `Collapse | css_global_values ]] v |> sanitize_sexp
   in
   create_raw ~field:"visibility" ~value
 ;;
@@ -211,11 +217,12 @@ type overflow =
   | `Hidden
   | `Scroll
   | `Auto
-  | css_global_values ]
+  | css_global_values
+  ]
 
 let make_overflow field v =
   let value =
-    [%sexp_of: [`Visible | `Hidden | `Scroll | `Auto | css_global_values]] v
+    [%sexp_of: [ `Visible | `Hidden | `Scroll | `Auto | css_global_values ]] v
     |> sanitize_sexp
   in
   create_raw ~field ~value
@@ -249,7 +256,8 @@ type font_style =
   [ `Normal
   | `Italic
   | `Oblique
-  | css_global_values ]
+  | css_global_values
+  ]
 
 type font_weight =
   [ `Normal
@@ -257,19 +265,21 @@ type font_weight =
   | `Bolder
   | `Lighter
   | `Number of int
-  | css_global_values ]
+  | css_global_values
+  ]
 
 type font_variant =
   [ `Normal
   | `Small_caps
-  | css_global_values ]
+  | css_global_values
+  ]
 
 let font_size = create_length_field "font-size"
 let font_family l = create_raw ~field:"font-family" ~value:(String.concat l ~sep:",")
 
 let font_style s =
   let value =
-    [%sexp_of: [`Normal | `Italic | `Oblique | css_global_values]] s |> sanitize_sexp
+    [%sexp_of: [ `Normal | `Italic | `Oblique | css_global_values ]] s |> sanitize_sexp
   in
   create_raw ~field:"font-style" ~value
 ;;
@@ -281,7 +291,8 @@ let font_weight =
       | `Bold
       | `Bolder
       | `Lighter
-      | css_global_values ]
+      | css_global_values
+      ]
     [@@deriving sexp]
   end
   in
@@ -298,7 +309,7 @@ let bold = font_weight `Bold
 
 let font_variant s =
   let value =
-    [%sexp_of: [`Normal | `Small_caps | css_global_values]] s |> sanitize_sexp
+    [%sexp_of: [ `Normal | `Small_caps | css_global_values ]] s |> sanitize_sexp
   in
   create_raw ~field:"font-variant" ~value
 ;;
@@ -331,7 +342,7 @@ let vertical_align = create_alignment "vertical-align"
 let float f =
   create_raw
     ~field:"float"
-    ~value:([%sexp_of: [`None | `Left | `Right | css_global_values]] f |> sanitize_sexp)
+    ~value:([%sexp_of: [ `None | `Left | `Right | css_global_values ]] f |> sanitize_sexp)
 ;;
 
 let width = create_length_field "width"
@@ -386,7 +397,8 @@ type border_style =
   | `Ridge
   | `Inset
   | `Outset
-  | css_global_values ]
+  | css_global_values
+  ]
 [@@deriving sexp]
 
 (** Concat 2 values with a space in between.  If either is the empty string
@@ -433,7 +445,7 @@ let outline ?width ?color ~style () =
 
 let border_collapse v =
   let value =
-    [%sexp_of: [`Separate | `Collapse | css_global_values]] v |> sanitize_sexp
+    [%sexp_of: [ `Separate | `Collapse | css_global_values ]] v |> sanitize_sexp
   in
   create_raw ~field:"border-collapse" ~value
 ;;
@@ -446,7 +458,8 @@ type text_decoration_line =
   | `Underline
   | `Overline
   | `Line_through
-  | css_global_values ]
+  | css_global_values
+  ]
 [@@deriving sexp]
 
 type text_decoration_style =
@@ -455,7 +468,8 @@ type text_decoration_style =
   | `Dotted
   | `Dashed
   | `Wavy
-  | css_global_values ]
+  | css_global_values
+  ]
 [@@deriving sexp]
 
 let text_decoration ?style ?color ~line () =
@@ -479,7 +493,8 @@ type item_alignment =
   | `Flex_end
   | `Center
   | `Baseline
-  | `Stretch ]
+  | `Stretch
+  ]
 
 let item_alignment_to_string_css = function
   | `Auto -> "auto"
@@ -498,10 +513,10 @@ let flex_container
       ()
   =
   let direction =
-    [%sexp_of: [`Row | `Row_reverse | `Column | `Column_reverse]] direction
+    [%sexp_of: [ `Row | `Row_reverse | `Column | `Column_reverse ]] direction
     |> sanitize_sexp
   in
-  let wrap = [%sexp_of: [`Nowrap | `Wrap | `Wrap_reverse]] wrap |> sanitize_sexp in
+  let wrap = [%sexp_of: [ `Nowrap | `Wrap | `Wrap_reverse ]] wrap |> sanitize_sexp in
   let align_items =
     match align_items with
     | None -> empty
@@ -550,7 +565,12 @@ let animation
       let value =
         d
         |> [%sexp_of:
-          [`Normal | `Reverse | `Alternate | `Alternate_reverse | css_global_values]]
+          [ `Normal
+          | `Reverse
+          | `Alternate
+          | `Alternate_reverse
+          | css_global_values
+          ]]
         |> sanitize_sexp
       in
       create_raw ~field:"animation-direction" ~value)
@@ -558,7 +578,7 @@ let animation
   let fill_mode =
     m fill_mode ~f:(fun f ->
       let value =
-        [%sexp_of: [`None | `Forwards | `Backwards | `Both | css_global_values]] f
+        [%sexp_of: [ `None | `Forwards | `Backwards | `Both | css_global_values ]] f
         |> sanitize_sexp
       in
       create_raw ~field:"animation-fill-mode" ~value)

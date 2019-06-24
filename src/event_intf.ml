@@ -31,7 +31,7 @@ module type Event = sig
   type t = private ..
 
   type t +=
-    | Ignore  (** [Ignore] events are dropped, so no handler is called *)
+    | Ignore (** [Ignore] events are dropped, so no handler is called *)
     | Viewport_changed
     (** [Viewport_changed] events are delivered to all visibility handlers  *)
     | Stop_propagation

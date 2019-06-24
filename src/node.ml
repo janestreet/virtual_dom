@@ -98,22 +98,22 @@ module Widget = struct
     obj##.type_ := Js.string "Widget";
     obj##.name := ();
     obj##.id := id;
-    obj##.init :=
-      Js.wrap_callback (fun () ->
-        let s0, dom_node = init () in
-        obj##.state := s0;
-        dom_node);
-    obj##.update :=
-      Js.wrap_callback (fun prev dom_node ->
-        (* The [update] method of [obj] is only called by virtual-dom after it has checked
-           that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
-           never raise.
-        *)
-        match Type_equal.Id.same_witness_exn prev##.id id with
-        | Type_equal.T ->
-          let state', dom_node' = update prev##.state dom_node in
-          obj##.state := state';
-          dom_node');
+    obj##.init
+    := Js.wrap_callback (fun () ->
+      let s0, dom_node = init () in
+      obj##.state := s0;
+      dom_node);
+    obj##.update
+    := Js.wrap_callback (fun prev dom_node ->
+      (* The [update] method of [obj] is only called by virtual-dom after it has checked
+         that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
+         never raise.
+      *)
+      match Type_equal.Id.same_witness_exn prev##.id id with
+      | Type_equal.T ->
+        let state', dom_node' = update prev##.state dom_node in
+        obj##.state := state';
+        dom_node');
     obj##.destroy := Js.wrap_callback (fun dom_node -> destroy obj##.state dom_node);
     t_of_widget obj
   ;;
@@ -160,7 +160,7 @@ end = struct
     ; key : string option
     ; attrs : Attrs.t
     ; children : virtual_dom_node Js.t list
-    ; kind : [`Vnode | `Svg]
+    ; kind : [ `Vnode | `Svg ]
     }
 
   and t =
