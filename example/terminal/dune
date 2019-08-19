@@ -1,2 +1,2 @@
 (executables (names terminal) (libraries virtual_dom core_kernel js_of_ocaml)
- (preprocess (pps js_of_ocaml-ppx ppx_jane)))
+ (preprocess (pps js_of_ocaml-ppx ppx_jane -allow-unannotated-ignores)))
