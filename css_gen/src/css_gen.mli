@@ -19,8 +19,22 @@ module Color : sig
     val create : r:int -> g:int -> b:int -> ?a:Percent.t -> unit -> t
   end
 
+  module HSLA : sig
+
+    type t [@@deriving sexp, bin_io, compare]
+
+    (** [create ~h ~s ~l ~a] creates a color that corresponds to hsla([h],[s],[l],[a])
+
+        If [a] is omitted then it creates a color that corresponds to hsl([h],[s],[l])
+    *)
+
+    val create : h:int -> s:Percent.t -> l:Percent.t -> ?a:Percent.t -> unit -> t
+  end
+
+
   type t =
     [ `RGBA of RGBA.t
+    | `HSLA of HSLA.t
     | `Name of string
     | `Hex of string
     | `Var of string

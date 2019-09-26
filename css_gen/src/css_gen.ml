@@ -37,8 +37,21 @@ module Color = struct
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
 
+    module HSLA = struct
+      type t =
+        { h : int
+        ; s : Percent.t
+        ; l : Percent.t
+        ; a : Percent.t option
+        }
+      [@@deriving sexp, bin_io, compare, fields]
+
+      let create ~h ~s ~l ?a () = { h; s; l; a }
+    end
+
     type t =
       [ `RGBA of RGBA.t
+      | `HSLA of HSLA.t
       | `Name of string
       | `Hex of string
       | `Var of string
@@ -56,6 +69,21 @@ module Color = struct
       (match a with
        | None -> sprintf "rgb(%i,%i,%i)" r g b
        | Some p -> sprintf "rgba(%i,%i,%i,%.2f)" r g b (Percent.to_mult p))
+    | `HSLA { HSLA.h; s; l; a } ->
+      (match a with
+       | None ->
+         sprintf
+           "hsl(%i,%.0f%%,%.0f%%)"
+           h
+           (Percent.to_percentage s)
+           (Percent.to_percentage l)
+       | Some p ->
+         sprintf
+           "hsla(%i,%.0f%%,%.0f%%,%.2f)"
+           h
+           (Percent.to_percentage s)
+           (Percent.to_percentage l)
+           (Percent.to_mult p))
     | `Name name -> name
     | `Hex hex -> hex
     | `Var var -> sprintf "var(%s)" var
@@ -608,6 +636,10 @@ let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
   t (flex_item ~grow:1.0 () @> overflow `Scroll);
   t (flex_container ~inline:true ~direction:`Column () @> border ~style:`Dashed ());
   t (color (`RGBA (Color.RGBA.create ~r:100 ~g:100 ~b:100 ())));
+  t
+    (color
+       (`HSLA
+          (Color.HSLA.create ~h:100 ~s:(Percent.of_mult 0.75) ~l:(Percent.of_mult 0.60) ())));
   t (create ~field:"content" ~value:{|";"|});
   [%expect
     {|
@@ -617,6 +649,8 @@ let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
     display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
     color: rgb(100,100,100)
     color: rgb(100,100,100)
+    color: hsl(100,75%,60%)
+    color: hsl(100,75%,60%)
     content: ";"
     content: ";" |}]
 ;;
