@@ -14,7 +14,7 @@ depends: [
   "base"
   "core_kernel"
   "ppx_jane"
-  "dune"            {build & >= "1.5.1"}
+  "dune"            {>= "1.5.1"}
   "js_of_ocaml"     {>= "3.4.1"}
   "js_of_ocaml-ppx"
   "tyxml"           {>= "4.3.0"}
