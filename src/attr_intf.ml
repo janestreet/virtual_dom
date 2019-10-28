@@ -44,8 +44,8 @@ module type S = sig
   val tabindex : int -> t
   val type_ : string -> t
   val value : string -> t
-  val on_focus : (Dom_html.event Js.t -> Event.t) -> t
-  val on_blur : (Dom_html.event Js.t -> Event.t) -> t
+  val on_focus : (Dom_html.focusEvent Js.t -> Event.t) -> t
+  val on_blur : (Dom_html.focusEvent Js.t -> Event.t) -> t
 
   (** [on_input] fires every time the input changes, i.e., whenever a key is pressed in
       the input field.  The current contents are returned as an OCaml string as
