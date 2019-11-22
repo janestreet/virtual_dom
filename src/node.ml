@@ -257,6 +257,7 @@ type t = T.t =
 
 let none = None
 let text = T.text
+let textf format = Printf.ksprintf text format
 let create = T.create
 let create_svg = T.svg
 let create_childless = T.create_childless

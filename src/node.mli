@@ -29,6 +29,7 @@ type node_creator_childless = ?key:string -> Attr.t list -> t
 
 val none : t
 val text : string -> t
+val textf : ('a, unit, string, t) format4 -> 'a
 val a : node_creator
 val body : node_creator
 val button : node_creator

@@ -44,6 +44,8 @@ module type S = sig
   val tabindex : int -> t
   val type_ : string -> t
   val value : string -> t
+  val title : string -> t
+  val src : string -> t
   val on_focus : (Dom_html.focusEvent Js.t -> Event.t) -> t
   val on_blur : (Dom_html.focusEvent Js.t -> Event.t) -> t
 
