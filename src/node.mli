@@ -76,6 +76,7 @@ val create : string -> ?key:string -> Attr.t list -> t list -> t
 val create_svg : string -> ?key:string -> Attr.t list -> t list -> t
 
 val to_dom : t -> Dom_html.element Js.t
+val unsafe_to_js : t -> Js.Unsafe.any
 
 (** Creates a Node.t that has fine-grained control over the Browser DOM node.
 

@@ -1,4 +1,5 @@
-open Virtual_dom.Vdom
+open! Core_kernel
+open! Import
 
 let%test "empty patch succeeds" =
   let previous = Node.div [] [] in

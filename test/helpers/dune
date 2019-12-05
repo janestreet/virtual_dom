@@ -1,0 +1,4 @@
+(library (name virtual_dom_test_helpers)
+ (public_name virtual_dom.vdom_test_helpers)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries core_kernel js_of_ocaml lambdasoup virtual_dom))
