@@ -6,8 +6,8 @@ let make_map ~extract ~combine ~is_empty ~make_attr t ~f =
   let specials, other =
     List.partition_map t ~f:(fun a ->
       match extract a with
-      | Some c -> `Fst c
-      | None -> `Snd a)
+      | Some c -> First c
+      | None -> Second a)
   in
   let cl = f (combine specials) in
   if is_empty cl then other else make_attr cl :: other
