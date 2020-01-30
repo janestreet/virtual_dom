@@ -216,3 +216,12 @@ let unsafe_of_js_exn =
 let unsafe_convert_exn vdom_node =
   vdom_node |> Virtual_dom.Vdom.Node.unsafe_to_js |> Js.Unsafe.inject |> unsafe_of_js_exn
 ;;
+
+let trigger ?extra_fields (node : t) ~event_name =
+  match node with
+  | Element { handlers; tag_name = _; attributes = _; key = _; children = _ } ->
+    (match List.Assoc.find handlers event_name ~equal:String.equal with
+     | None -> raise_s [%message "Handler not found on element" (event_name : string)]
+     | Some handler -> Handler.trigger handler ?extra_fields)
+  | _ -> raise_s [%message "expected Element node" (node : t)]
+;;

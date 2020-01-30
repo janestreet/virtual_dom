@@ -24,3 +24,9 @@ val select_one : t -> selector:string -> t option
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
 val to_string_html : t -> string
 val unsafe_convert_exn : Virtual_dom.Vdom.Node.t -> t
+
+val trigger
+  :  ?extra_fields:(string * Js.Unsafe.any) list
+  -> t
+  -> event_name:string
+  -> unit
