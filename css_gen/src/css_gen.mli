@@ -48,7 +48,7 @@ module Length : sig
   type t =
     [ `Ch of float
     | `Rem of float
-    | `Em of int
+    | `Em of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int

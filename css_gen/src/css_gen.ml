@@ -114,7 +114,7 @@ module Length = struct
   type t =
     [ `Ch of float
     | `Rem of float
-    | `Em of int
+    | `Em of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int
@@ -127,7 +127,7 @@ module Length = struct
   let to_string_css = function
     | `Ch c -> sprintf "%.2fch" c
     | `Rem f -> sprintf "%.2frem" f
-    | `Em i -> sprintf "%iem" i
+    | `Em f -> sprintf "%.2fem" f
     | `Percent p -> sprintf "%.2f%%" (Percent.to_percentage p)
     | `Pt p -> sprintf "%.2fpt" p
     | `Px i -> sprintf "%ipx" i
