@@ -50,9 +50,11 @@ module Length : sig
     | `Ch of float
     | `Rem of float
     | `Em of int
+    | `Em_float of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int
+    | `Px_float of float
     | `Vh of Percent.t
     | `Vw of Percent.t
     | css_global_values

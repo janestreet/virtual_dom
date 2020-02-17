@@ -116,9 +116,11 @@ module Length = struct
     | `Ch of float
     | `Rem of float
     | `Em of int
+    | `Em_float of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int
+    | `Px_float of float
     | `Vh of Percent.t
     | `Vw of Percent.t
     | css_global_values
@@ -130,9 +132,11 @@ module Length = struct
     | `Ch c -> sprintf "%.2fch" c
     | `Rem f -> sprintf "%.2frem" f
     | `Em i -> sprintf "%iem" i
+    | `Em_float f -> sprintf "%.2fem" f
     | `Percent p -> sprintf "%.2f%%" (Percent.to_percentage p)
     | `Pt p -> sprintf "%.2fpt" p
     | `Px i -> sprintf "%ipx" i
+    | `Px_float f -> sprintf "%.2fpx" f
     | `Vh p -> sprintf "%.2fvh" (Percent.to_percentage p)
     | `Vw p -> sprintf "%.2fvw" (Percent.to_percentage p)
     | #css_global_values as l -> sexp_of_css_global_values l |> sanitize_sexp
