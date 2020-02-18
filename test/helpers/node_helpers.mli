@@ -16,7 +16,8 @@ type t =
 [@@deriving sexp_of]
 
 val select : t -> selector:string -> t list
-val select_one : t -> selector:string -> t option
+val select_first : t -> selector:string -> t option
+val select_first_exn : t -> selector:string -> t
 
 (* This function currently Stack Overflows when compiled with Js_of_ocaml
    JavaScript because of limitations in the tail-call optimizer.
@@ -30,3 +31,10 @@ val trigger
   -> t
   -> event_name:string
   -> unit
+
+module User_actions : sig
+  (** Convenience functions for {!trigger}, closely modeling user interactions. *)
+
+  val click_on : t -> unit
+  val input_text : t -> text:string -> unit
+end
