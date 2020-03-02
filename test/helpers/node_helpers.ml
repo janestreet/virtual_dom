@@ -13,6 +13,31 @@ type t =
   | Widget of string
 [@@deriving sexp_of]
 
+let is_tag ~tag = function
+  | Element { tag_name; _ } -> String.equal tag_name tag
+  | _ -> false
+;;
+
+let has_class ~cls = function
+  | Element { attributes; _ } ->
+    List.exists attributes ~f:(function
+      | "class", data ->
+        data |> String.split ~on:' ' |> List.exists ~f:(String.equal cls)
+      | _ -> false)
+  | _ -> false
+;;
+
+let rec map t ~f =
+  match f t with
+  | `Replace_with t -> t
+  | `Continue ->
+    (match t with
+     | Text _ | Widget _ -> t
+     | Element { tag_name; attributes; handlers; key; children } ->
+       let children = List.map children ~f:(fun ch -> map ch ~f) in
+       Element { tag_name; attributes; handlers; key; children })
+;;
+
 
 
 type hidden_soup = Hidden_soup : _ Soup.node -> hidden_soup

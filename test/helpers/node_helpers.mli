@@ -15,6 +15,9 @@ type t =
   | Widget of string
 [@@deriving sexp_of]
 
+val map : t -> f:(t -> [ `Continue | `Replace_with of t ]) -> t
+val is_tag : tag:string -> t -> bool
+val has_class : cls:string -> t -> bool
 val select : t -> selector:string -> t list
 val select_first : t -> selector:string -> t option
 val select_first_exn : t -> selector:string -> t
