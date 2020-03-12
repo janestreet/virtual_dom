@@ -6,7 +6,7 @@ open Js_of_ocaml
         have written first class ocaml representations (so far only Style
         and Class)
 
-      - Those which we immediatly convert into Js called Raw, which
+      - Those which we immediately convert into Js called Raw, which
         in turn has two cases:
         - Property for properties on the DOM
         - Attribute for attributes on the DOM
