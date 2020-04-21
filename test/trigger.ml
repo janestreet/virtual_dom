@@ -25,7 +25,7 @@ let%expect_test "empty div with triggered callback (failing)" =
          ]
          [])
   in
-  Expect_test_helpers_kernel.require_does_raise [%here] (fun _ ->
+  Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
     Node_helpers.trigger node ~event_name:"onclick");
   [%expect
     {|
@@ -73,7 +73,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
          ]
          [])
   in
-  Expect_test_helpers_kernel.require_does_raise [%here] (fun _ ->
+  Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
     Node_helpers.trigger
       node
       ~extra_fields:[ "target", value_element ]
