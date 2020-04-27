@@ -1,13 +1,13 @@
 (** A css3 tokenizer.
 
-    See section 4.1.1 on this page: https://www.w3.org/TR/CSS21/syndata.html
+    See section 4.3 on this page: https://www.w3.org/TR/css-syntax-3/
 
-    Differences to the standard: {v
-      - This does not implement BAD_STRING, BAD_URI, BAD_COMMENT
-        That is we are not implementing any support for robustness in the face
-        of bad input.  Rationale is we rather learn that we wrote invalid CSS.
-      - We didn't do anything to validate the unicode support.
-    v}
+    Differences to the standard:
+    - This does not implement BAD_STRING, BAD_URI, BAD_COMMENT
+      That is we are not implementing any support for robustness in the face
+      of bad input.  Rationale is we rather learn that we wrote invalid CSS.
+    - This does not support escape sequence outside of strings.
+    - We didn't do anything to validate the unicode support.
 
     Also we generally only implement what we need to parse declaration lists.
     Not everything needed to parse complete css style sheets (e.g. cdo, cdc).
@@ -21,26 +21,27 @@ val create : string -> t
 module Token : sig
   type t =
     | Ident
+    | Function
     | Atkeyword
-    | String
     | Hash
+    | String
+    | Uri
+    | Delim
     | Number
     | Percentage
     | Dimension
-    | Uri
-    | Lcurly
-    | Rcurly
+    | White_space
+    | Colon
+    | Semi_colon
+    | Comma
     | Lbracket
     | Rbracket
     | Lparen
     | Rparen
-    | Colon
-    | Semi
-    | White_space
+    | Lcurly
+    | Rcurly
     | Comment
-    | Function
     | Eof
-    | Delim
     | Error
   [@@deriving sexp]
 

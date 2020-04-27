@@ -60,7 +60,7 @@ let many1 (ct : Css_tokenizer.t) f =
 let rec any ct : bool =
   let res =
     match Css_tokenizer.current ct with
-    | Ident | Number | Percentage | Dimension | String | Uri | Delim | Hash ->
+    | Ident | Number | Percentage | Dimension | String | Uri | Delim | Hash | Comma ->
       next ct;
       true
     | Function ->
@@ -81,7 +81,10 @@ let rec any ct : bool =
       expect_any ct;
       expect ct Rbracket;
       true
-    | _ -> false
+    | Rcurly | Rparen | Rbracket -> false
+    | Lcurly -> false
+    | Atkeyword | Colon | Semi_colon -> false
+    | Comment | White_space | Eof | Error -> false
   in
   if res then skip_white_space ct else ();
   res
@@ -107,7 +110,7 @@ and block ct : bool =
     many ct (fun ct ->
       value0 ct
       ||
-      if accept ct Semi
+      if accept ct Semi_colon
       then (
         skip_white_space ct;
         true)
@@ -158,7 +161,7 @@ let expect_declaration_list ct =
   skip_white_space ct;
   add (declaration ct);
   many ct (fun ct ->
-    if accept ct Semi
+    if accept ct Semi_colon
     then (
       skip_white_space ct;
       add (declaration ct);
@@ -178,12 +181,67 @@ let parse parser_f s =
     res)
 ;;
 
+let print_tokens s =
+  let ct = Css_tokenizer.create s in
+  while Css_tokenizer.(not (Token.equal (current ct) Eof)) do
+    print_s (Css_tokenizer.Token.sexp_of_t (Css_tokenizer.current ct));
+    Css_tokenizer.next ct
+  done
+;;
+
 let validate_value = parse expect_value
 let parse_declaration_list s = parse expect_declaration_list s
 
 let test_parser p sexp_of_arg s =
   let r = parse p s in
   printf !"%s --> %{sexp:arg Or_error.t}\n" s r
+;;
+
+let%expect_test "" =
+  let value =
+    "0 4px 8px 0 RGBA(var(--js-text-color-rgb), 0.12), 0 2px 4px 0 \
+     RGBA(var(--js-text-color-rgb), 0.08)"
+  in
+  print_tokens value;
+  [%expect
+    {|
+    Number
+    White_space
+    Dimension
+    White_space
+    Dimension
+    White_space
+    Number
+    White_space
+    Function
+    Function
+    Ident
+    Rparen
+    Comma
+    White_space
+    Number
+    Rparen
+    Comma
+    White_space
+    Number
+    White_space
+    Dimension
+    White_space
+    Dimension
+    White_space
+    Number
+    White_space
+    Function
+    Function
+    Ident
+    Rparen
+    Comma
+    White_space
+    Number
+    Rparen |}];
+  print_s [%message (validate_value value : unit Or_error.t)];
+  [%expect {|
+    ("validate_value value" (Ok ())) |}]
 ;;
 
 let%expect_test "values" =
@@ -220,7 +278,7 @@ let%expect_test "declaration" =
     {|
       flex: 1 0 auto --> (Ok (flex "1 0 auto"))
       content: 'Hello World' --> (Ok (content "'Hello World'"))
-      content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi)))
+      content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi_colon)))
       content: bar  --> (Ok (content bar)) |}]
 ;;
 
