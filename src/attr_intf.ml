@@ -37,6 +37,8 @@ module type S = sig
   val selected : t
   val hidden : t
   val style : Css_gen.t -> t
+  val min : float -> t
+  val max : float -> t
 
   (** [to_style (style c) = Some c], [None] otherwise *)
   val to_style : t -> Css_gen.t option

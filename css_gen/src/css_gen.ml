@@ -359,6 +359,39 @@ let background_color c =
   create_raw ~field:"background-color" ~value:(Color.to_string_css c)
 ;;
 
+type stops = (Percent.t * Color.t) list
+
+type linear_gradient =
+  { direction : [ `Deg of int ]
+  ; stops : stops
+  }
+
+type radial_gradient = { stops : stops }
+
+type background_image =
+  [ `Url of string
+  | `Linear_gradient of linear_gradient
+  | `Radial_gradient of radial_gradient
+  ]
+
+let stops_to_string stops =
+  List.map stops ~f:(fun (pct, color) ->
+    (* Note: Percent.to_string produced e.g. "0x", "1x", won't work here. *)
+    sprintf "%s %f%%" (Color.to_string_css color) (Percent.to_percentage pct))
+  |> String.concat ~sep:", "
+;;
+
+let background_image spec =
+  let value =
+    match spec with
+    | `Url url -> sprintf "url(%s)" url
+    | `Linear_gradient { direction = `Deg direction; stops } ->
+      sprintf "linear-gradient(%ddeg, %s)" direction (stops_to_string stops)
+    | `Radial_gradient { stops } -> sprintf "radial-gradient(%s)" (stops_to_string stops)
+  in
+  create_raw ~field:"background-image" ~value
+;;
+
 let create_alignment field a =
   create_raw ~field ~value:(Alignment.to_string_css (a :> Alignment.t))
 ;;
@@ -653,4 +686,27 @@ let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
     color: hsl(100,75%,60%)
     content: ";"
     content: ";" |}]
+;;
+
+let%expect_test "gradients" =
+  let p x = Percent.of_mult x in
+  let c s = `Name s in
+  let t css = print_endline (to_string_css css) in
+  t
+    (background_image
+       (`Linear_gradient
+          { direction = `Deg 90
+          ; stops =
+              [ p 0., c "black"
+              ; p 0.2, c "#ff0000"
+              ; p 0.4, c "red"
+              ; ( p 1.
+                , `RGBA
+                    (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ()) )
+              ]
+          }));
+  [%expect
+    {| background-image: linear-gradient(90deg, black 0.000000%, #ff0000 20.000000%, red 40.000000%, rgba(100,50,30,0.75) 100.000000%) |}];
+  t (background_image (`Radial_gradient { stops = [ p 0., c "black"; p 1., c "red" ] }));
+  [%expect {| background-image: radial-gradient(black 0.000000%, red 100.000000%) |}]
 ;;

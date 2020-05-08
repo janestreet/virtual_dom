@@ -180,6 +180,8 @@ let value x = create "value" x
 let tabindex x = create "tabindex" (Int.to_string x)
 let title x = create "title" x
 let src x = create "src" x
+let min x = create_float "min" x
+let max x = create_float "max" x
 
 let on event convert_to_vdom_event : t =
   let f e =

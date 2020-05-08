@@ -253,13 +253,29 @@ let unsafe_convert_exn vdom_node =
   vdom_node |> Virtual_dom.Vdom.Node.unsafe_to_js |> Js.Unsafe.inject |> unsafe_of_js_exn
 ;;
 
-let trigger ?extra_fields (node : t) ~event_name =
+let get_handlers (node : t) =
   match node with
-  | Element { handlers; tag_name = _; attributes = _; key = _; children = _ } ->
-    (match List.Assoc.find handlers event_name ~equal:String.equal with
-     | None -> raise_s [%message "Handler not found on element" (event_name : string)]
-     | Some handler -> Handler.trigger handler ?extra_fields)
+  | Element { handlers; tag_name = _; attributes = _; key = _; children = _ } -> handlers
   | _ -> raise_s [%message "expected Element node" (node : t)]
+;;
+
+let trigger_many ?extra_fields node ~event_names =
+  let all_handlers = get_handlers node in
+  let count =
+    List.count event_names ~f:(fun event_name ->
+      match List.Assoc.find all_handlers event_name ~equal:String.equal with
+      | None -> false
+      | Some handler ->
+        Handler.trigger handler ?extra_fields;
+        true)
+  in
+  match count with
+  | 0 -> raise_s [%message "No handler found on element" (event_names : string list)]
+  | _ -> ()
+;;
+
+let trigger ?extra_fields node ~event_name =
+  trigger_many ?extra_fields node ~event_names:[ event_name ]
 ;;
 
 module User_actions = struct
@@ -293,6 +309,8 @@ module User_actions = struct
           val value = Js.string text
         end)
     in
-    trigger element ~extra_fields:[ "target", value_element ] ~event_name:"oninput"
+    let extra_fields = [ "target", value_element ] in
+    let event_names = [ "oninput"; "onchange" ] in
+    trigger_many element ~extra_fields ~event_names
   ;;
 end

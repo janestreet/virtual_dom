@@ -161,8 +161,24 @@ val font
   -> unit
   -> t
 val bold : t
+
+(* Note: css gradients are actually much more complicated. Please feel free to extend
+   these if you need something more *)
+type stops = (Percent.t * Color.t) list
+type linear_gradient =
+  { direction : [ `Deg of int ]
+  ; stops : stops
+  }
+type radial_gradient = { stops : stops }
+type background_image =
+  [ `Url of string
+  | `Linear_gradient of linear_gradient
+  | `Radial_gradient of radial_gradient
+  ]
+
 val color : Color.t -> t
 val background_color : Color.t -> t
+val background_image : background_image -> t
 val text_align : [ `Left | `Right | `Center | `Justify | css_global_values ] -> t
 val horizontal_align : [ `Left | `Right | `Center | css_global_values ] -> t
 val vertical_align : [ `Top | `Bottom | `Middle | css_global_values ] -> t
