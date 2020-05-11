@@ -1,17 +1,17 @@
 open Base
 open Js_of_ocaml
-include Event_intf
-
-type t = ..
-
-type t +=
-  | Ignore | Viewport_changed | Stop_propagation | Prevent_default | Many of t list
-
-(* We use this table for dispatching to the appropriate handler in an efficient way.  *)
-let handlers : (t -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:8
+include Ui_event
 
 (* All visibility handlers see all events, so a simple list is enough.  *)
 let visibility_handlers : (unit -> unit) list ref = ref []
+
+module type Visibility_handler = sig
+  val handle : unit -> unit
+end
+
+module Define_visibility (VH : Visibility_handler) = struct
+  let () = visibility_handlers := VH.handle :: !visibility_handlers
+end
 
 module Obj = struct
   module Extension_constructor = struct
@@ -22,60 +22,42 @@ module Obj = struct
   end
 end
 
-module Define (Handler : Handler) :
-  S with type action := Handler.Action.t and type t := t = struct
-  type t += C : Handler.Action.t -> t
+type t += Viewport_changed | Stop_propagation | Prevent_default
 
-  let key = Obj.Extension_constructor.id [%extension_constructor C]
+(* We need to keep track of the current dom event here so that
+   movement between [Vdom.Event.Expert.handle] and
+   [Ui_concrete.Event.Expert.handle] keeps the original
+   dom event around. *)
+let current_dom_event = ref None
 
-  let () =
-    Hashtbl.add_exn handlers ~key ~data:(fun inp ->
-      match inp with
-      | C value -> Handler.handle value
-      | _ -> raise_s [%message "Unrecognized variant"])
-  ;;
+let () =
+  Hashtbl.add_exn
+    Expert.handlers
+    ~key:Obj.Extension_constructor.(id (of_val Viewport_changed))
+    ~data:(fun _ -> List.iter !visibility_handlers ~f:(fun f -> f ()))
+;;
 
-  let inject v = C v
-end
+let () =
+  Hashtbl.add_exn
+    Expert.handlers
+    ~key:Obj.Extension_constructor.(id (of_val Stop_propagation))
+    ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom_html.stopPropagation)
+;;
 
-module Define_visibility (VH : Visibility_handler) = struct
-  let () = visibility_handlers := VH.handle :: !visibility_handlers
-end
-
-let get_key t = Obj.Extension_constructor.id (Obj.Extension_constructor.of_val t)
-let handle_registered_event t = Hashtbl.find_exn handlers (get_key t) t
+let () =
+  Hashtbl.add_exn
+    Expert.handlers
+    ~key:Obj.Extension_constructor.(id (of_val Prevent_default))
+    ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom.preventDefault)
+;;
 
 module Expert = struct
-  let handle evt =
-    let rec handle t =
-      match t with
-      | Ignore -> ()
-      | Many l -> List.iter ~f:handle l
-      | Viewport_changed -> List.iter !visibility_handlers ~f:(fun f -> f ())
-      | Stop_propagation ->
-        (* Safe to do because [stopPropagation] is defined equivalently to
-           [preventDefault] *)
-        Dom_html.stopPropagation evt
-      | Prevent_default -> Dom.preventDefault evt
-      | t -> handle_registered_event t
-    in
-    handle
-  ;;
+  let handle_non_dom_event_exn = Expert.handle
 
-
-  let rec handle_non_dom_event_exn t =
-    match t with
-    | Ignore -> ()
-    | Many l -> List.iter ~f:handle_non_dom_event_exn l
-    | Viewport_changed -> List.iter !visibility_handlers ~f:(fun f -> f ())
-    | Stop_propagation ->
-      failwith
-        "[handle_non_dom_event_exn] called with [Stop_propagation] which requires a dom \
-         event"
-    | Prevent_default ->
-      failwith
-        "[handle_non_dom_event_exn] called with [Prevent_default] which requires a dom \
-         event"
-    | t -> handle_registered_event t
+  let handle dom_event event =
+    let old = !current_dom_event in
+    current_dom_event := Some (dom_event :> Dom_html.element Dom.event Js.t);
+    Expert.handle event;
+    current_dom_event := old
   ;;
 end

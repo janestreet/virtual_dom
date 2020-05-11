@@ -1,0 +1,3 @@
+(library (name virtual_dom_svg) (public_name virtual_dom.svg)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries virtual_dom css_gen core_kernel))
