@@ -176,6 +176,7 @@ type background_image =
   | `Radial_gradient of radial_gradient
   ]
 
+
 val color : Color.t -> t
 val background_color : Color.t -> t
 val background_image : background_image -> t
