@@ -43,6 +43,15 @@ let%expect_test "empty div with key" =
     <div @key=keykey> </div> |}]
 ;;
 
+let%expect_test "empty div with string property" =
+  show (Node.div [ Attr.string_property "foo" "bar" ] []);
+  [%expect
+    {|
+    (Element (tag_name div) (string_properties ((foo bar))))
+    ----------------------
+    <div #foo="bar"> </div> |}]
+;;
+
 let%expect_test "nested div with span" =
   show (Node.div [] [ Node.span [] [] ]);
   [%expect

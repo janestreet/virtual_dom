@@ -8,6 +8,7 @@ type t =
   | Element of
       { tag_name : string
       ; attributes : (string * string) list
+      ; string_properties : (string * string) list
       ; handlers : (string * Handler.t) list
       ; key : string option
       ; children : t list

@@ -6,6 +6,7 @@ type t =
   | Element of
       { tag_name : string
       ; attributes : (string * string) list [@sexp.list]
+      ; string_properties : (string * string) list [@sexp.list]
       ; handlers : (string * Handler.t) list [@sexp.list]
       ; key : string option [@sexp.option]
       ; children : t list [@sexp.list]
@@ -33,9 +34,9 @@ let rec map t ~f =
   | `Continue ->
     (match t with
      | Text _ | Widget _ -> t
-     | Element { tag_name; attributes; handlers; key; children } ->
+     | Element { tag_name; attributes; string_properties; handlers; key; children } ->
        let children = List.map children ~f:(fun ch -> map ch ~f) in
-       Element { tag_name; attributes; handlers; key; children })
+       Element { tag_name; attributes; string_properties; handlers; key; children })
 ;;
 
 
@@ -58,7 +59,7 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
     match t with
     | Text s -> Hidden_soup (Soup.create_text s)
     | Widget w -> Hidden_soup (Soup.create_element "widget" ~attributes:[ "type_id", w ])
-    | Element { tag_name; attributes; handlers; key; children } ->
+    | Element { tag_name; attributes; string_properties; handlers; key; children } ->
       let key_attrs =
         match key with
         | Some key -> [ "key", key ]
@@ -76,7 +77,7 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
         List.map handlers ~f:(fun (name, _) -> name, "<event-handler>")
       in
       let attributes =
-        [ key_attrs; soup_id_attrs; handler_attrs; attributes ]
+        [ key_attrs; soup_id_attrs; handler_attrs; attributes; string_properties ]
         |> List.concat
         |> String.Map.of_alist_exn (* Raise on duplicate attributes *)
         |> Map.to_alist
@@ -107,10 +108,11 @@ let to_string_html t =
     let indent = String.init (depth * 2) ~f:(Fn.const ' ') in
     function
     | Text s -> bprintf buffer "%s%s" indent s
-    | Element { tag_name; attributes; handlers; key; children } ->
+    | Element { tag_name; attributes; string_properties; handlers; key; children } ->
       bprintf buffer "%s<%s" indent tag_name;
       Option.iter key ~f:(bprintf buffer " @key=%s");
       List.iter attributes ~f:(fun (k, v) -> bprintf buffer " %s=\"%s\"" k v);
+      List.iter string_properties ~f:(fun (k, v) -> bprintf buffer " #%s=\"%s\"" k v);
       List.iter handlers ~f:(fun (k, _) -> bprintf buffer " %s={handler}" k);
       bprintf buffer ">";
       let children_should_collapse =
@@ -167,6 +169,7 @@ let unsafe_of_js_exn =
         (children : t Js.js_array Js.t)
         (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
         (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+        (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (key : Js.js_string Js.t Js.Opt.t)
     =
     let tag_name = tag_name |> Js.to_string in
@@ -185,8 +188,14 @@ let unsafe_of_js_exn =
       |> Array.to_list
       |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
     in
+    let string_properties =
+      string_properties
+      |> Js.to_array
+      |> Array.to_list
+      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
+    in
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
-    Element { tag_name; children; handlers; attributes; key }
+    Element { tag_name; children; handlers; attributes; string_properties; key }
   in
   let make_widget_node (type_id : _ Type_equal.Id.t) =
     Widget (Type_equal.Id.name type_id)
@@ -226,11 +235,20 @@ let unsafe_of_js_exn =
                       // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
                       return [0, key, node.properties[key]];
                   });
+              var string_properties =
+                  Object.keys(node.properties)
+                  .filter(function (key) {
+                      return typeof node.properties[key] === 'string';
+                  })
+                  .map(function (key) {
+                      return [0, key, node.properties[key]]
+                  });
               return make_element_node(
                   node.tagName,
                   children,
                   handlers,
                   attr_list,
+                  string_properties,
                   node.key || null);
           default:
               raise_unknown_node_type("" + node.type);
@@ -255,7 +273,14 @@ let unsafe_convert_exn vdom_node =
 
 let get_handlers (node : t) =
   match node with
-  | Element { handlers; tag_name = _; attributes = _; key = _; children = _ } -> handlers
+  | Element
+      { handlers
+      ; tag_name = _
+      ; attributes = _
+      ; string_properties = _
+      ; key = _
+      ; children = _
+      } -> handlers
   | _ -> raise_s [%message "expected Element node" (node : t)]
 ;;
 
