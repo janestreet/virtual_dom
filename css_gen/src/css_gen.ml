@@ -658,6 +658,25 @@ let animation
   |> concat
 ;;
 
+type user_select =
+  [ `All
+  | `Auto
+  | `None
+  | `Text
+  ]
+
+let user_select_to_string_css = function
+  | `All -> "all"
+  | `Auto -> "auto"
+  | `None -> "none"
+  | `Text -> "text"
+;;
+
+let user_select s =
+  let value = user_select_to_string_css s in
+  create_raw ~field:"user-select" ~value
+;;
+
 
 let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
   let t css =

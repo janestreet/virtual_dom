@@ -288,6 +288,15 @@ val animation
   -> unit
   -> t
 
+type user_select =
+  [ `All
+  | `Auto
+  | `None
+  | `Text
+  ]
+
+val user_select : user_select -> t
+
 module Stable : sig
   module V1 : sig
     type nonrec t = t [@@deriving sexp, compare, bin_io]
