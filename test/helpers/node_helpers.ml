@@ -11,7 +11,7 @@ type t =
       ; key : string option [@sexp.option]
       ; children : t list [@sexp.list]
       }
-  | Widget of string
+  | Widget of Sexp.t
 [@@deriving sexp_of]
 
 let is_tag ~tag = function
@@ -58,7 +58,11 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
   let rec convert t =
     match t with
     | Text s -> Hidden_soup (Soup.create_text s)
-    | Widget w -> Hidden_soup (Soup.create_element "widget" ~attributes:[ "type_id", w ])
+    | Widget w ->
+      let info_text = Soup.create_text (Sexp.to_string w) in
+      let element = Soup.create_element "widget" ~attributes:[] in
+      Soup.append_child element info_text;
+      Hidden_soup element
     | Element { tag_name; attributes; string_properties; handlers; key; children } ->
       let key_attrs =
         match key with
@@ -135,7 +139,7 @@ let to_string_html t =
         bprintf buffer "\n";
         bprintf buffer "%s" indent);
       bprintf buffer "</%s>" tag_name
-    | Widget s -> bprintf buffer "%s<widget id=%s />" indent s
+    | Widget s -> bprintf buffer "%s<widget %s />" indent (Sexp.to_string s)
   in
   let buffer = Buffer.create 100 in
   recurse buffer ~depth:0 t;
@@ -197,8 +201,10 @@ let unsafe_of_js_exn =
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
     Element { tag_name; children; handlers; attributes; string_properties; key }
   in
-  let make_widget_node (type_id : _ Type_equal.Id.t) =
-    Widget (Type_equal.Id.name type_id)
+  let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t option) =
+    match info with
+    | Some sexp -> Widget sexp
+    | None -> Widget (Sexp.Atom (Type_equal.Id.name id))
   in
   let raise_unknown_node_type node_type =
     let node_type = Js.to_string node_type in
@@ -215,7 +221,7 @@ let unsafe_of_js_exn =
           case 'VirtualText':
               return make_text_node(node.text);
           case 'Widget':
-              return make_widget_node(node.id);
+              return make_widget_node(node.id, node.info);
           case 'VirtualNode':
               var attributes = node.properties.attributes || {};
               var attr_list = Object.keys(attributes).map(function (key) {

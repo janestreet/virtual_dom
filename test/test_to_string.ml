@@ -25,6 +25,28 @@ let%expect_test "empty div" =
     <div> </div> |}]
 ;;
 
+let%expect_test "empty div" =
+  show (Node.div [] []);
+  [%expect
+    {|
+    (Element (tag_name div))
+    ----------------------
+    <div> </div> |}]
+;;
+
+let%expect_test "inner_html" =
+  show
+    (Node.inner_html
+       `This_html_is_sanitized_and_is_totally_safe_trust_me
+       ~tag:"div"
+       ~content:"<b>hi</b>");
+  [%expect
+    {|
+    (Widget (inner-html div <b>hi</b>))
+    ----------------------
+    <widget (inner-html div <b>hi</b>) /> |}]
+;;
+
 let%expect_test "div with some text" =
   show (Node.div [] [ Node.text "hello world" ]);
   [%expect
@@ -93,7 +115,23 @@ let%expect_test "widget" =
     {|
     (Widget name_goes_here)
     ----------------------
-    <widget id=name_goes_here /> |}]
+    <widget name_goes_here /> |}]
+;;
+
+let%expect_test "widget with info" =
+  let widget =
+    Node.widget
+      ~info:(Sexp.Atom "info name")
+      ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
+      ~init:(fun _ -> failwith "unreachable")
+      ()
+  in
+  show widget;
+  [%expect
+    {|
+    (Widget "info name")
+    ----------------------
+    <widget "info name" /> |}]
 ;;
 
 let%expect_test "empty div with callback" =

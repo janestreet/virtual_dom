@@ -65,6 +65,8 @@ module Widget = struct
 
       method state : 's Js.prop
 
+      method info : Sexp.t option Js.prop
+
       method destroy : ('element -> unit) Js.callback Js.writeonly_prop
 
       method update :
@@ -88,6 +90,7 @@ module Widget = struct
 
   let create
         (type s)
+        ?info
         ?(destroy : s -> 'element -> unit = fun _ _ -> ())
         ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
         ~(id : (s * 'element) Type_equal.Id.t)
@@ -98,6 +101,7 @@ module Widget = struct
     obj##.type_ := Js.string "Widget";
     obj##.name := ();
     obj##.id := id;
+    obj##.info := info;
     obj##.init
     := Js.wrap_callback (fun () ->
       let s0, dom_node = init () in
@@ -143,7 +147,8 @@ module T : sig
   val text : string -> t
 
   val widget
-    :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
+    :  ?info:Sexp.t
+    -> ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
     -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
     -> id:('s * 'e Js.t) Type_equal.Id.t
     -> init:(unit -> 's * 'e Js.t)
@@ -238,8 +243,8 @@ end = struct
 
   let text s = Text s
 
-  let widget ?destroy ?update ~id ~init () =
-    Widget (Widget.create ?destroy ?update ~id ~init ())
+  let widget ?info ?destroy ?update ~id ~init () =
+    Widget (Widget.create ?info ?destroy ?update ~id ~init ())
   ;;
 
   let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
@@ -267,6 +272,25 @@ type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
 let to_dom t : Dom_html.element Js.t = virtual_dom##createElement (T.to_js t)
+
+let inner_html `This_html_is_sanitized_and_is_totally_safe_trust_me ~tag ~content =
+  let sexp tag content =
+    Sexp.List [ Sexp.Atom "inner-html"; Sexp.Atom tag; Sexp.Atom content ]
+  in
+  let id =
+    Type_equal.Id.create ~name:"inner-html-node" (fun ((tag, content), _) ->
+      sexp tag content)
+  in
+  widget
+    ~info:(sexp tag content)
+    ~id
+    ~init:(fun () ->
+      let element = to_dom (create tag [] []) in
+      element##.innerHTML := Js.string content;
+      (tag, content), element)
+    ()
+;;
+
 let unsafe_to_js t = t |> T.to_js |> Js.Unsafe.inject
 let a = create "a"
 let body = create "body"

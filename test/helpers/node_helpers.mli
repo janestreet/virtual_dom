@@ -13,7 +13,7 @@ type t =
       ; key : string option
       ; children : t list
       }
-  | Widget of string
+  | Widget of Sexp.t
 [@@deriving sexp_of]
 
 val map : t -> f:(t -> [ `Continue | `Replace_with of t ]) -> t

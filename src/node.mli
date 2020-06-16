@@ -66,6 +66,20 @@ val ol : node_creator
 val br : node_creator_childless
 val hr : node_creator_childless
 
+(** This function can be used to build a node with the tag and html content of
+    that node provided as a string.  If this function was called with 
+    [~tag:"div" ~content:"<b> hello world </b>"] then the resulting node would be 
+    [<div><b> hello world </b></div>]
+
+    For totally sanitized content strings, this is fine; but if a user can influence 
+    the value of [content] and you don't have a sanitizer, they can inject code into 
+    the page, so use with extreme caution! *)
+val inner_html
+  :  [ `This_html_is_sanitized_and_is_totally_safe_trust_me ]
+  -> tag:string
+  -> content:string
+  -> t
+
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create : string -> ?key:string -> Attr.t list -> t list -> t
@@ -110,7 +124,8 @@ val unsafe_to_js : t -> Js.Unsafe.any
     best-practices.
 *)
 val widget
-  :  ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
+  :  ?info:Sexp.t
+  -> ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
   -> id:('s * 'e Js.t) Type_equal.Id.t
   -> init:(unit -> 's * 'e Js.t)
