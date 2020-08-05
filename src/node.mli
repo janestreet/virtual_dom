@@ -67,17 +67,24 @@ val br : node_creator_childless
 val hr : node_creator_childless
 
 (** This function can be used to build a node with the tag and html content of
-    that node provided as a string.  If this function was called with 
-    [~tag:"div" ~content:"<b> hello world </b>"] then the resulting node would be 
+    that node provided as a string.  If this function was called with
+    [~tag:"div" [] ~this_html...:"<b> hello world</b>"] then the resulting node would be
     [<div><b> hello world </b></div>]
 
-    For totally sanitized content strings, this is fine; but if a user can influence 
-    the value of [content] and you don't have a sanitizer, they can inject code into 
+    For totally sanitized content strings, this is fine; but if a user can influence
+    the value of [content] and you don't have a sanitizer, they can inject code into
     the page, so use with extreme caution! *)
 val inner_html
-  :  [ `This_html_is_sanitized_and_is_totally_safe_trust_me ]
-  -> tag:string
-  -> content:string
+  :  tag:string
+  -> Attr.t list
+  -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
+  -> t
+
+(** Same as [inner_html] but for svg elements *)
+val inner_html_svg
+  :  tag:string
+  -> Attr.t list
+  -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> t
 
 
@@ -90,7 +97,7 @@ val create : string -> ?key:string -> Attr.t list -> t list -> t
 val create_svg : string -> ?key:string -> Attr.t list -> t list -> t
 
 val to_dom : t -> Dom_html.element Js.t
-val unsafe_to_js : t -> Js.Unsafe.any
+val to_raw : t -> Raw.Node.t
 
 (** Creates a Node.t that has fine-grained control over the Browser DOM node.
 
@@ -124,7 +131,7 @@ val unsafe_to_js : t -> Js.Unsafe.any
     best-practices.
 *)
 val widget
-  :  ?info:Sexp.t
+  :  ?info:Sexp.t Lazy.t
   -> ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
   -> id:('s * 'e Js.t) Type_equal.Id.t

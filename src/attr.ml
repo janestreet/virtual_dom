@@ -1,8 +1,10 @@
 open! Base
 open Js_of_ocaml
+module Vdom_raw = Raw
 
-(** This has 3 kinds of constructors. {v
-      - First class constructors for properties / attributes for which we
+(** This has 3 kinds of constructors.
+    {v
+      - constructors for properties / attributes for which we
         have written first class ocaml representations (so far only Style
         and Class)
 
@@ -48,26 +50,43 @@ end = struct
   let pack = Fn.id
 end
 
-module Raw : sig
+module T : sig
   type t
 
   (** {2 Attribute creation functions *)
-  val create : string -> string -> t
 
+  val create : string -> string -> t
   val create_float : string -> float -> t
   val create_hook : string -> Hook.t -> t
 
   (** {2 Property creation functions *)
-  val property : string -> Js.Unsafe.any -> t
 
+  val property : string -> Js.Unsafe.any -> t
   val string_property : string -> string -> t
   val bool_property : string -> bool -> t
-  val list_to_obj : t list -> < > Js.t
+
+  (** {2 style creation functions *)
+
+  val style : Css_gen.t -> t
+
+  (** {2 class creation functions *)
+
+  val classes : string list -> t
+  val class_ : string -> t
+  val classes' : (string, String.comparator_witness) Set.t -> t
+
+  (** {2 convertion functions *)
+
+  val to_raw : t list -> Raw.Attrs.t
+  val to_style : t -> Css_gen.t option
+  val to_class : t -> (string, String.comparator_witness) Set.t option
 end = struct
   type t =
     | Property of string * Js.Unsafe.any
     | Attribute of string * Js.Unsafe.any
     | Hook of string * Hook.t
+    | Style of Css_gen.t
+    | Class of (string, String.comparator_witness) Set.t
 
   let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
 
@@ -80,7 +99,9 @@ end = struct
   let bool_property name value = Property (name, Js.Unsafe.inject (Js.bool value))
   let create_hook name hook = Hook (name, hook)
 
-  let list_to_obj attrs =
+  external ojs_of_any : Js.Unsafe.any -> Gen_js_api.Ojs.t = "%identity"
+
+  let to_raw attrs =
     (* When input elements have their value set to what it already is
        the cursor gets moved to the end of the field even when the user
        is editing in the middle. SoftSetHook (from ./soft-set-hook.js)
@@ -91,80 +112,78 @@ end = struct
        if we switch to that the workaround here will be unnecessary.
        https://github.com/elm-lang/virtual-dom/blob/17b30fb7de48672565d6227d33c0176f075786db/src/Native/VirtualDom.js#L434-L439
     *)
-    let softSetHook x = Js.Unsafe.global ## SoftSetHook x in
-    let attrs_obj = Js.Unsafe.obj [||] in
+    let softSetHook x : Gen_js_api.Ojs.t = Js.Unsafe.global ## SoftSetHook x in
+    let attrs_obj : Vdom_raw.Attrs.t = Vdom_raw.Attrs.create () in
     List.iter
       ~f:(function
-        | Hook (name, hook) -> Js.Unsafe.set attrs_obj (Js.string name) (Hook.pack hook)
+        | Hook (name, hook) ->
+          Vdom_raw.Attrs.set_property attrs_obj name (ojs_of_any (Hook.pack hook))
         | Property ("value", value) ->
           let value = softSetHook value in
-          Js.Unsafe.set attrs_obj (Js.string "value") value
-        | Property (name, value) -> Js.Unsafe.set attrs_obj (Js.string name) value
+          Vdom_raw.Attrs.set_property attrs_obj "value" value
+        | Property (name, value) ->
+          Vdom_raw.Attrs.set_property attrs_obj name (ojs_of_any value)
         | Attribute (name, value) ->
-          if not (Js.Optdef.test attrs_obj##.attributes)
-          then attrs_obj##.attributes := Js.Unsafe.obj [||];
-          Js.Unsafe.set attrs_obj##.attributes (Js.string name) value)
+          Vdom_raw.Attrs.set_attribute attrs_obj name (ojs_of_any value)
+        | Style css ->
+          let props = Css_gen.to_string_list css in
+          let obj = Gen_js_api.Ojs.empty_obj () in
+          List.iter
+            ~f:(fun (k, v) -> Gen_js_api.Ojs.set obj k (Gen_js_api.Ojs.string_to_js v))
+            props;
+          Vdom_raw.Attrs.set_property attrs_obj "style" obj
+        | Class classes ->
+          Vdom_raw.Attrs.set_attribute
+            attrs_obj
+            "class"
+            (Gen_js_api.Ojs.string_to_js (String.concat (Set.to_list classes) ~sep:" ")))
       attrs;
     attrs_obj
   ;;
+
+  let to_style : t -> _ = function
+    | Style s -> Some s
+    | Class _ | Property _ | Attribute _ | Hook _ -> None
+  ;;
+
+  let style css = Style css
+
+  let valid_class_name s =
+    let invalid = String.is_empty s || String.exists s ~f:Char.is_whitespace in
+    not invalid
+  ;;
+
+  let%test "valid" = valid_class_name "foo-bar"
+  let%test "invalid-empty" = not (valid_class_name "")
+  let%test "invalid-space" = not (valid_class_name "foo bar")
+
+  let class_ classname =
+    if not (valid_class_name classname)
+    then raise_s [%message "invalid classname" (classname : string)];
+    Class (Set.singleton (module String) classname)
+  ;;
+
+  let classes' classes = Class classes
+
+  let classes classnames =
+    if not (List.for_all ~f:valid_class_name classnames)
+    then raise_s [%message "invalid classnames" (classnames : string list)];
+    classes' (Set.of_list (module String) classnames)
+  ;;
+
+  let to_class = function
+    | Class cs -> Some cs
+    | Style _ | Property _ | Attribute _ | Hook _ -> None
+  ;;
 end
 
-type t =
-  | Style of Css_gen.t
-  | Class of (string, String.comparator_witness) Set.t
-  | Raw of Raw.t
+include T
 
-let to_style = function
-  | Style s -> Some s
-  | Class _ | Raw _ -> None
-;;
-
-let style css = Style css
-
-let style_to_raw css =
-  let props = Css_gen.to_string_list css in
-  let obj = Js.Unsafe.obj [||] in
-  List.iter ~f:(fun (k, v) -> Js.Unsafe.set obj (Js.string k) (Js.string v)) props;
-  Raw.property "style" obj
-;;
-
-let valid_class_name s =
-  let invalid = String.is_empty s || String.exists s ~f:Char.is_whitespace in
-  not invalid
-;;
-
-let%test "valid" = valid_class_name "foo-bar"
-let%test "invalid-empty" = not (valid_class_name "")
-let%test "invalid-space" = not (valid_class_name "foo bar")
-
-let class_ classname =
-  if not (valid_class_name classname)
-  then raise_s [%message "invalid classname" (classname : string)];
-  Class (Set.singleton (module String) classname)
-;;
-
-let classes' classes = Class classes
-
-let classes classnames =
-  if not (List.for_all ~f:valid_class_name classnames)
-  then raise_s [%message "invalid classnames" (classnames : string list)];
-  classes' (Set.of_list (module String) classnames)
-;;
-
-let to_class = function
-  | Class cs -> Some cs
-  | Style _ | Raw _ -> None
-;;
-
-let class_to_raw classes =
-  Raw.create "class" (String.concat (Set.to_list classes) ~sep:" ")
-;;
-
-let create name value = Raw (Raw.create name value)
-let create_float name value = Raw (Raw.create_float name value)
-let property name value = Raw (Raw.property name value)
-let string_property name value = Raw (Raw.string_property name value)
-let bool_property name value = Raw (Raw.bool_property name value)
+let create name value = T.create name value
+let create_float name value = T.create_float name value
+let property name value = T.property name value
+let string_property name value = T.string_property name value
+let bool_property name value = T.bool_property name value
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
@@ -244,28 +263,21 @@ let on_input_event event handler =
 
 let on_change = on_input_event "change"
 let on_input = on_input_event "input"
-
-let to_raw = function
-  | Raw r -> r
-  | Style css -> style_to_raw css
-  | Class classes -> class_to_raw classes
-;;
-
-let list_to_obj l = Raw.list_to_obj (List.map l ~f:to_raw)
+let to_raw l = T.to_raw l
 
 module Expert = struct
   let create_basic_hook name ?hook ?unhook () =
     let hook = Option.value hook ~default:(Fn.const ()) in
     let unhook = Option.map unhook ~f:(fun f () -> f) in
     let id = Type_equal.Id.create ~name:"placeholder" [%sexp_of: unit] in
-    Raw (Raw.create_hook name (Hook.create ~init:hook ?update:None ?destroy:unhook ~id))
+    T.create_hook name (Hook.create ~init:hook ?update:None ?destroy:unhook ~id)
   ;;
 
   let create_stateful_hook name ~hook ~unhook ~id =
-    Raw (Raw.create_hook name (Hook.create ~init:hook ?update:None ~destroy:unhook ~id))
+    T.create_hook name (Hook.create ~init:hook ?update:None ~destroy:unhook ~id)
   ;;
 
   let create_persistent_hook name ~init ~update ~destroy ~id =
-    Raw (Raw.create_hook name (Hook.create ~init ~update ~destroy ~id))
+    T.create_hook name (Hook.create ~init ~update ~destroy ~id)
   ;;
 end

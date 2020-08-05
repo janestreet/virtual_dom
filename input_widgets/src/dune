@@ -1,0 +1,3 @@
+(library (name vdom_input_widgets) (public_name virtual_dom.input_widgets)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries core_kernel js_of_ocaml virtual_dom))

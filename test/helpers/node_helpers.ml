@@ -201,9 +201,9 @@ let unsafe_of_js_exn =
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
     Element { tag_name; children; handlers; attributes; string_properties; key }
   in
-  let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t option) =
+  let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t Lazy.t option) =
     match info with
-    | Some sexp -> Widget sexp
+    | Some sexp -> Widget (Lazy.force sexp)
     | None -> Widget (Sexp.Atom (Type_equal.Id.name id))
   in
   let raise_unknown_node_type node_type =
@@ -274,7 +274,7 @@ let unsafe_of_js_exn =
 ;;
 
 let unsafe_convert_exn vdom_node =
-  vdom_node |> Virtual_dom.Vdom.Node.unsafe_to_js |> Js.Unsafe.inject |> unsafe_of_js_exn
+  vdom_node |> Virtual_dom.Vdom.Node.to_raw |> Js.Unsafe.inject |> unsafe_of_js_exn
 ;;
 
 let get_handlers (node : t) =

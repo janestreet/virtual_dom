@@ -1,0 +1,2 @@
+(executables (names example) (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries async_kernel core_kernel incr_dom vdom_input_widgets))

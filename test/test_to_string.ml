@@ -37,9 +37,9 @@ let%expect_test "empty div" =
 let%expect_test "inner_html" =
   show
     (Node.inner_html
-       `This_html_is_sanitized_and_is_totally_safe_trust_me
        ~tag:"div"
-       ~content:"<b>hi</b>");
+       []
+       ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
   [%expect
     {|
     (Widget (inner-html div <b>hi</b>))
@@ -121,7 +121,7 @@ let%expect_test "widget" =
 let%expect_test "widget with info" =
   let widget =
     Node.widget
-      ~info:(Sexp.Atom "info name")
+      ~info:(lazy (Sexp.Atom "info name"))
       ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
       ~init:(fun _ -> failwith "unreachable")
       ()

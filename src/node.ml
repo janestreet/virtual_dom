@@ -1,129 +1,5 @@
 open Base
-open Js_of_ocaml
-
-type virtual_dom_node
-type virtual_dom_patch
-
-class type virtual_dom =
-  object
-    method _VNode :
-      (Js.js_string Js.t
-       -> < > Js.t
-       -> virtual_dom_node Js.t Js.js_array Js.t
-       -> Js.js_string Js.t Js.optdef
-       -> virtual_dom_node Js.t)
-        Js.constr
-        Js.readonly_prop
-
-    method _VText :
-      (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
-
-    method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
-
-    method diff :
-      virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
-
-    method patch :
-      Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t Js.meth
-
-    method svg :
-      (Js.js_string Js.t
-       -> < > Js.t
-       -> virtual_dom_node Js.t Js.js_array Js.t
-       -> Js.js_string Js.t Js.optdef
-       -> virtual_dom_node Js.t)
-        Js.constr
-        Js.readonly_prop
-  end
-
-let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
-
-module Widget = struct
-  class type ['s, 'element] widget =
-    object
-      constraint 'element = #Dom_html.element Js.t
-
-      method type_ : Js.js_string Js.t Js.writeonly_prop
-
-      (* virtual-dom considers two widgets of being of the same "kind" if either
-         of the following holds:
-
-         1. They both have a "name" attribute and their "id" fields are equal.
-         (I think this is probably a bug in virtual-dom and have field an issue
-         on github: [https://github.com/Matt-Esch/virtual-dom/issues/380])
-
-         2. Their [init] methods are "===" equal. This is true when using virtual-dom
-         widgets in the usual style in Javascript, since the [init] method will be defined
-         on a prototype, but is not true in this binding as it is redefined for each
-         call to [widget].
-
-         So, we go with option 1 and must have a trivial field called [name].
-      *)
-      method name : unit Js.writeonly_prop
-
-      method id : ('s * 'element) Type_equal.Id.t Js.prop
-
-      method state : 's Js.prop
-
-      method info : Sexp.t option Js.prop
-
-      method destroy : ('element -> unit) Js.callback Js.writeonly_prop
-
-      method update :
-        (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
-          Js.writeonly_prop
-
-      method init : (unit -> 'element) Js.callback Js.writeonly_prop
-    end
-
-  (* We model JS level objects here so there is a lot of throwing away of type
-     information.  We could possibly try to rediscover more of it.  Or maybe we
-     should see if we can get rid Widget completely.
-     the unit type parameters here are not actually unit, but part of
-     the type info we have thrown away into our dance
-     with JS *)
-  type t = (unit, Dom_html.element Js.t) widget Js.t
-
-  (* here is how we throw away type information.  Our good old friend Obj.magic,
-     but constrained a little bit *)
-  external t_of_widget : (_, _) widget Js.t -> t = "%identity"
-
-  let create
-        (type s)
-        ?info
-        ?(destroy : s -> 'element -> unit = fun _ _ -> ())
-        ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
-        ~(id : (s * 'element) Type_equal.Id.t)
-        ~(init : unit -> s * 'element)
-        ()
-    =
-    let obj : (s, _) widget Js.t = Js.Unsafe.obj [||] in
-    obj##.type_ := Js.string "Widget";
-    obj##.name := ();
-    obj##.id := id;
-    obj##.info := info;
-    obj##.init
-    := Js.wrap_callback (fun () ->
-      let s0, dom_node = init () in
-      obj##.state := s0;
-      dom_node);
-    obj##.update
-    := Js.wrap_callback (fun prev dom_node ->
-      (* The [update] method of [obj] is only called by virtual-dom after it has checked
-         that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
-         never raise.
-      *)
-      match Type_equal.Id.same_witness_exn prev##.id id with
-      | Type_equal.T ->
-        let state', dom_node' = update prev##.state dom_node in
-        obj##.state := state';
-        dom_node');
-    obj##.destroy := Js.wrap_callback (fun dom_node -> destroy obj##.state dom_node);
-    t_of_widget obj
-  ;;
-
-  external to_js : t -> virtual_dom_node Js.t = "%identity"
-end
+module Widget = Raw.Widget
 
 module T : sig
   module Element : sig
@@ -147,24 +23,24 @@ module T : sig
   val text : string -> t
 
   val widget
-    :  ?info:Sexp.t
-    -> ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
-    -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
-    -> id:('s * 'e Js.t) Type_equal.Id.t
-    -> init:(unit -> 's * 'e Js.t)
+    :  ?info:Sexp.t Lazy.t
+    -> ?destroy:('s -> (#Js_of_ocaml.Dom_html.element as 'e) Js_of_ocaml.Js.t -> unit)
+    -> ?update:('s -> 'e Js_of_ocaml.Js.t -> 's * 'e Js_of_ocaml.Js.t)
+    -> id:('s * 'e Js_of_ocaml.Js.t) Type_equal.Id.t
+    -> init:(unit -> 's * 'e Js_of_ocaml.Js.t)
     -> unit
     -> t
 
   val create : string -> ?key:string -> Attr.t list -> t list -> t
   val create_childless : string -> ?key:string -> Attr.t list -> t
   val svg : string -> ?key:string -> Attr.t list -> t list -> t
-  val to_js : t -> virtual_dom_node Js.t
+  val t_to_js : t -> Raw.Node.t
 end = struct
   type element =
     { tag : string
     ; key : string option
     ; attrs : Attrs.t
-    ; children : virtual_dom_node Js.t list
+    ; children : Raw.Node.t list
     ; kind : [ `Vnode | `Svg ]
     }
 
@@ -186,57 +62,26 @@ end = struct
     let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
   end
 
-  let string_to_js_text s =
-    let vtext = virtual_dom##._VText in
-    new%js vtext (Js.string s)
-  ;;
-
-  let to_js = function
+  let t_to_js = function
     | None ->
       (* We normally filter these out, but if [to_js] is called directly on a [None] node,
          we use this hack. Aside from having a [Text] node without any text present in the
          Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
          can only happen when the root view Incremental is inhabited by a [None]. *)
-      string_to_js_text ""
-    | Text s -> string_to_js_text s
+      Raw.Node.text ""
+    | Text s -> Raw.Node.text s
     | Element { tag; key; attrs; children; kind = `Vnode } ->
-      let vnode = virtual_dom##._VNode in
-      (match key with
-       | None ->
-         new%js vnode
-           (Js.string tag)
-           (Attr.list_to_obj attrs)
-           (Js.array (Array.of_list children))
-           Js.Optdef.empty
-       | Some key ->
-         new%js vnode
-           (Js.string tag)
-           (Attr.list_to_obj attrs)
-           (Js.array (Array.of_list children))
-           (Js.Optdef.return (Js.string key)))
+      Raw.Node.node tag (Attr.to_raw attrs) children key
     | Element { tag; key; attrs; children; kind = `Svg } ->
-      let vnode = virtual_dom##.svg in
-      (match key with
-       | None ->
-         new%js vnode
-           (Js.string tag)
-           (Attr.list_to_obj attrs)
-           (Js.array (Array.of_list children))
-           Js.Optdef.empty
-       | Some key ->
-         new%js vnode
-           (Js.string tag)
-           (Attr.list_to_obj attrs)
-           (Js.array (Array.of_list children))
-           (Js.Optdef.return (Js.string key)))
-    | Widget w -> Widget.to_js w
+      Raw.Node.svg tag (Attr.to_raw attrs) children key
+    | Widget w -> w
   ;;
 
   let element kind ~tag ~key attrs children =
     let children =
       List.filter_map children ~f:(function
         | None -> None
-        | other -> Some (to_js other))
+        | (Text _ | Element _ | Widget _) as other -> Some (t_to_js other))
     in
     { kind; tag; key; attrs; children }
   ;;
@@ -271,27 +116,42 @@ let widget = T.widget
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
-let to_dom t : Dom_html.element Js.t = virtual_dom##createElement (T.to_js t)
+let to_raw t = T.t_to_js t
+let to_dom t = Raw.Node.to_dom (to_raw t)
 
-let inner_html `This_html_is_sanitized_and_is_totally_safe_trust_me ~tag ~content =
-  let sexp tag content =
-    Sexp.List [ Sexp.Atom "inner-html"; Sexp.Atom tag; Sexp.Atom content ]
+let inner_html
+      create
+      ~tag
+      attrs
+      ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
+  =
+  let element = create tag attrs [] in
+  let build_sexp ~extra ~content =
+    Sexp.List [ Sexp.Atom "inner-html"; extra; Sexp.Atom content ]
   in
   let id =
-    Type_equal.Id.create ~name:"inner-html-node" (fun ((tag, content), _) ->
-      sexp tag content)
+    Type_equal.Id.create ~name:"inner-html-node" (fun ((element, content), _) ->
+      build_sexp ~extra:element ~content)
+  in
+  let debug =
+    match element with
+    | Element element -> Sexp.Atom (Element.tag element)
+    | Widget _ -> failwith "Vdom.Node.inner_html was given a 'widget'"
+    | None -> failwith "Vdom.Node.inner_html was given a 'none'"
+    | Text _ -> failwith "Vdom.Node.inner_html was given a 'text'"
   in
   widget
-    ~info:(sexp tag content)
     ~id
+    ~info:(lazy (build_sexp ~extra:debug ~content))
     ~init:(fun () ->
-      let element = to_dom (create tag [] []) in
-      element##.innerHTML := Js.string content;
-      (tag, content), element)
+      let element = to_dom element in
+      element##.innerHTML := Js_of_ocaml.Js.string content;
+      (debug, content), element)
     ()
 ;;
 
-let unsafe_to_js t = t |> T.to_js |> Js.Unsafe.inject
+let inner_html_svg = inner_html (fun tag attrs -> create_svg tag attrs)
+let inner_html = inner_html (fun tag attrs -> create tag attrs)
 let a = create "a"
 let body = create "body"
 let button = create "button"
@@ -330,23 +190,12 @@ let hr = create_childless "hr"
 
 module Patch = struct
   type node = t
-  type t = virtual_dom_patch Js.t
+  type t = Raw.Patch.t
 
-  let create ~previous ~current = virtual_dom##diff (T.to_js previous) (T.to_js current)
-  let apply t elt = virtual_dom##patch elt t
-
-  let is_empty =
-    let f =
-      Js.Unsafe.pure_js_expr
-        {js|
-        (function (patch) {
-          for (var key in patch) {
-            if (key !== 'a') return false
-          }
-          return true
-        })
-      |js}
-    in
-    fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
+  let create ~previous ~current =
+    Raw.Patch.create ~previous:(T.t_to_js previous) ~current:(T.t_to_js current)
   ;;
+
+  let apply t elt = Raw.Patch.apply elt t
+  let is_empty t = Raw.Patch.is_empty t
 end
