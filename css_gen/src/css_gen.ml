@@ -178,11 +178,7 @@ let create ~field ~value =
 
 let empty = []
 let is_empty = List.is_empty
-
-let create_placement name length =
-  create ~field:name ~value:(Length.to_string_css length)
-;;
-
+let create_placement name length = create ~field:name ~value:(Length.to_string_css length)
 let left = create_placement "left"
 let top = create_placement "top"
 let bottom = create_placement "bottom"
@@ -566,12 +562,7 @@ let item_alignment_to_string_css = function
   | `Stretch -> "stretch"
 ;;
 
-let flex_container
-      ?(inline = false)
-      ?(direction = `Row)
-      ?(wrap = `Nowrap)
-      ?align_items
-      ()
+let flex_container ?(inline = false) ?(direction = `Row) ?(wrap = `Nowrap) ?align_items ()
   =
   let direction =
     [%sexp_of: [ `Row | `Row_reverse | `Column | `Column_reverse ]] direction
@@ -609,15 +600,7 @@ let align_self a =
   create_raw ~field:"align-self" ~value
 ;;
 
-let animation
-      ~name
-      ~duration
-      ?delay
-      ?direction
-      ?fill_mode
-      ?iter_count
-      ?timing_function
-      ()
+let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_function ()
   =
   let m = Option.map in
   let span_to_string s = sprintf "%.2fs" (Time_ns.Span.to_sec s) in
@@ -720,8 +703,8 @@ let%expect_test "gradients" =
               ; p 0.2, c "#ff0000"
               ; p 0.4, c "red"
               ; ( p 1.
-                , `RGBA
-                    (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ()) )
+                , `RGBA (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ())
+                )
               ]
           }));
   [%expect

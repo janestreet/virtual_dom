@@ -138,15 +138,13 @@ module App = struct
             ~value:model.time_span
             ~on_input:(fun time_span ->
               inject
-                (Set
-                   { model with time_span = Validated.update model.time_span time_span }))
+                (Set { model with time_span = Validated.update model.time_span time_span }))
             ~on_return:(fun () ->
               inject (Set { model with time_span = Validated.initial_empty })) )
       ; ( "Entry.raw (press Enter = clear)"
         , Entry.raw
             ~value:(Option.value model.string_opt ~default:"")
-            ~on_input:(fun string ->
-              inject (Set { model with string_opt = Some string }))
+            ~on_input:(fun string -> inject (Set { model with string_opt = Some string }))
             ~on_return:(fun () -> inject (Set { model with string_opt = None }))
             () )
       ; ( "Entry.text"

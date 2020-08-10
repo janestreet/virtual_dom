@@ -371,8 +371,7 @@ let to_list s =
 ;;
 
 let test s =
-  print_endline
-    (Sexp.to_string_mach ([%sexp_of: (Token.t * int * int) list] (to_list s)))
+  print_endline (Sexp.to_string_mach ([%sexp_of: (Token.t * int * int) list] (to_list s)))
 ;;
 
 let%expect_test "eof" =

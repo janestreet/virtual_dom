@@ -24,8 +24,9 @@ end
 
 module Validated = struct
   type 'a t =
-    | Initial (* This is used to avoid marking as invalid a field that hasn't ever been
-                 touched by the user, to improve UX. *)
+    | Initial
+    (* This is used to avoid marking as invalid a field that hasn't ever been
+       touched by the user, to improve UX. *)
     | Valid of 'a
     | Invalid of
         { input : string
@@ -502,8 +503,7 @@ module Entry = struct
     match on_return with
     | None -> attrs
     | Some on_return ->
-      Attr.on_keydown (fun ev ->
-        if ev##.keyCode = 13 then on_return () else Event.Ignore)
+      Attr.on_keydown (fun ev -> if ev##.keyCode = 13 then on_return () else Event.Ignore)
       :: attrs
   ;;
 
@@ -537,8 +537,7 @@ module Entry = struct
       let value = Option.value_map ~f:M.to_string value ~default:"" in
       Normalizing_hook.create "value" value ~f:(normalize (module M))
     in
-    [ Call_on_input_when.listener call_on_input_when (fun _ev ->
-        function
+    [ Call_on_input_when.listener call_on_input_when (fun _ev -> function
         | "" -> on_input None
         | s -> on_input (Option.try_with (fun () -> M.of_string s)))
     ; value
@@ -583,8 +582,7 @@ module Entry = struct
     let value_attr =
       match (value : V.t) with
       | Initial -> Attr.string_property "value" ""
-      | _ ->
-        Normalizing_hook.create "value" (V.to_string value) ~f:(normalize (module V))
+      | _ -> Normalizing_hook.create "value" (V.to_string value) ~f:(normalize (module V))
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev s ->
         on_input (V.of_string s))

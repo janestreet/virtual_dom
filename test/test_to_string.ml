@@ -18,8 +18,7 @@ let%expect_test "basic text" =
 
 let%expect_test "empty div" =
   show (Node.div [] []);
-  [%expect
-    {|
+  [%expect {|
     (Element (tag_name div))
     ----------------------
     <div> </div> |}]
@@ -27,8 +26,7 @@ let%expect_test "empty div" =
 
 let%expect_test "empty div" =
   show (Node.div [] []);
-  [%expect
-    {|
+  [%expect {|
     (Element (tag_name div))
     ----------------------
     <div> </div> |}]

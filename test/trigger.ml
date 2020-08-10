@@ -94,6 +94,5 @@ let%expect_test "fake event handler" =
       (Node.div [ Attr.create "on_foo" "not a function" ] [])
   in
   print_s [%message (node : Node_helpers.t)];
-  [%expect
-    {| (node (Element (tag_name div) (attributes ((on_foo "not a function"))))) |}]
+  [%expect {| (node (Element (tag_name div) (attributes ((on_foo "not a function"))))) |}]
 ;;
