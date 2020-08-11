@@ -258,11 +258,21 @@ val text_decoration
 
 type item_alignment = [ `Auto | `Flex_start | `Flex_end | `Center | `Baseline | `Stretch ]
 
+type justify_content =
+  [ `Flex_start
+  | `Flex_end
+  | `Center
+  | `Space_between
+  | `Space_around
+  | `Space_evenly
+  ]
+
 val flex_container
   :  ?inline:bool
   -> ?direction:[ `Row | `Row_reverse | `Column | `Column_reverse ]
   -> ?wrap:[ `Nowrap | `Wrap | `Wrap_reverse ]
   -> ?align_items:item_alignment
+  -> ?justify_content:justify_content
   -> unit
   -> t
 

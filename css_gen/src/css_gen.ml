@@ -562,7 +562,31 @@ let item_alignment_to_string_css = function
   | `Stretch -> "stretch"
 ;;
 
-let flex_container ?(inline = false) ?(direction = `Row) ?(wrap = `Nowrap) ?align_items ()
+type justify_content =
+  [ `Flex_start
+  | `Flex_end
+  | `Center
+  | `Space_between
+  | `Space_around
+  | `Space_evenly
+  ]
+
+let justify_content_to_string_css = function
+  | `Flex_start -> "flex-start"
+  | `Flex_end -> "flex-end"
+  | `Center -> "center"
+  | `Space_between -> "space-between"
+  | `Space_around -> "space-around"
+  | `Space_evenly -> "space-evenly"
+;;
+
+let flex_container
+      ?(inline = false)
+      ?(direction = `Row)
+      ?(wrap = `Nowrap)
+      ?align_items
+      ?justify_content
+      ()
   =
   let direction =
     [%sexp_of: [ `Row | `Row_reverse | `Column | `Column_reverse ]] direction
@@ -574,11 +598,18 @@ let flex_container ?(inline = false) ?(direction = `Row) ?(wrap = `Nowrap) ?alig
     | None -> empty
     | Some a -> create_raw ~field:"align-items" ~value:(item_alignment_to_string_css a)
   in
+  let justify_content =
+    match justify_content with
+    | None -> empty
+    | Some a ->
+      create_raw ~field:"justify-content" ~value:(justify_content_to_string_css a)
+  in
   concat
     [ display (if inline then `Inline_flex else `Flex)
     ; create_raw ~field:"flex-direction" ~value:direction
     ; create_raw ~field:"flex-wrap" ~value:wrap
     ; align_items
+    ; justify_content
     ]
 ;;
 
