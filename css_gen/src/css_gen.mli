@@ -46,7 +46,8 @@ end
 
 module Length : sig
   type t =
-    [ `Ch of float
+    [ `Raw of string
+    | `Ch of float
     | `Rem of float
     | `Em of int
     | `Percent of Percent.t
@@ -311,4 +312,13 @@ module Stable : sig
   module V1 : sig
     type nonrec t = t [@@deriving sexp, compare, bin_io]
   end
+end
+
+module Expert : sig
+  (** By default, the Css_gen constructors validate that all values are well-formed.  This
+      can be useful for debugging, as it'll throw an exception when the programmer makes a
+      mistake. However, it also incurs a heavy cost and should be avoided in tight loops.
+      [should_validate] allows the programmer to disable css value validation when
+      necessary. *)
+  val should_validate : bool ref
 end

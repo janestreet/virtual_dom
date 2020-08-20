@@ -112,7 +112,8 @@ end
 
 module Length = struct
   type t =
-    [ `Ch of float
+    [ `Raw of string
+    | `Ch of float
     | `Rem of float
     | `Em of int
     | `Percent of Percent.t
@@ -125,6 +126,7 @@ module Length = struct
   [@@deriving sexp, bin_io, compare]
 
   let to_string_css = function
+    | `Raw s -> s
     | `Ch c -> sprintf "%.2fch" c
     | `Rem f -> sprintf "%.2frem" f
     | `Em i -> sprintf "%iem" i
@@ -171,8 +173,12 @@ let of_string_css_exn s = Css_parser.parse_declaration_list s |> Or_error.ok_exn
     by construction that the values do not need quoting / escaping. *)
 let create_raw ~field ~value = [ field, value ]
 
+module Expert = struct
+  let should_validate = ref true
+end
+
 let create ~field ~value =
-  Css_parser.validate_value value |> Or_error.ok_exn;
+  if !Expert.should_validate then Css_parser.validate_value value |> Or_error.ok_exn;
   create_raw ~field ~value
 ;;
 
