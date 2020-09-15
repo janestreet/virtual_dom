@@ -16,7 +16,33 @@ module Element : sig
   val add_class : t -> string -> t
 end
 
-module Widget : Base.T
+module Widget : sig
+  type t
+
+  module type S = sig
+    type dom = private #Dom_html.element
+
+    module Input : sig
+      type t [@@deriving sexp_of]
+    end
+
+    module State : sig
+      type t [@@deriving sexp_of]
+    end
+
+    val name : string
+    val create : Input.t -> State.t * dom Js.t
+
+    val update
+      :  prev_input:Input.t
+      -> input:Input.t
+      -> state:State.t
+      -> element:dom Js.t
+      -> State.t * dom Js.t
+
+    val destroy : prev_input:Input.t -> state:State.t -> element:dom Js.t -> unit
+  end
+end
 
 type t =
   | None
@@ -138,6 +164,10 @@ val widget
   -> init:(unit -> 's * 'e Js.t)
   -> unit
   -> t
+
+val widget_of_module
+  :  (module Widget.S with type Input.t = 'input)
+  -> ('input -> t) Staged.t
 
 module Patch : sig
   type node = t

@@ -27,7 +27,10 @@ module Validated = struct
     | Initial
     (* This is used to avoid marking as invalid a field that hasn't ever been
        touched by the user, to improve UX. *)
-    | Valid of 'a
+    | Valid of
+        { input : string option
+        ; value : 'a
+        }
     | Invalid of
         { input : string
         ; last_valid : 'a option
@@ -43,12 +46,15 @@ module Validated = struct
 
       let to_string = function
         | Initial -> ""
-        | Valid a -> M.to_string a
         | Invalid { input; last_valid = _; error = _ } -> input
+        | Valid { input; value } ->
+          (match input with
+           | Some input -> input
+           | None -> M.to_string value)
       ;;
 
       let of_string s =
-        try Valid (M.of_string s) with
+        try Valid { input = Some s; value = M.of_string s } with
         | exn -> Invalid { input = s; last_valid = None; error = Exn.to_string exn }
       ;;
     end : Stringable.S
@@ -56,15 +62,15 @@ module Validated = struct
   ;;
 
   let initial_empty = Initial
-  let return a = Valid a
+  let return value = Valid { input = None; value }
 
   let get_current = function
-    | Valid a -> Some a
+    | Valid { input = _; value } -> Some value
     | Invalid _ | Initial -> None
   ;;
 
   let get_last = function
-    | Valid a -> Some a
+    | Valid { input = _; value } -> Some value
     | Invalid { input = _; last_valid; error = _ } -> last_valid
     | Initial -> None
   ;;
@@ -83,7 +89,7 @@ module Validated = struct
     match old, new_ with
     | Initial, _ -> new_
     | _, Valid _ -> new_
-    | Valid old, Invalid { input; last_valid = _; error } ->
+    | Valid { input = _; value = old }, Invalid { input; last_valid = _; error } ->
       Invalid { input; last_valid = Some old; error }
     | ( Invalid { input = _; last_valid; error = _ }
       , Invalid { input; last_valid = None; error } ) ->
@@ -510,7 +516,7 @@ module Entry = struct
   let input_node ?(extra_attrs = []) ?(disabled = false) ?(placeholder = "") attrs =
     Node.input
       (attrs
-       |> add_attrs [ Attr.placeholder placeholder ]
+       |> add_attrs [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
        |> maybe_disabled ~disabled
        |> add_attrs extra_attrs)
       []

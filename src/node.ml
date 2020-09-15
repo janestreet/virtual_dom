@@ -1,5 +1,60 @@
 open Base
-module Widget = Raw.Widget
+
+module Widget = struct
+  open Js_of_ocaml
+  include Raw.Widget
+
+  module type S = sig
+    type dom = private #Dom_html.element
+
+    module Input : sig
+      type t [@@deriving sexp_of]
+    end
+
+    module State : sig
+      type t [@@deriving sexp_of]
+    end
+
+    val name : string
+    val create : Input.t -> State.t * dom Js.t
+
+    val update
+      :  prev_input:Input.t
+      -> input:Input.t
+      -> state:State.t
+      -> element:dom Js.t
+      -> State.t * dom Js.t
+
+    val destroy : prev_input:Input.t -> state:State.t -> element:dom Js.t -> unit
+  end
+
+  let of_module (type input) (module M : S with type Input.t = input) =
+    let module State = struct
+      type t =
+        { input : M.Input.t
+        ; state : M.State.t
+        }
+      [@@deriving sexp_of]
+    end
+    in
+    let sexp_of_dom : M.dom Js.t -> Sexp.t = fun _ -> Sexp.Atom "<opaque>" in
+    let id = Type_equal.Id.create ~name:M.name [%sexp_of: State.t * dom] in
+    Base.Staged.stage (fun input ->
+      let info = lazy (M.Input.sexp_of_t input) in
+      create
+        ~id
+        ~info
+        ~init:(fun () ->
+          let state, element = M.create input in
+          { input; state }, element)
+        ~update:(fun { State.input = prev_input; state } element ->
+          let state, element = M.update ~prev_input ~input ~state ~element in
+          { input; state }, element)
+        ~destroy:(fun { State.input = prev_input; state } element ->
+          M.destroy ~prev_input ~state ~element)
+        ())
+  ;;
+end
 
 module T : sig
   module Element : sig
@@ -112,6 +167,11 @@ let create = T.create
 let create_svg = T.svg
 let create_childless = T.create_childless
 let widget = T.widget
+
+let widget_of_module m =
+  let f = Base.Staged.unstage (Widget.of_module m) in
+  Base.Staged.stage (fun i -> Widget (f i))
+;;
 
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
