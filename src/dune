@@ -1,4 +1,4 @@
 (library (name virtual_dom) (public_name virtual_dom)
  (preprocess (pps js_of_ocaml-ppx ppx_jane gen_js_api.ppx))
  (js_of_ocaml (javascript_files ../lib/virtualdom.compiled.js ./hooks.js))
- (libraries ui_event tyxml.functor js_of_ocaml css_gen base gen_js_api))
+ (libraries ui_event js_of_ocaml css_gen base gen_js_api))

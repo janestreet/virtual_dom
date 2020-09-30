@@ -56,117 +56,68 @@ module Widget = struct
   ;;
 end
 
-module T : sig
-  module Element : sig
-    type t
+type element =
+  { tag : string
+  ; key : string option
+  ; attrs : Attrs.t
+  ; children : Raw.Node.t list
+  ; kind : [ `Vnode | `Svg ]
+  }
 
-    val tag : t -> string
-    val attrs : t -> Attrs.t
-    val key : t -> string option
-    val with_key : t -> string -> t
-    val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
-    val add_class : t -> string -> t
-    val add_style : t -> Css_gen.t -> t
-  end
-
-  type t =
-    | None
-    | Text of string
-    | Element of Element.t
-    | Widget of Widget.t
-
-  val text : string -> t
-
-  val widget
-    :  ?info:Sexp.t Lazy.t
-    -> ?destroy:('s -> (#Js_of_ocaml.Dom_html.element as 'e) Js_of_ocaml.Js.t -> unit)
-    -> ?update:('s -> 'e Js_of_ocaml.Js.t -> 's * 'e Js_of_ocaml.Js.t)
-    -> id:('s * 'e Js_of_ocaml.Js.t) Type_equal.Id.t
-    -> init:(unit -> 's * 'e Js_of_ocaml.Js.t)
-    -> unit
-    -> t
-
-  val create : string -> ?key:string -> Attr.t list -> t list -> t
-  val create_childless : string -> ?key:string -> Attr.t list -> t
-  val svg : string -> ?key:string -> Attr.t list -> t list -> t
-  val t_to_js : t -> Raw.Node.t
-end = struct
-  type element =
-    { tag : string
-    ; key : string option
-    ; attrs : Attrs.t
-    ; children : Raw.Node.t list
-    ; kind : [ `Vnode | `Svg ]
-    }
-
-  and t =
-    | None
-    | Text of string
-    | Element of element
-    | Widget of Widget.t
-
-  module Element = struct
-    type t = element
-
-    let tag t = t.tag
-    let attrs t = t.attrs
-    let key t = t.key
-    let with_key t key = { t with key = Some key }
-    let map_attrs t ~f = { t with attrs = f t.attrs }
-    let add_class t c = map_attrs t ~f:(fun a -> Attrs.add_class a c)
-    let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
-  end
-
-  let t_to_js = function
-    | None ->
-      (* We normally filter these out, but if [to_js] is called directly on a [None] node,
-         we use this hack. Aside from having a [Text] node without any text present in the
-         Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
-         can only happen when the root view Incremental is inhabited by a [None]. *)
-      Raw.Node.text ""
-    | Text s -> Raw.Node.text s
-    | Element { tag; key; attrs; children; kind = `Vnode } ->
-      Raw.Node.node tag (Attr.to_raw attrs) children key
-    | Element { tag; key; attrs; children; kind = `Svg } ->
-      Raw.Node.svg tag (Attr.to_raw attrs) children key
-    | Widget w -> w
-  ;;
-
-  let element kind ~tag ~key attrs children =
-    let children =
-      List.filter_map children ~f:(function
-        | None -> None
-        | (Text _ | Element _ | Widget _) as other -> Some (t_to_js other))
-    in
-    { kind; tag; key; attrs; children }
-  ;;
-
-  let text s = Text s
-
-  let widget ?info ?destroy ?update ~id ~init () =
-    Widget (Widget.create ?info ?destroy ?update ~id ~init ())
-  ;;
-
-  let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
-  let create_childless tag ?key attrs = create tag ?key attrs []
-  let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
-end
-
-module Element = T.Element
-
-type t = T.t =
+and t =
   | None
   | Text of string
-  | Element of Element.t
+  | Element of element
   | Widget of Widget.t
 
+module Element = struct
+  type t = element
+
+  let tag t = t.tag
+  let attrs t = t.attrs
+  let key t = t.key
+  let with_key t key = { t with key = Some key }
+  let map_attrs t ~f = { t with attrs = f t.attrs }
+  let add_class t c = map_attrs t ~f:(fun a -> Attrs.add_class a c)
+  let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
+end
+
+let t_to_js = function
+  | None ->
+    (* We normally filter these out, but if [to_js] is called directly on a [None] node,
+       we use this hack. Aside from having a [Text] node without any text present in the
+       Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
+       can only happen when the root view Incremental is inhabited by a [None]. *)
+    Raw.Node.text ""
+  | Text s -> Raw.Node.text s
+  | Element { tag; key; attrs; children; kind = `Vnode } ->
+    Raw.Node.node tag (Attr.to_raw attrs) children key
+  | Element { tag; key; attrs; children; kind = `Svg } ->
+    Raw.Node.svg tag (Attr.to_raw attrs) children key
+  | Widget w -> w
+;;
+
+let element kind ~tag ~key attrs children =
+  let children =
+    List.filter_map children ~f:(function
+      | None -> None
+      | (Text _ | Element _ | Widget _) as other -> Some (t_to_js other))
+  in
+  { kind; tag; key; attrs; children }
+;;
+
+let text s = Text s
+
+let widget ?info ?destroy ?update ~id ~init () =
+  Widget (Widget.create ?info ?destroy ?update ~id ~init ())
+;;
+
+let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
+let create_childless tag ?key attrs = create tag ?key attrs []
+let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
 let none = None
-let text = T.text
 let textf format = Printf.ksprintf text format
-let create = T.create
-let create_svg = T.svg
-let create_childless = T.create_childless
-let widget = T.widget
+let create_svg = svg
 
 let widget_of_module m =
   let f = Base.Staged.unstage (Widget.of_module m) in
@@ -176,7 +127,7 @@ let widget_of_module m =
 type node_creator = ?key:string -> Attr.t list -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
 
-let to_raw t = T.t_to_js t
+let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
 
 let inner_html
@@ -253,7 +204,7 @@ module Patch = struct
   type t = Raw.Patch.t
 
   let create ~previous ~current =
-    Raw.Patch.create ~previous:(T.t_to_js previous) ~current:(T.t_to_js current)
+    Raw.Patch.create ~previous:(t_to_js previous) ~current:(t_to_js current)
   ;;
 
   let apply t elt = Raw.Patch.apply elt t

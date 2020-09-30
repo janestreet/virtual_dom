@@ -1,5 +1,7 @@
+open Virtual_dom
 open Tyxml_f
 open Js_of_ocaml
+open Vdom
 
 module type XML =
   Xml_sigs.T
