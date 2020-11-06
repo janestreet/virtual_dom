@@ -94,5 +94,34 @@ let%expect_test "fake event handler" =
       (Node.div [ Attr.create "on_foo" "not a function" ] [])
   in
   print_s [%message (node : Node_helpers.t)];
-  [%expect {| (node (Element (tag_name div) (attributes ((on_foo "not a function"))))) |}]
+  [%expect
+    {| (node (Element ((tag_name div) (attributes ((on_foo "not a function")))))) |}]
+;;
+
+module H = Attr.Hooks.Make (struct
+    module Input = struct
+      type t = int -> Ui_event.t [@@deriving sexp]
+    end
+
+    module State = Unit
+
+    let init _input _element = ()
+    let on_mount _input _state _element = ()
+    let update ~old_input:_ ~new_input:_ _state _element = ()
+    let destroy _input _state _element = ()
+  end)
+
+let%expect_test "fake event handler for hook" =
+  let node =
+    Node.input
+      [ H.create ~name:"unique-name" (fun int ->
+          printf "%d" int;
+          Event.Ignore)
+      ]
+      []
+  in
+  node
+  |> Node_helpers.unsafe_convert_exn
+  |> Node_helpers.trigger_hook ~type_id:H.For_testing.type_id ~name:"unique-name" ~arg:5;
+  [%expect {| 5 |}]
 ;;

@@ -1,7 +1,11 @@
 open! Js_of_ocaml
+open Base
 
 (** This type covers both properties and attributes, despite the name. *)
 type t
+
+(** [get_name] returns the attribute or property name *)
+val get_name : t -> string
 
 (** [create name value] creates a simple string-only attribute *)
 val create : string -> string -> t
@@ -24,9 +28,9 @@ val autofocus : bool -> t
 
 val checked : t
 val class_ : string -> t
-val to_class : t -> Base.Set.M(Base.String).t option
+val to_class : t -> Set.M(String).t option
 val classes : string list -> t
-val classes' : Base.Set.M(Base.String).t -> t
+val classes' : Set.M(String).t -> t
 val disabled : t
 val for_ : string -> t
 val href : string -> t
@@ -95,7 +99,8 @@ module Expert : sig
     "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
 
   val create_persistent_hook
-    :  string
+    :  ?extra:'a * 'a Type_equal.Id.t
+    -> string
     -> init:(Dom_html.element Js.t -> 'state)
     -> update:('state -> Dom_html.element Js.t -> 'state)
     -> destroy:('state -> Dom_html.element Js.t -> unit)
@@ -103,5 +108,16 @@ module Expert : sig
     -> t
   [@@deprecated
     "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
+
+  module Extra : sig
+    type t =
+      | T :
+          { type_id : 'a Type_equal.Id.t
+          ; value : 'a
+          }
+          -> t
+
+    val sexp_of_t : t -> Sexp.t
+  end
 end
 

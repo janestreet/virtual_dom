@@ -16,15 +16,16 @@ joo_global_object.SoftSetHook.prototype.hook = function (node, propertyName) {
 };
 
 
-var GenericHook = function (init, update, destroy, id) {
+var GenericHook = function (init, update, destroy, id, extra) {
     if (!(this instanceof GenericHook)) {
-        return new GenericHook(init, update, destroy, id);
+        return new GenericHook(init, update, destroy, id, extra);
     }
 
     this.init = init;
     this.update = update;
     this.destroy = destroy;
     this.id = id;
+    this.extra = extra;
 };
 
 GenericHook.canTransition = function (from, to) {

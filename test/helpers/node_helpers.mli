@@ -1,18 +1,23 @@
 open! Core_kernel
 open! Js_of_ocaml
 
+type element =
+  { tag_name : string
+  ; attributes : (string * string) list
+  ; string_properties : (string * string) list
+  ; styles : (string * string) list
+  ; handlers : (string * Handler.t) list
+  ; hooks : (string * Virtual_dom.Vdom.Attr.Expert.Extra.t) list
+  ; key : string option
+  ; children : t list
+  }
+[@@deriving sexp_of]
+
 (** Roughly analogous to {!Vdom.Node.t}, but more easily inspectable and represented as a
     pure OCaml type. *)
-type t =
+and t =
   | Text of string
-  | Element of
-      { tag_name : string
-      ; attributes : (string * string) list
-      ; string_properties : (string * string) list
-      ; handlers : (string * Handler.t) list
-      ; key : string option
-      ; children : t list
-      }
+  | Element of element
   | Widget of Sexp.t
 [@@deriving sexp_of]
 
@@ -35,6 +40,20 @@ val trigger
   -> t
   -> event_name:string
   -> unit
+
+(** When a hook-based attribute build from an event-returning function, this function will
+    find the hook, extract the value, call that function with [arg], and schedule the
+    resulting function. *)
+val trigger_hook
+  :  t
+  -> type_id:('a -> Virtual_dom.Vdom.Event.t) Type_equal.Id.t
+  -> name:string
+  -> arg:'a
+  -> unit
+
+(** Given an element, this function attempts to retrieve a hook with the name [name], and
+    the type-id from the hooks [For_testing] module. *)
+val get_hook_value : t -> type_id:'a Type_equal.Id.t -> name:string -> 'a
 
 module User_actions : sig
   (** Convenience functions for {!trigger}, closely modeling user interactions. *)

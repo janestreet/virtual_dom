@@ -1,16 +1,21 @@
 open! Core_kernel
 open! Js_of_ocaml
 
-type t =
+type element =
+  { tag_name : string
+  ; attributes : (string * string) list [@sexp.list]
+  ; string_properties : (string * string) list [@sexp.list]
+  ; styles : (string * string) list [@sexp.list]
+  ; handlers : (string * Handler.t) list [@sexp.list]
+  ; hooks : (string * Virtual_dom.Vdom.Attr.Expert.Extra.t) list [@sexp.list]
+  ; key : string option [@sexp.option]
+  ; children : t list [@sexp.list]
+  }
+[@@deriving sexp_of]
+
+and t =
   | Text of string
-  | Element of
-      { tag_name : string
-      ; attributes : (string * string) list [@sexp.list]
-      ; string_properties : (string * string) list [@sexp.list]
-      ; handlers : (string * Handler.t) list [@sexp.list]
-      ; key : string option [@sexp.option]
-      ; children : t list [@sexp.list]
-      }
+  | Element of element
   | Widget of Sexp.t
 [@@deriving sexp_of]
 
@@ -34,9 +39,9 @@ let rec map t ~f =
   | `Continue ->
     (match t with
      | Text _ | Widget _ -> t
-     | Element { tag_name; attributes; string_properties; handlers; key; children } ->
-       let children = List.map children ~f:(fun ch -> map ch ~f) in
-       Element { tag_name; attributes; string_properties; handlers; key; children })
+     | Element element ->
+       let children = List.map element.children ~f:(fun ch -> map ch ~f) in
+       Element { element with children })
 ;;
 
 
@@ -63,7 +68,7 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
       let element = Soup.create_element "widget" ~attributes:[] in
       Soup.append_child element info_text;
       Hidden_soup element
-    | Element { tag_name; attributes; string_properties; handlers; key; children } ->
+    | Element { tag_name; attributes; string_properties; handlers; key; children; _ } ->
       let key_attrs =
         match key with
         | Some key -> [ "key", key ]
@@ -107,30 +112,93 @@ let _to_string_html t =
   Soup.to_string soup
 ;;
 
+(* Printing elements in single-line and multiline formats is essentially the
+   same. The main difference is what attributes are separated by: in
+   single-line, they are separated just by spaces, but in multiline they are
+   separated by a newline and some indentation.
+*)
+let bprint_element
+      buffer
+      ~sep
+      ~before_styles
+      { tag_name; attributes; string_properties; styles; handlers; key; hooks; _ }
+  =
+  bprintf buffer "<%s" tag_name;
+  let has_printed_an_attribute = ref false in
+  let bprint_aligned_indent () =
+    if !has_printed_an_attribute
+    then bprintf buffer "%s" sep
+    else (
+      has_printed_an_attribute := true;
+      bprintf buffer " ")
+  in
+  Option.iter key ~f:(fun key ->
+    bprint_aligned_indent ();
+    bprintf buffer "@key=%s" key);
+  List.iter attributes ~f:(fun (k, v) ->
+    bprint_aligned_indent ();
+    bprintf buffer "%s=\"%s\"" k v);
+  List.iter string_properties ~f:(fun (k, v) ->
+    bprint_aligned_indent ();
+    bprintf buffer "#%s=\"%s\"" k v);
+  List.iter hooks ~f:(fun (k, v) ->
+    bprint_aligned_indent ();
+    bprintf
+      buffer
+      "%s=%s"
+      k
+      (v |> [%sexp_of: Virtual_dom.Vdom.Attr.Expert.Extra.t] |> Sexp.to_string_mach));
+  List.iter handlers ~f:(fun (k, _) ->
+    bprint_aligned_indent ();
+    bprintf buffer "%s={handler}" k);
+  if not (List.is_empty styles)
+  then (
+    bprint_aligned_indent ();
+    bprintf buffer "style={";
+    List.iter styles ~f:(fun (k, v) ->
+      bprint_aligned_indent ();
+      bprintf buffer "%s%s: %s;" before_styles k v);
+    bprint_aligned_indent ();
+    bprintf buffer "}");
+  bprintf buffer ">"
+;;
+
+let bprint_element_single_line buffer element =
+  bprint_element buffer ~sep:" " ~before_styles:"" element
+;;
+
+let bprint_element_multi_line buffer ~indent element =
+  let align_with_first_attribute = String.map element.tag_name ~f:(Fn.const ' ') ^ "  " in
+  let sep = "\n" ^ indent ^ align_with_first_attribute in
+  bprint_element buffer ~sep ~before_styles:"  " element
+;;
+
 let to_string_html t =
+  (* Keep around the buffer so that it is not re-allocated for every element *)
+  let single_line_buffer = Buffer.create 200 in
   let rec recurse buffer ~depth =
     let indent = String.init (depth * 2) ~f:(Fn.const ' ') in
     function
     | Text s -> bprintf buffer "%s%s" indent s
-    | Element { tag_name; attributes; string_properties; handlers; key; children } ->
-      bprintf buffer "%s<%s" indent tag_name;
-      Option.iter key ~f:(bprintf buffer " @key=%s");
-      List.iter attributes ~f:(fun (k, v) -> bprintf buffer " %s=\"%s\"" k v);
-      List.iter string_properties ~f:(fun (k, v) -> bprintf buffer " #%s=\"%s\"" k v);
-      List.iter handlers ~f:(fun (k, _) -> bprintf buffer " %s={handler}" k);
-      bprintf buffer ">";
+    | Element element ->
+      bprintf buffer "%s" indent;
+      Buffer.reset single_line_buffer;
+      bprint_element_single_line single_line_buffer element;
+      if Buffer.length single_line_buffer < 100 - String.length indent
+      then Buffer.add_buffer buffer single_line_buffer
+      else bprint_element_multi_line buffer ~indent element;
       let children_should_collapse =
-        List.for_all children ~f:(function
+        List.for_all element.children ~f:(function
           | Text _ -> true
           | _ -> false)
-        && List.fold children ~init:0 ~f:(fun acc child ->
+        && List.fold element.children ~init:0 ~f:(fun acc child ->
           match child with
           | Text s -> acc + String.length s
           | _ -> acc)
            < 80 - String.length indent
       in
       let depth = if children_should_collapse then 0 else depth + 1 in
-      List.iter children ~f:(fun child ->
+      List.iter element.children ~f:(fun child ->
         if children_should_collapse then bprintf buffer " " else bprintf buffer "\n";
         recurse buffer ~depth child);
       if children_should_collapse
@@ -138,7 +206,7 @@ let to_string_html t =
       else (
         bprintf buffer "\n";
         bprintf buffer "%s" indent);
-      bprintf buffer "</%s>" tag_name
+      bprintf buffer "</%s>" element.tag_name
     | Widget s -> bprintf buffer "%s<widget %s />" indent (Sexp.to_string s)
   in
   let buffer = Buffer.create 100 in
@@ -174,6 +242,9 @@ let unsafe_of_js_exn =
         (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
         (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+        (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+        (hooks :
+           (Js.js_string Js.t * Virtual_dom.Vdom.Attr.Expert.Extra.t) Js.js_array Js.t)
         (key : Js.js_string Js.t Js.Opt.t)
     =
     let tag_name = tag_name |> Js.to_string in
@@ -192,14 +263,27 @@ let unsafe_of_js_exn =
       |> Array.to_list
       |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
     in
+    let hooks =
+      hooks
+      |> Js.to_array
+      |> Array.to_list
+      |> List.map ~f:(fun (k, v) -> Js.to_string k, v)
+    in
     let string_properties =
       string_properties
       |> Js.to_array
       |> Array.to_list
       |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
     in
+    let styles =
+      styles
+      |> Js.to_array
+      |> Array.to_list
+      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
+    in
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
-    Element { tag_name; children; handlers; attributes; string_properties; key }
+    Element
+      { tag_name; children; handlers; attributes; string_properties; key; hooks; styles }
   in
   let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t Lazy.t option) =
     match info with
@@ -213,54 +297,73 @@ let unsafe_of_js_exn =
   let f =
     Js.Unsafe.pure_js_expr
       {js|
-      // Convert analyzes a Vdom node that was produced by [Node.to_js] and walks the tree
-      // recursively, calling make_text_node, make_element_node, and make_widget_node depending
-      // on the type of node.
-      (function convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type) {
-          switch (node.type) {
-          case 'VirtualText':
-              return make_text_node(node.text);
-          case 'Widget':
-              return make_widget_node(node.id, node.info);
-          case 'VirtualNode':
-              var attributes = node.properties.attributes || {};
-              var attr_list = Object.keys(attributes).map(function (key) {
-                  return [0, key, attributes[key].toString()];
-              });
-              var children = node.children.map(function (node) {
-                  return convert(node, make_text_node, make_element_node, raise_unknown_node_type);
-              });
-              var handlers =
-                  Object.keys(node.properties)
-                  .filter(function (key) {
-                      // This is a bit of a hack, but it works for all the handlers that we
-                      // have defined at the moment.  Consider removing the 'on' check?
-                      return key.startsWith("on") && typeof node.properties[key] === 'function';
-                  })
-                  .map(function (key) {
-                      // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
-                      return [0, key, node.properties[key]];
-                  });
-              var string_properties =
-                  Object.keys(node.properties)
-                  .filter(function (key) {
-                      return typeof node.properties[key] === 'string';
-                  })
-                  .map(function (key) {
-                      return [0, key, node.properties[key]]
-                  });
-              return make_element_node(
-                  node.tagName,
-                  children,
-                  handlers,
-                  attr_list,
-                  string_properties,
-                  node.key || null);
-          default:
-              raise_unknown_node_type("" + node.type);
-          }
-      })
-    |js}
+   // Convert analyzes a Vdom node that was produced by [Node.to_js] and walks the tree
+   // recursively, calling make_text_node, make_element_node, and make_widget_node depending
+   // on the type of node.
+   (function convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type) {
+   switch (node.type) {
+   case 'VirtualText':
+   return make_text_node(node.text);
+   case 'Widget':
+   return make_widget_node(node.id, node.info);
+   case 'VirtualNode':
+   var attributes = node.properties.attributes || {};
+   var attr_list = Object.keys(attributes).map(function (key) {
+   return [0, key, attributes[key].toString()];
+   });
+   var children = node.children.map(function (node) {
+   return convert(node, make_text_node, make_element_node, raise_unknown_node_type);
+   });
+   var handlers =
+   Object.keys(node.properties)
+   .filter(function (key) {
+   // This is a bit of a hack, but it works for all the handlers that we
+   // have defined at the moment.  Consider removing the 'on' check?
+   return key.startsWith("on") && typeof node.properties[key] === 'function';
+   })
+   .map(function (key) {
+   // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
+   return [0, key, node.properties[key]];
+   });
+   var string_properties =
+   Object.keys(node.properties)
+   .filter(function (key) {
+   return typeof node.properties[key] === 'string';
+   })
+   .map(function (key) {
+   return [0, key, node.properties[key]]
+   });
+   var styles =
+   Object.keys(node.properties.style ? node.properties.style : {})
+   .filter(function (key) {
+   return typeof node.properties.style[key] === 'string';
+   })
+   .map(function (key) {
+   return [0, key, node.properties.style[key]]
+   });
+   var hooks =
+   Object.keys(node.properties)
+   .filter(function (key) {
+   return typeof node.properties[key] === 'object' && 
+   typeof node.properties[key]['extra'] === 'object';
+   })
+   .map(function (key) {
+   return [0, key, node.properties[key]['extra']]
+   });
+   return make_element_node(
+   node.tagName,
+   children,
+   handlers,
+   attr_list,
+   string_properties,
+   styles,
+   hooks,
+   node.key || null);
+   default:
+   raise_unknown_node_type("" + node.type);
+   }
+   })
+   |js}
   in
   fun value ->
     Js.Unsafe.fun_call
@@ -279,14 +382,7 @@ let unsafe_convert_exn vdom_node =
 
 let get_handlers (node : t) =
   match node with
-  | Element
-      { handlers
-      ; tag_name = _
-      ; attributes = _
-      ; string_properties = _
-      ; key = _
-      ; children = _
-      } -> handlers
+  | Element { handlers; _ } -> handlers
   | _ -> raise_s [%message "expected Element node" (node : t)]
 ;;
 
@@ -307,6 +403,31 @@ let trigger_many ?extra_fields node ~event_names =
 
 let trigger ?extra_fields node ~event_name =
   trigger_many ?extra_fields node ~event_names:[ event_name ]
+;;
+
+let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a =
+  fun t ~type_id ~name ->
+  match t with
+  | Element { hooks; _ } ->
+    (match List.Assoc.find ~equal:String.equal hooks name with
+     | Some hook ->
+       let (Virtual_dom.Vdom.Attr.Expert.Extra.T { type_id = type_id_v; value }) = hook in
+       (match Type_equal.Id.same_witness type_id_v type_id with
+        | Some T -> value
+        | None ->
+          failwithf
+            "get_hook_value: a hook for %s was found, but the type-ids were not the same; \
+             are you using the same type-id that you got from the For_testing module from \
+             your hook creator?"
+            name
+            ())
+     | None -> failwithf "get_hook_value: no hook found with name %s" name ())
+  | Text _ -> failwith "get_hook_value: expected Element, found Text"
+  | Widget _ -> failwith "get_hook_value: expected Element, found Widget"
+;;
+
+let trigger_hook t ~type_id ~name ~arg =
+  Ui_event.Expert.handle ((get_hook_value t ~type_id ~name) arg)
 ;;
 
 module User_actions = struct

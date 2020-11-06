@@ -38,35 +38,32 @@ end = struct
   ;;
 end
 
-module Node : sig
-  type t = private Ojs.t
+module Node =
+  [%js:
+    type t = private Ojs.t
 
-  val t_of_js : Ojs.t -> t
-  val t_to_js : t -> Ojs.t
+    val t_of_js : Ojs.t -> t
+    val t_to_js : t -> Ojs.t
+    val node : string -> Attrs.t -> t list -> string option -> t [@@js.new "VirtualDom.VNode"]
+    val text : string -> t [@@js.new "VirtualDom.VText"]
+    val svg : string -> Attrs.t -> t list -> string option -> t [@@js.new "VirtualDom.svg"]
+    val to_dom : t -> Native_node.t [@@js.global "VirtualDom.createElement"]]
 
-  val node : string -> Attrs.t -> t list -> string option -> t
-  [@@js.new "VirtualDom.VNode"]
+module Patch =
+  [%js:
+    type t = private Ojs.t
 
-  val text : string -> t [@@js.new "VirtualDom.VText"]
-  val svg : string -> Attrs.t -> t list -> string option -> t [@@js.new "VirtualDom.svg"]
-  val to_dom : t -> Native_node.t [@@js.global "VirtualDom.createElement"]
-end =
-  [%js]
+    val t_of_js : Ojs.t -> t
+    val t_to_js : t -> Ojs.t
+    val create : previous:Node.t -> current:Node.t -> t [@@js.global "VirtualDom.diff"]
+    val apply : Native_node.t -> t -> Native_node.t [@@js.global "VirtualDom.patch"]
 
-module Patch : sig
-  type t = private Ojs.t
-
-  val t_of_js : Ojs.t -> t
-  val t_to_js : t -> Ojs.t
-  val create : previous:Node.t -> current:Node.t -> t [@@js.global "VirtualDom.diff"]
-  val apply : Native_node.t -> t -> Native_node.t [@@js.global "VirtualDom.patch"]
-
-  val is_empty : t -> bool
-  [@@js.custom
-    let is_empty =
-      let f =
-        Js.Unsafe.pure_js_expr
-          {js|
+    val is_empty : t -> bool
+    [@@js.custom
+      let is_empty =
+        let f =
+          Js.Unsafe.pure_js_expr
+            {js|
         (function (patch) {
           for (var key in patch) {
             if (key !== 'a') return false
@@ -74,11 +71,9 @@ module Patch : sig
           return true
         })
       |js}
-      in
-      fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
-    ;;]
-end =
-  [%js]
+        in
+        fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
+      ;;]]
 
 module Widget = struct
   class type ['s, 'element] widget =

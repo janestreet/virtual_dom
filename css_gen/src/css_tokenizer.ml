@@ -204,6 +204,27 @@ let quoted_string t ~quote =
   t.current <- String
 ;;
 
+let exponential_part t =
+  let mark = mark t in
+  if accept t (function
+    | 'e' | 'E' -> true
+    | _ -> false)
+  then
+    if accept t plus_or_minus
+    then many1 t Char.is_digit
+    else if accept t Char.is_digit
+    then many t Char.is_digit
+    else
+      (* Backtrack if there are no digits or signs after the 'e' because
+         it is possible that the 'e' was actually a part of something else. For
+         example, the 'e' could be part of an 'em' or 'en' dimension instead
+         of beginning the exponential part of a scientific notation number.
+
+         Example: 1.2e3 is scientific notation, but 1.2em is a number with a
+         dimension. *)
+      reset t mark
+;;
+
 let num t =
   ignore (accept t plus_or_minus : bool);
   if accept_char t '.'
@@ -211,12 +232,7 @@ let num t =
   else (
     many1 t Char.is_digit;
     if accept_char t '.' then many1 t Char.is_digit);
-  if accept t (function
-    | 'e' | 'E' -> true
-    | _ -> false)
-  then (
-    ignore (accept t plus_or_minus : bool);
-    many1 t Char.is_digit)
+  exponential_part t
 ;;
 
 let number_or_percentage_or_dimension t =
@@ -410,6 +426,8 @@ let%expect_test "whitespace" =
 ;;
 
 let%expect_test "numbers" =
+  test "margin: 0.5en";
+  test "margin: 0.5em";
   test "margin: 0.5in";
   test "line-height: 3cm";
   test "line-height: 120%";
@@ -423,6 +441,8 @@ let%expect_test "numbers" =
   test "margin: .02e20";
   [%expect
     {|
+    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
     ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
     ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Dimension 13 3)(Eof 16 0))
     ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Percentage 13 4)(Eof 17 0))

@@ -23,9 +23,21 @@ module Vdom_raw = Raw
 module Hook = struct
   type t = Js.Unsafe.any
 
+  module Extra = struct
+    type t =
+      | T :
+          { type_id : 'a Type_equal.Id.t
+          ; value : 'a
+          }
+          -> t
+
+    let sexp_of_t (T { type_id; value }) = Type_equal.Id.to_sexp type_id value
+    let unit = T { type_id = Type_equal.Id.create ~name:"unit" sexp_of_unit; value = () }
+  end
+
   let generic_hook = lazy Js.Unsafe.(get global (Js.string "GenericHook"))
 
-  let create ~init ?update ?destroy ~id =
+  let create ~init ?(extra = Extra.unit) ?update ?destroy ~id =
     let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
     let init = wrap init in
     let update =
@@ -33,7 +45,9 @@ module Hook = struct
     in
     let destroy = destroy |> Option.value ~default:(fun _ _ -> ()) |> wrap in
     let generic_hook = Lazy.force generic_hook in
-    Js.Unsafe.fun_call generic_hook [| init; update; destroy; id |> Js.Unsafe.inject |]
+    Js.Unsafe.fun_call
+      generic_hook
+      [| init; update; destroy; id |> Js.Unsafe.inject; extra |> Js.Unsafe.inject |]
   ;;
 
   let pack = Fn.id
@@ -42,11 +56,20 @@ end
 type t =
   | Property of string * Js.Unsafe.any
   | Attribute of string * Js.Unsafe.any
-  | Hook of string * Hook.t
+  | Hook of
+      { name : string
+      ; hook : Hook.t
+      }
   | Style of Css_gen.t
   | Class of (string, String.comparator_witness) Set.t
 
 let create name value = Attribute (name, Js.Unsafe.inject (Js.string value))
+
+let get_name = function
+  | Property (name, _) | Attribute (name, _) | Hook { name; _ } -> name
+  | Style _ -> "style"
+  | Class _ -> "class"
+;;
 
 let create_float name value =
   Attribute (name, Js.Unsafe.inject (Dom_float.to_js_string value))
@@ -55,7 +78,7 @@ let create_float name value =
 let property name value = Property (name, value)
 let string_property name value = Property (name, Js.Unsafe.inject (Js.string value))
 let bool_property name value = Property (name, Js.Unsafe.inject (Js.bool value))
-let create_hook name hook = Hook (name, hook)
+let create_hook name hook = Hook { name; hook }
 
 external ojs_of_any : Js.Unsafe.any -> Gen_js_api.Ojs.t = "%identity"
 
@@ -74,7 +97,7 @@ let to_raw attrs =
   let attrs_obj : Vdom_raw.Attrs.t = Vdom_raw.Attrs.create () in
   List.iter
     ~f:(function
-      | Hook (name, hook) ->
+      | Hook { name; hook } ->
         Vdom_raw.Attrs.set_property attrs_obj name (ojs_of_any (Hook.pack hook))
       | Property ("value", value) ->
         let value = softSetHook value in
@@ -216,18 +239,23 @@ let on_input = on_input_event "input"
 let to_raw l = to_raw l
 
 module Expert = struct
+  module Extra = Hook.Extra
+
   let create_basic_hook name ?hook ?unhook () =
     let hook = Option.value hook ~default:(Fn.const ()) in
     let unhook = Option.map unhook ~f:(fun f () -> f) in
     let id = Type_equal.Id.create ~name:"placeholder" [%sexp_of: unit] in
-    create_hook name (Hook.create ~init:hook ?update:None ?destroy:unhook ~id)
+    create_hook name (Hook.create ~init:hook ?extra:None ?update:None ?destroy:unhook ~id)
   ;;
 
   let create_stateful_hook name ~hook ~unhook ~id =
-    create_hook name (Hook.create ~init:hook ?update:None ~destroy:unhook ~id)
+    create_hook name (Hook.create ~init:hook ?extra:None ?update:None ~destroy:unhook ~id)
   ;;
 
-  let create_persistent_hook name ~init ~update ~destroy ~id =
-    create_hook name (Hook.create ~init ~update ~destroy ~id)
+  let create_persistent_hook ?extra name ~init ~update ~destroy ~id =
+    let extra =
+      Option.map extra ~f:(fun (value, type_id) -> Hook.Extra.T { value; type_id })
+    in
+    create_hook name (Hook.create ?extra ~init ~update ~destroy ~id)
   ;;
 end

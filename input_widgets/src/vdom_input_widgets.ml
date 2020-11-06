@@ -148,25 +148,21 @@ end
 let maybe_disabled ~disabled attrs = if disabled then Attr.disabled :: attrs else attrs
 let add_attrs attrs' attrs = attrs @ attrs' |> Attrs.merge_classes_and_styles
 
-module Normalizing_hook = struct
+module Value_normalizing_hook = struct
   module Unsafe = Js_of_ocaml.Js.Unsafe
   open Js_of_ocaml
   open Js_of_ocaml.Dom_html
-
-  let id : Dom.event_listener_id Type_equal.Id.t =
-    Type_equal.Id.create ~name:"normalizing-hook event-listener-id" (fun _ ->
-      Sexp.Atom "event-listener-id")
-  ;;
 
   let is_active element =
     let document_active_element = Unsafe.get document (Js.string "activeElement") in
     phys_equal element document_active_element
   ;;
 
-  let get_property element name : 'a Js.t = Unsafe.get element (Js.string name)
-  let set_property element name value = Unsafe.set element (Js.string name) value
+  let value_property = Js.string "value"
+  let get_value element : 'a Js.t = Unsafe.get element value_property
+  let set_value element value = Unsafe.set element value_property value
 
-  let install_event_handler element name ~f =
+  let install_event_handler element ~f =
     (* This event handler normalizes the value on the input element on the [change] event.
        For a text entry, this means when the user presses enter, and when the user blurs
        the element. Why don't we simply [to_string] the value in the model? Because for
@@ -175,26 +171,48 @@ module Normalizing_hook = struct
        press the up arrow on a number input. This leads to a bug where the value in the
        model swaps back and forth with the value in the element. *)
     let change_handler _ =
-      let value = Js.to_string (get_property element name) in
+      let value = Js.to_string (get_value element) in
       let normalized = Js.string (f value) in
-      set_property element name normalized;
+      set_value element normalized;
       Js._true
     in
     let change_handler = Dom.handler change_handler in
     addEventListener element Event.change change_handler Js._false
   ;;
 
-  [@@@ocaml.warning "-3"]
+  module M = struct
+    module State = struct
+      type t = { mutable event_id : event_listener_id }
+    end
 
-  let create name value ~f =
-    Attr.Expert.create_stateful_hook
-      name
-      ~hook:(fun element ->
-        if not (is_active element) then set_property element name (Js.string value);
-        install_event_handler element name ~f)
-      ~unhook:(fun event_handle _ -> removeEventListener event_handle)
-      ~id
-  ;;
+    module Input = struct
+      type t =
+        { value : string
+        ; f : string -> string
+        }
+
+      let sexp_of_t { value; _ } = Sexp.Atom value
+    end
+
+    let init { Input.value; f } element =
+      if not (is_active element) then set_value element (Js.string value);
+      let event_id = install_event_handler element ~f in
+      { State.event_id }
+    ;;
+
+    let on_mount _input _state _element = ()
+    let destroy _input { State.event_id } _element = removeEventListener event_id
+
+    let update ~old_input ~new_input state element =
+      destroy old_input state element;
+      let { State.event_id } = init new_input element in
+      state.State.event_id <- event_id
+    ;;
+  end
+
+  include Attr.Hooks.Make (M)
+
+  let create value ~f = create ~name:"value:normalized" { value; f }
 end
 
 module Dropdown = struct
@@ -541,7 +559,7 @@ module Entry = struct
     =
     let value =
       let value = Option.value_map ~f:M.to_string value ~default:"" in
-      Normalizing_hook.create "value" value ~f:(normalize (module M))
+      Value_normalizing_hook.create value ~f:(normalize (module M))
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev -> function
         | "" -> on_input None
@@ -588,7 +606,7 @@ module Entry = struct
     let value_attr =
       match (value : V.t) with
       | Initial -> Attr.string_property "value" ""
-      | _ -> Normalizing_hook.create "value" (V.to_string value) ~f:(normalize (module V))
+      | _ -> Value_normalizing_hook.create (V.to_string value) ~f:(normalize (module V))
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev s ->
         on_input (V.of_string s))
@@ -703,7 +721,7 @@ module Entry = struct
     Node.textarea
       ([ Attr.placeholder placeholder
        ; Call_on_input_when.listener call_on_input_when (fun _ev value -> on_input value)
-       ; Normalizing_hook.create "value" value ~f:Fn.id
+       ; Value_normalizing_hook.create value ~f:Fn.id
        ]
        |> maybe_disabled ~disabled
        |> add_attrs extra_attrs)
