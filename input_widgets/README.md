@@ -1,4 +1,7 @@
-# `Vdom_input_widgets`
+---
+title: "`Vdom_input_widgets`"
+uuid: eaf34eeb-09d0-3dff-ae95-e0e6553ac876
+---
 
 This is a collection of simple widgets that correspond to a single or small
 collection of `<input>` that helps map the values into arbitrary types so that

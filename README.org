@@ -1,4 +1,6 @@
 #+TITLE: ~Virtual_dom~: a virtual DOM diffing library
+#+PARENT: ../../doc/webdev/index.org
+#+UUID: cb61140b-03ea-3a88-7aea-877a63d56575
 
 This library is an OCaml wrapper of Matt Esch's [[https://github.com/Matt-Esch/virtual-dom][virtual-dom library]].
 It provides a simple, immutable representation of a desired state of

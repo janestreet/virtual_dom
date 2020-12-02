@@ -22,7 +22,6 @@ val bool_property : string -> bool -> t
 (** [property name value] creates a property with a generic value *)
 val property : string -> Js.Unsafe.any -> t
 
-val on : string -> (#Dom_html.event Js.t -> Event.t) -> t
 val autofocus : bool -> t
 
 
@@ -78,6 +77,14 @@ val on_mouseout : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_keyup : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
 val on_keypress : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
 val on_keydown : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
+val on_scroll : (Dom_html.event Js.t -> Event.t) -> t
+val on_submit : (Dom_html.submitEvent Js.t -> Event.t) -> t
+
+val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> Event.t) -> t
+val on_copy : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
+val on_cut : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
+val on_paste : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
+val on_reset : (Dom_html.event Js.t -> Event.t) -> t
 
 module Expert : sig
   val create_basic_hook

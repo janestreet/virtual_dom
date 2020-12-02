@@ -198,6 +198,13 @@ let on_mouseout = on "mouseout"
 let on_keyup = on "keyup"
 let on_keypress = on "keypress"
 let on_keydown = on "keydown"
+let on_scroll = on "scroll"
+let on_submit = on "submit"
+let on_mousewheel = on "mousewheel"
+let on_copy = on "copy"
+let on_cut = on "cut"
+let on_paste = on "paste"
+let on_reset = on "reset"
 let const_ignore _ = Event.Ignore
 
 class type value_element =
