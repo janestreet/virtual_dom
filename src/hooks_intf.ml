@@ -38,19 +38,36 @@ end
 module type Hooks = sig
   module type S = S
 
+  type t
+
+  val pack : t -> Js.Unsafe.any
+
   module Make (S : S) : sig
     (** [name] is a unique identifier that is treated like the names of regular
         attributes like "id" and "class" in <div id=... class=...> in that
         there can only be one attribute with the same name on an element, and
         that hooks are diffed only if the same hook has the same name between
         stabilizations. *)
-    val create : name:string -> S.Input.t -> Attr.t
+    val create : S.Input.t -> t
 
     module For_testing : sig
       (** The type-id provided here can be used to pull out the input value for
           an instance of this hook for testing-purposes. *)
 
       val type_id : S.Input.t Type_equal.Id.t
+    end
+  end
+
+  module For_testing : sig
+    module Extra : sig
+      type t =
+        | T :
+            { type_id : 'a Type_equal.Id.t
+            ; value : 'a
+            }
+            -> t
+
+      val sexp_of_t : t -> Sexp.t
     end
   end
 end

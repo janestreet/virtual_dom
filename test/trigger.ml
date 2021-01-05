@@ -114,9 +114,11 @@ module H = Attr.Hooks.Make (struct
 let%expect_test "fake event handler for hook" =
   let node =
     Node.input
-      [ H.create ~name:"unique-name" (fun int ->
-          printf "%d" int;
-          Event.Ignore)
+      [ Attr.create_hook
+          "unique-name"
+          (H.create (fun int ->
+             printf "%d" int;
+             Event.Ignore))
       ]
       []
   in

@@ -95,14 +95,18 @@ module H = Attr.Hooks.Make (struct
 let%expect_test "print element with a hook" =
   show
     "*"
-    (Node.div [ H.create ~name:"unique-name" { Person.age = 20; name = "person" } ] []);
+    (Node.div
+       [ Attr.create_hook "unique-name" (H.create { Person.age = 20; name = "person" }) ]
+       []);
   [%expect
     {|
       ((Element ((tag_name div) (hooks ((unique-name ((age 20) (name person)))))))) |}]
 ;;
 
 let%expect_test "get value out of a hook in a test" =
-  Node.div [ H.create ~name:"unique-name" { Person.age = 20; name = "person" } ] []
+  Node.div
+    [ Attr.create_hook "unique-name" (H.create { Person.age = 20; name = "person" }) ]
+    []
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.get_hook_value ~type_id:H.For_testing.type_id ~name:"unique-name"
   |> Person.sexp_of_t
@@ -135,7 +139,10 @@ let%expect_test "try to find hook on a text node" =
 let%expect_test "try to find hook with a bad type_id" =
   Expect_test_helpers_core.require_does_raise [%here] (fun () ->
     let (_ : _) =
-      Node.div [ H.create ~name:"unique-name" { Person.age = 20; name = "person" } ] []
+      Node.div
+        [ Attr.create_hook "unique-name" (H.create { Person.age = 20; name = "person" })
+        ]
+        []
       |> Node_helpers.unsafe_convert_exn
       |> Node_helpers.get_hook_value
            ~type_id:(Type_equal.Id.create ~name:"" sexp_of_opaque)

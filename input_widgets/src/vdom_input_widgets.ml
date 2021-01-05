@@ -212,7 +212,7 @@ module Value_normalizing_hook = struct
 
   include Attr.Hooks.Make (M)
 
-  let create value ~f = create ~name:"value:normalized" { value; f }
+  let create value ~f = Attr.create_hook "value:normalized" (create { value; f })
 end
 
 module Dropdown = struct

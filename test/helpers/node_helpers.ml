@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Js_of_ocaml
+open Virtual_dom
 
 type element =
   { tag_name : string
@@ -7,7 +8,7 @@ type element =
   ; string_properties : (string * string) list [@sexp.list]
   ; styles : (string * string) list [@sexp.list]
   ; handlers : (string * Handler.t) list [@sexp.list]
-  ; hooks : (string * Virtual_dom.Vdom.Attr.Expert.Extra.t) list [@sexp.list]
+  ; hooks : (string * Vdom.Attr.Hooks.For_testing.Extra.t) list [@sexp.list]
   ; key : string option [@sexp.option]
   ; children : t list [@sexp.list]
   }
@@ -147,7 +148,7 @@ let bprint_element
       buffer
       "%s=%s"
       k
-      (v |> [%sexp_of: Virtual_dom.Vdom.Attr.Expert.Extra.t] |> Sexp.to_string_mach));
+      (v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach));
   List.iter handlers ~f:(fun (k, _) ->
     bprint_aligned_indent ();
     bprintf buffer "%s={handler}" k);
@@ -243,8 +244,7 @@ let unsafe_of_js_exn =
         (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-        (hooks :
-           (Js.js_string Js.t * Virtual_dom.Vdom.Attr.Expert.Extra.t) Js.js_array Js.t)
+        (hooks : (Js.js_string Js.t * Vdom.Attr.Hooks.For_testing.Extra.t) Js.js_array Js.t)
         (key : Js.js_string Js.t Js.Opt.t)
     =
     let tag_name = tag_name |> Js.to_string in
@@ -411,7 +411,7 @@ let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a 
   | Element { hooks; _ } ->
     (match List.Assoc.find ~equal:String.equal hooks name with
      | Some hook ->
-       let (Virtual_dom.Vdom.Attr.Expert.Extra.T { type_id = type_id_v; value }) = hook in
+       let (Vdom.Attr.Hooks.For_testing.Extra.T { type_id = type_id_v; value }) = hook in
        (match Type_equal.Id.same_witness type_id_v type_id with
         | Some T -> value
         | None ->

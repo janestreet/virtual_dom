@@ -7,7 +7,7 @@ type element =
   ; string_properties : (string * string) list
   ; styles : (string * string) list
   ; handlers : (string * Handler.t) list
-  ; hooks : (string * Virtual_dom.Vdom.Attr.Expert.Extra.t) list
+  ; hooks : (string * Virtual_dom.Vdom.Attr.Hooks.For_testing.Extra.t) list
   ; key : string option
   ; children : t list
   }

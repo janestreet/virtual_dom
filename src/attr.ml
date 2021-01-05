@@ -1,4 +1,4 @@
-open! Base
+open! Core_kernel
 open Js_of_ocaml
 module Vdom_raw = Raw
 
@@ -20,45 +20,12 @@ module Vdom_raw = Raw
     for something for which we have a first class representation.
 *)
 
-module Hook = struct
-  type t = Js.Unsafe.any
-
-  module Extra = struct
-    type t =
-      | T :
-          { type_id : 'a Type_equal.Id.t
-          ; value : 'a
-          }
-          -> t
-
-    let sexp_of_t (T { type_id; value }) = Type_equal.Id.to_sexp type_id value
-    let unit = T { type_id = Type_equal.Id.create ~name:"unit" sexp_of_unit; value = () }
-  end
-
-  let generic_hook = lazy Js.Unsafe.(get global (Js.string "GenericHook"))
-
-  let create ~init ?(extra = Extra.unit) ?update ?destroy ~id =
-    let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
-    let init = wrap init in
-    let update =
-      update |> Option.map ~f:Js.wrap_callback |> Js.Opt.option |> Js.Unsafe.inject
-    in
-    let destroy = destroy |> Option.value ~default:(fun _ _ -> ()) |> wrap in
-    let generic_hook = Lazy.force generic_hook in
-    Js.Unsafe.fun_call
-      generic_hook
-      [| init; update; destroy; id |> Js.Unsafe.inject; extra |> Js.Unsafe.inject |]
-  ;;
-
-  let pack = Fn.id
-end
-
 type t =
   | Property of string * Js.Unsafe.any
   | Attribute of string * Js.Unsafe.any
   | Hook of
       { name : string
-      ; hook : Hook.t
+      ; hook : Hooks.t
       }
   | Style of Css_gen.t
   | Class of (string, String.comparator_witness) Set.t
@@ -98,7 +65,7 @@ let to_raw attrs =
   List.iter
     ~f:(function
       | Hook { name; hook } ->
-        Vdom_raw.Attrs.set_property attrs_obj name (ojs_of_any (Hook.pack hook))
+        Vdom_raw.Attrs.set_property attrs_obj name (ojs_of_any (Hooks.pack hook))
       | Property ("value", value) ->
         let value = softSetHook value in
         Vdom_raw.Attrs.set_property attrs_obj "value" value
@@ -200,6 +167,7 @@ let on_keypress = on "keypress"
 let on_keydown = on "keydown"
 let on_scroll = on "scroll"
 let on_submit = on "submit"
+let on_pointerdown = on "pointerdown"
 let on_mousewheel = on "mousewheel"
 let on_copy = on "copy"
 let on_cut = on "cut"
@@ -245,24 +213,55 @@ let on_change = on_input_event "change"
 let on_input = on_input_event "input"
 let to_raw l = to_raw l
 
-module Expert = struct
-  module Extra = Hook.Extra
+module Always_focus_hook = struct
+  module T = struct
+    module State = Unit
+    module Input = Unit
 
-  let create_basic_hook name ?hook ?unhook () =
-    let hook = Option.value hook ~default:(Fn.const ()) in
-    let unhook = Option.map unhook ~f:(fun f () -> f) in
-    let id = Type_equal.Id.create ~name:"placeholder" [%sexp_of: unit] in
-    create_hook name (Hook.create ~init:hook ?extra:None ?update:None ?destroy:unhook ~id)
+    let init () _ = ()
+    let on_mount () () element = element##focus
+    let update ~old_input:() ~new_input:() () _ = ()
+    let destroy () () _ = ()
+  end
+
+  module Hook = Hooks.Make (T)
+
+  let attr `Read_the_docs__this_hook_is_unpredictable =
+    (* Append the id to the name of the hook to ensure that it is distinct
+       from all other focus hooks. *)
+    create_hook "always-focus-hook" (Hook.create ())
   ;;
+end
 
-  let create_stateful_hook name ~hook ~unhook ~id =
-    create_hook name (Hook.create ~init:hook ?extra:None ?update:None ~destroy:unhook ~id)
-  ;;
+module Single_focus_hook () = struct
+  module T = struct
+    module State = Unit
 
-  let create_persistent_hook ?extra name ~init ~update ~destroy ~id =
-    let extra =
-      Option.map extra ~f:(fun (value, type_id) -> Hook.Extra.T { value; type_id })
-    in
-    create_hook name (Hook.create ?extra ~init ~update ~destroy ~id)
+    let has_been_used = ref false
+
+    module Input = struct
+      type t = (Ui_event.t[@sexp.opaque]) [@@deriving sexp_of]
+    end
+
+    let init _ _ = ()
+
+    let on_mount event () element =
+      if not !has_been_used
+      then (
+        has_been_used := true;
+        element##focus;
+        Event.Expert.handle_non_dom_event_exn event)
+    ;;
+
+    let update ~old_input:_ ~new_input:_ () _ = ()
+    let destroy _ () _ = ()
+  end
+
+  module Hook = Hooks.Make (T)
+
+  let attr `Read_the_docs__this_hook_is_unpredictable ~after =
+    (* Append the id to the name of the hook to ensure that it is distinct
+       from all other focus hooks. *)
+    create_hook "single-focus-hook" (Hook.create after)
   ;;
 end

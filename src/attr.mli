@@ -22,6 +22,9 @@ val bool_property : string -> bool -> t
 (** [property name value] creates a property with a generic value *)
 val property : string -> Js.Unsafe.any -> t
 
+(** [create_hook name hook] creates a hook attribute with a name *)
+val create_hook : string -> Hooks.t -> t
+
 val autofocus : bool -> t
 
 
@@ -79,6 +82,7 @@ val on_keypress : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
 val on_keydown : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
 val on_scroll : (Dom_html.event Js.t -> Event.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> Event.t) -> t
+val on_pointerdown : (Dom_html.pointerEvent Js.t -> Event.t) -> t
 
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> Event.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
@@ -86,45 +90,34 @@ val on_cut : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_paste : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_reset : (Dom_html.event Js.t -> Event.t) -> t
 
-module Expert : sig
-  val create_basic_hook
-    :  string
-    -> ?hook:(Dom_html.element Js.t -> unit)
-    -> ?unhook:(Dom_html.element Js.t -> unit)
-    -> unit
-    -> t
-  [@@deprecated
-    "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
 
-  val create_stateful_hook
-    :  string
-    -> hook:(Dom_html.element Js.t -> 'a)
-    -> unhook:('a -> Dom_html.element Js.t -> unit)
-    -> id:'a Core_kernel.Type_equal.Id.t
-    -> t
-  [@@deprecated
-    "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
-
-  val create_persistent_hook
-    :  ?extra:'a * 'a Type_equal.Id.t
-    -> string
-    -> init:(Dom_html.element Js.t -> 'state)
-    -> update:('state -> Dom_html.element Js.t -> 'state)
-    -> destroy:('state -> Dom_html.element Js.t -> unit)
-    -> id:'state Core_kernel.Type_equal.Id.t
-    -> t
-  [@@deprecated
-    "[since 2019-05] Do not use.  This API is in beta and I _will_ break you."]
-
-  module Extra : sig
-    type t =
-      | T :
-          { type_id : 'a Type_equal.Id.t
-          ; value : 'a
-          }
-          -> t
-
-    val sexp_of_t : t -> Sexp.t
-  end
+module Always_focus_hook : sig
+  (* This hook always causes the element to which it is attached to become
+     focused when the element is attached to the DOM. This may behave
+     unpredictably, since elements which are moved from one part of a page
+     may be removed and re-inserted from the DOM, thus causing this attribute
+     to steal back focus *)
+  val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> t
 end
 
+module Single_focus_hook () : sig
+  (* A hook that makes the element it is attached to become focused immediately
+     after the attribute is applied. Afterward, the attribute has no effect on
+     the element or any other element.
+
+     Since an element in the virtual dom can be removed and re-inserted into
+     the DOM, a hook which focuses an element every time its [on_mount]
+     function is called will not have the right behavior. Elements which move
+     from one part of the tree to another may unexpectedly gain focus.
+
+     To avoid this problem, we treat each instance of the attribute as
+     distinct from all the other instances. Each individual focus attribute
+     can only be used once before it is deactivated which prevents it
+     from causing any elements from being focused again.
+
+     This functor creates a new instance of a focus attribute. Since each
+     functor instantiation is distinct, avoid calling this from within an
+     Incremental graph, or you will not get the desired effect. *)
+
+  val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:Ui_event.t -> t
+end
