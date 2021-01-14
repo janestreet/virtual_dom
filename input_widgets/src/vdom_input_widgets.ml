@@ -192,6 +192,7 @@ module Value_normalizing_hook = struct
         }
 
       let sexp_of_t { value; _ } = Sexp.Atom value
+      let combine _left right = right
     end
 
     let init { Input.value; f } element =
@@ -406,15 +407,17 @@ module Multi_select = struct
         ?(repeated_click_behavior = Repeated_click_behavior.No_action)
         ?(extra_attrs = [])
         ?(disabled = false)
+        ?size
         (module M : Set with type t = t and type comparator_witness = cmp)
         values
         ~selected
         ~on_change
     =
     let open Js_of_ocaml in
+    let size = Option.value size ~default:(List.length values) in
     let attrs =
       [ Attr.create "multiple" ""
-      ; Attr.create "size" (Int.to_string (List.length values))
+      ; Attr.create "size" (Int.to_string size)
       ; Attr.on_change (fun evt (_ : string) ->
           let target =
             match
@@ -471,6 +474,7 @@ module Multi_select = struct
         ?extra_attrs
         ?repeated_click_behavior
         ?disabled
+        ?size
         (module M : Set with type t = t and type comparator_witness = cmp)
         values
         ~selected
@@ -480,6 +484,7 @@ module Multi_select = struct
       ?extra_attrs
       ?repeated_click_behavior
       ?disabled
+      ?size
       (module M)
       values
       ~selected
@@ -491,6 +496,7 @@ module Multi_select = struct
         ?extra_attrs
         ?repeated_click_behavior
         ?disabled
+        ?size
         (module M : Enum_set with type t = t and type comparator_witness = cmp)
         ~selected
         ~on_change
@@ -499,6 +505,7 @@ module Multi_select = struct
       ?extra_attrs
       ?repeated_click_behavior
       ?disabled
+      ?size
       (module M)
       M.all
       ~selected

@@ -9,47 +9,65 @@ let request_animation_frame f =
   Dom_html.window##requestAnimationFrame (Js.wrap_callback f)
 ;;
 
-module Low_level_hook = struct
-  type t = Js.Unsafe.any
+module Extra = struct
+  type t =
+    | T :
+        { type_id : 'a Type_equal.Id.t
+        ; value : 'a
+        }
+        -> t
 
-  module Extra = struct
-    type t =
-      | T :
-          { type_id : 'a Type_equal.Id.t
-          ; value : 'a
-          }
-          -> t
-
-    let sexp_of_t (T { type_id; value }) = Type_equal.Id.to_sexp type_id value
-    let unit = T { type_id = Type_equal.Id.create ~name:"unit" sexp_of_unit; value = () }
-  end
-
-  let generic_hook = lazy Js.Unsafe.(get global (Js.string "GenericHook"))
-
-  let create ~init ?(extra = Extra.unit) ?update ?destroy ~id =
-    let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
-    let init = wrap init in
-    let update =
-      update |> Option.map ~f:Js.wrap_callback |> Js.Opt.option |> Js.Unsafe.inject
-    in
-    let destroy = destroy |> Option.value ~default:(fun _ _ -> ()) |> wrap in
-    let generic_hook = Lazy.force generic_hook in
-    Js.Unsafe.fun_call
-      generic_hook
-      [| init; update; destroy; id |> Js.Unsafe.inject; extra |> Js.Unsafe.inject |]
-  ;;
+  let sexp_of_t (T { type_id; value }) = Type_equal.Id.to_sexp type_id value
 end
 
-type t = Low_level_hook.t
+type t =
+  | T :
+      { input : 'input
+      ; input_id : 'input Type_equal.Id.t
+      ; combine_inputs : 'input -> 'input -> 'input
+      ; init :
+          Dom_html.element Js.t -> 'input * Dom_html.animation_frame_request_id * 'state
+      ; update :
+          'input * Dom_html.animation_frame_request_id * 'state
+          -> Dom_html.element Js.t
+          -> 'input * Dom_html.animation_frame_request_id * 'state
+      ; destroy :
+          'input * Dom_html.animation_frame_request_id * 'state
+          -> Dom_html.element Js.t
+          -> unit
+      ; id :
+          ('input * Dom_html.animation_frame_request_id * 'state)
+            Core_kernel.Type_equal.Id.t
+      }
+      -> t
 
-let pack = Fn.id
+let generic_hook = lazy Js.Unsafe.(get global (Js.string "GenericHook"))
 
-let make_hook ?extra ~init ~update ~destroy ~id =
-  let extra =
-    Option.map extra ~f:(fun (value, type_id) ->
-      Low_level_hook.Extra.T { value; type_id })
-  in
-  Low_level_hook.create ?extra ~init ~update ~destroy ~id
+let make_hook ~combine_inputs ~init ~extra:(input, input_id) ~update ~destroy ~id =
+  T { init; combine_inputs; input; input_id; update; destroy; id }
+;;
+
+let pack (T { init; input; input_id; update; destroy; id; _ }) =
+  let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
+  let init = wrap init in
+  let update = wrap update in
+  let destroy = wrap destroy in
+  let generic_hook = Lazy.force generic_hook in
+  let extra = Extra.T { type_id = input_id; value = input } in
+  Js.Unsafe.fun_call
+    generic_hook
+    [| init; update; destroy; id |> Js.Unsafe.inject; extra |> Js.Unsafe.inject |]
+;;
+
+let combine (T left) (T right) =
+  match Type_equal.Id.same_witness left.input_id right.input_id with
+  | None ->
+    eprint_s
+      [%message
+        "hooks do not have the same type, so they cannot be combined; taking the second \
+         of the two"];
+    T right
+  | Some T -> T { right with input = right.combine_inputs left.input right.input }
 ;;
 
 module Make (S : S) = struct
@@ -76,7 +94,13 @@ module Make (S : S) = struct
       cancel_animation_frame animation_id;
       S.destroy old_input state element
     in
-    make_hook ~extra:(input, input_id) ~id:input_and_state_id ~init ~update ~destroy
+    make_hook
+      ~extra:(input, input_id)
+      ~combine_inputs:S.Input.combine
+      ~id:input_and_state_id
+      ~init
+      ~update
+      ~destroy
   ;;
 
   module For_testing = struct
@@ -85,5 +109,5 @@ module Make (S : S) = struct
 end
 
 module For_testing = struct
-  module Extra = Low_level_hook.Extra
+  module Extra = Extra
 end

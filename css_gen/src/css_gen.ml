@@ -266,7 +266,11 @@ let overflow = make_overflow "overflow"
 let overflow_x = make_overflow "overflow-x"
 let overflow_y = make_overflow "overflow-y"
 let z_index i = create_raw ~field:"z-index" ~value:(Int.to_string i)
-let opacity i = create_raw ~field:"opacity" ~value:(Float.to_string i)
+
+(* We use [sprintf] here instead of [Float.to_string], because the latter generates
+   numbers which are not valid in CSS (e.g. 0.) and causes tags not to be added to
+   styles in the browser. *)
+let opacity i = create_raw ~field:"opacity" ~value:(sprintf "%.12g" i)
 
 let create_length_field field l =
   create_raw ~field ~value:(Auto_or_length.to_string_css l)

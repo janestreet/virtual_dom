@@ -3,6 +3,6 @@ module Attr = struct
   module Hooks = Hooks
 end
 
-module Attrs = Attrs
+module Attrs = Attr.Multi
 module Event = Event
 module Node = Node

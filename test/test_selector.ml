@@ -39,8 +39,8 @@ let%expect_test "select finds multiple items" =
        ]);
   [%expect
     {|
-    ((Element ((tag_name span) (attributes ((class a) (id 1)))))
-     (Element ((tag_name span) (attributes ((class a) (id 2)))))) |}]
+    ((Element ((tag_name span) (attributes ((id 1) (class a)))))
+     (Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
 ;;
 
 let%expect_test "select nth-child" =
@@ -53,10 +53,10 @@ let%expect_test "select nth-child" =
   in
   show "span:nth-child(1)" t;
   [%expect {|
-    ((Element ((tag_name span) (attributes ((class a) (id 1)))))) |}];
+    ((Element ((tag_name span) (attributes ((id 1) (class a)))))) |}];
   show "span:nth-child(2)" t;
   [%expect {|
-    ((Element ((tag_name span) (attributes ((class a) (id 2)))))) |}]
+    ((Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
 ;;
 
 let%expect_test "select on node-name" =
@@ -70,8 +70,8 @@ let%expect_test "select on node-name" =
   show "span" t;
   [%expect
     {|
-    ((Element ((tag_name span) (attributes ((class a) (id 1)))))
-     (Element ((tag_name span) (attributes ((class a) (id 2)))))) |}]
+    ((Element ((tag_name span) (attributes ((id 1) (class a)))))
+     (Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
 ;;
 
 module Person = struct
@@ -80,6 +80,8 @@ module Person = struct
     ; name : string
     }
   [@@deriving sexp_of]
+
+  let combine _ right = right
 end
 
 module H = Attr.Hooks.Make (struct

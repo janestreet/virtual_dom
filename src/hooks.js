@@ -28,15 +28,39 @@ var GenericHook = function (init, update, destroy, id, extra) {
     this.extra = extra;
 };
 
+var hook_state_key = "vdom_hook_state_key";
+
+if (this.Symbol) {
+    hook_state_key = Symbol(hook_state_key);
+}
+
+GenericHook.write_state = function (node, propName, state) {
+    if (!node[hook_state_key]) {
+        node[hook_state_key] = {};
+    }
+    node[hook_state_key][propName] = state;
+}
+
+GenericHook.read_state = function (node, propName) {
+    return node[hook_state_key][propName];
+}
+
+GenericHook.remove_state = function (node, propName) {
+    delete node[hook_state_key][propName];
+}
+
 GenericHook.canTransition = function (from, to) {
     return from instanceof this && to instanceof this && from.id === to.id && to.update;
 };
 
 GenericHook.prototype.hook = function (node, propName, prev) {
     if (GenericHook.canTransition(prev, this)) {
-        this.state = this.update(prev.state, node);
+        var state = GenericHook.read_state(node, propName);
+        state = this.update(state, node);
+        GenericHook.write_state(node, propName, state);
     } else {
-        this.state = this.init(node);
+        var state = this.init(node);
+        GenericHook.write_state(node, propName, state);
     }
 };
 
@@ -44,7 +68,9 @@ GenericHook.prototype.unhook = function (node, propName, next) {
     if (GenericHook.canTransition(this, next)) {
         // Do nothing, the impending [hook] will handle the call to update.
     } else {
-        this.destroy(this.state, node);
+        var state = GenericHook.read_state(node, propName);
+        this.destroy(state, node);
+        GenericHook.remove_state(node, propName);
     }
 };
 

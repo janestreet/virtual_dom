@@ -59,7 +59,8 @@ end
 type element =
   { tag : string
   ; key : string option
-  ; attrs : Attrs.t
+  ; attrs : Attr.Multi.t
+  ; raw_attrs : Raw.Attrs.t Lazy.t
   ; children : Raw.Node.t list
   ; kind : [ `Vnode | `Svg ]
   }
@@ -77,9 +78,15 @@ module Element = struct
   let attrs t = t.attrs
   let key t = t.key
   let with_key t key = { t with key = Some key }
-  let map_attrs t ~f = { t with attrs = f t.attrs }
-  let add_class t c = map_attrs t ~f:(fun a -> Attrs.add_class a c)
-  let add_style t s = map_attrs t ~f:(fun a -> Attrs.add_style a s)
+
+  let map_attrs t ~f =
+    let attrs = f t.attrs in
+    let raw_attrs = lazy (Attr.to_raw attrs) in
+    { t with attrs; raw_attrs }
+  ;;
+
+  let add_class t c = map_attrs t ~f:(fun a -> Attr.Multi.add_class a c)
+  let add_style t s = map_attrs t ~f:(fun a -> Attr.Multi.add_style a s)
 end
 
 let t_to_js = function
@@ -90,10 +97,10 @@ let t_to_js = function
        can only happen when the root view Incremental is inhabited by a [None]. *)
     Raw.Node.text ""
   | Text s -> Raw.Node.text s
-  | Element { tag; key; attrs; children; kind = `Vnode } ->
-    Raw.Node.node tag (Attr.to_raw attrs) children key
-  | Element { tag; key; attrs; children; kind = `Svg } ->
-    Raw.Node.svg tag (Attr.to_raw attrs) children key
+  | Element { tag; key; attrs = _; raw_attrs = (lazy raw_attrs); children; kind = `Vnode }
+    -> Raw.Node.node tag raw_attrs children key
+  | Element { tag; key; attrs = _; raw_attrs = (lazy raw_attrs); children; kind = `Svg }
+    -> Raw.Node.svg tag raw_attrs children key
   | Widget w -> w
 ;;
 
@@ -103,7 +110,8 @@ let element kind ~tag ~key attrs children =
       | None -> None
       | (Text _ | Element _ | Widget _) as other -> Some (t_to_js other))
   in
-  { kind; tag; key; attrs; children }
+  let raw_attrs = lazy (Attr.to_raw attrs) in
+  { kind; tag; key; attrs; raw_attrs; children }
 ;;
 
 let text s = Text s

@@ -6,6 +6,7 @@ type element =
   { tag_name : string
   ; attributes : (string * string) list [@sexp.list]
   ; string_properties : (string * string) list [@sexp.list]
+  ; bool_properties : (string * bool) list [@sexp.list]
   ; styles : (string * string) list [@sexp.list]
   ; handlers : (string * Handler.t) list [@sexp.list]
   ; hooks : (string * Vdom.Attr.Hooks.For_testing.Extra.t) list [@sexp.list]
@@ -69,7 +70,17 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
       let element = Soup.create_element "widget" ~attributes:[] in
       Soup.append_child element info_text;
       Hidden_soup element
-    | Element { tag_name; attributes; string_properties; handlers; key; children; _ } ->
+    | Element
+        { tag_name
+        ; attributes
+        ; string_properties
+        ; bool_properties
+        ; handlers
+        ; key
+        ; children
+        ; hooks
+        ; styles = _
+        } ->
       let key_attrs =
         match key with
         | Some key -> [ "key", key ]
@@ -86,8 +97,19 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
       let handler_attrs =
         List.map handlers ~f:(fun (name, _) -> name, "<event-handler>")
       in
+      let hook_attrs = List.map hooks ~f:(fun (name, _) -> name, "<hook>") in
+      let bool_properties =
+        List.map bool_properties ~f:(fun (name, bool) -> name, Bool.to_string bool)
+      in
       let attributes =
-        [ key_attrs; soup_id_attrs; handler_attrs; attributes; string_properties ]
+        [ hook_attrs
+        ; key_attrs
+        ; soup_id_attrs
+        ; handler_attrs
+        ; attributes
+        ; string_properties
+        ; bool_properties
+        ]
         |> List.concat
         |> String.Map.of_alist_exn (* Raise on duplicate attributes *)
         |> Map.to_alist
@@ -122,7 +144,17 @@ let bprint_element
       buffer
       ~sep
       ~before_styles
-      { tag_name; attributes; string_properties; styles; handlers; key; hooks; _ }
+      ~should_print_styles
+      { tag_name
+      ; attributes
+      ; string_properties
+      ; bool_properties
+      ; styles
+      ; handlers
+      ; key
+      ; hooks
+      ; children = _
+      }
   =
   bprintf buffer "<%s" tag_name;
   let has_printed_an_attribute = ref false in
@@ -142,6 +174,9 @@ let bprint_element
   List.iter string_properties ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "#%s=\"%s\"" k v);
+  List.iter bool_properties ~f:(fun (k, v) ->
+    bprint_aligned_indent ();
+    bprintf buffer "#%s=\"%b\"" k v);
   List.iter hooks ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf
@@ -156,10 +191,13 @@ let bprint_element
   then (
     bprint_aligned_indent ();
     bprintf buffer "style={";
-    List.iter styles ~f:(fun (k, v) ->
-      bprint_aligned_indent ();
-      bprintf buffer "%s%s: %s;" before_styles k v);
-    bprint_aligned_indent ();
+    if should_print_styles
+    then (
+      List.iter styles ~f:(fun (k, v) ->
+        bprint_aligned_indent ();
+        bprintf buffer "%s%s: %s;" before_styles k v);
+      bprint_aligned_indent ())
+    else bprintf buffer "...";
     bprintf buffer "}");
   bprintf buffer ">"
 ;;
@@ -174,7 +212,7 @@ let bprint_element_multi_line buffer ~indent element =
   bprint_element buffer ~sep ~before_styles:"  " element
 ;;
 
-let to_string_html t =
+let to_string_html ?(should_print_styles = true) t =
   (* Keep around the buffer so that it is not re-allocated for every element *)
   let single_line_buffer = Buffer.create 200 in
   let rec recurse buffer ~depth =
@@ -184,10 +222,10 @@ let to_string_html t =
     | Element element ->
       bprintf buffer "%s" indent;
       Buffer.reset single_line_buffer;
-      bprint_element_single_line single_line_buffer element;
+      bprint_element_single_line ~should_print_styles single_line_buffer element;
       if Buffer.length single_line_buffer < 100 - String.length indent
       then Buffer.add_buffer buffer single_line_buffer
-      else bprint_element_multi_line buffer ~indent element;
+      else bprint_element_multi_line ~should_print_styles buffer ~indent element;
       let children_should_collapse =
         List.for_all element.children ~f:(function
           | Text _ -> true
@@ -243,6 +281,7 @@ let unsafe_of_js_exn =
         (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
         (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+        (bool_properties : (Js.js_string Js.t * bool Js.t) Js.js_array Js.t)
         (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
         (hooks : (Js.js_string Js.t * Vdom.Attr.Hooks.For_testing.Extra.t) Js.js_array Js.t)
         (key : Js.js_string Js.t Js.Opt.t)
@@ -275,6 +314,12 @@ let unsafe_of_js_exn =
       |> Array.to_list
       |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
     in
+    let bool_properties =
+      bool_properties
+      |> Js.to_array
+      |> Array.to_list
+      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_bool v)
+    in
     let styles =
       styles
       |> Js.to_array
@@ -283,7 +328,16 @@ let unsafe_of_js_exn =
     in
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
     Element
-      { tag_name; children; handlers; attributes; string_properties; key; hooks; styles }
+      { tag_name
+      ; children
+      ; handlers
+      ; attributes
+      ; string_properties
+      ; bool_properties
+      ; key
+      ; hooks
+      ; styles
+      }
   in
   let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t Lazy.t option) =
     match info with
@@ -301,67 +355,76 @@ let unsafe_of_js_exn =
    // recursively, calling make_text_node, make_element_node, and make_widget_node depending
    // on the type of node.
    (function convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type) {
-   switch (node.type) {
-   case 'VirtualText':
-   return make_text_node(node.text);
-   case 'Widget':
-   return make_widget_node(node.id, node.info);
-   case 'VirtualNode':
-   var attributes = node.properties.attributes || {};
-   var attr_list = Object.keys(attributes).map(function (key) {
-   return [0, key, attributes[key].toString()];
-   });
-   var children = node.children.map(function (node) {
-   return convert(node, make_text_node, make_element_node, raise_unknown_node_type);
-   });
-   var handlers =
-   Object.keys(node.properties)
-   .filter(function (key) {
-   // This is a bit of a hack, but it works for all the handlers that we
-   // have defined at the moment.  Consider removing the 'on' check?
-   return key.startsWith("on") && typeof node.properties[key] === 'function';
-   })
-   .map(function (key) {
-   // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
-   return [0, key, node.properties[key]];
-   });
-   var string_properties =
-   Object.keys(node.properties)
-   .filter(function (key) {
-   return typeof node.properties[key] === 'string';
-   })
-   .map(function (key) {
-   return [0, key, node.properties[key]]
-   });
-   var styles =
-   Object.keys(node.properties.style ? node.properties.style : {})
-   .filter(function (key) {
-   return typeof node.properties.style[key] === 'string';
-   })
-   .map(function (key) {
-   return [0, key, node.properties.style[key]]
-   });
-   var hooks =
-   Object.keys(node.properties)
-   .filter(function (key) {
-   return typeof node.properties[key] === 'object' && 
-   typeof node.properties[key]['extra'] === 'object';
-   })
-   .map(function (key) {
-   return [0, key, node.properties[key]['extra']]
-   });
-   return make_element_node(
-   node.tagName,
-   children,
-   handlers,
-   attr_list,
-   string_properties,
-   styles,
-   hooks,
-   node.key || null);
-   default:
-   raise_unknown_node_type("" + node.type);
-   }
+       switch (node.type) {
+           case 'VirtualText':
+               return make_text_node(node.text);
+           case 'Widget':
+               return make_widget_node(node.id, node.info);
+           case 'VirtualNode':
+               var attributes = node.properties.attributes || {};
+               var attr_list = Object.keys(attributes).map(function(key) {
+                   return [0, key, attributes[key].toString()];
+               });
+               var children = node.children.map(function(node) {
+                   return convert(node, make_text_node, make_element_node, raise_unknown_node_type);
+               });
+               var handlers =
+                   Object.keys(node.properties)
+                   .filter(function(key) {
+                       // This is a bit of a hack, but it works for all the handlers that we
+                       // have defined at the moment.  Consider removing the 'on' check?
+                       return key.startsWith("on") && typeof node.properties[key] === 'function';
+                   })
+                   .map(function(key) {
+                       // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
+                       return [0, key, node.properties[key]];
+                   });
+               var string_properties =
+                   Object.keys(node.properties)
+                   .filter(function(key) {
+                       return typeof node.properties[key] === 'string';
+                   })
+                   .map(function(key) {
+                       return [0, key, node.properties[key]]
+                   });
+               var bool_properties =
+                   Object.keys(node.properties)
+                   .filter(function(key) {
+                     return typeof node.properties[key] === 'boolean';
+                   })
+                   .map(function(key) {
+                       return [0, key, node.properties[key]]
+                   });
+               var styles =
+                   Object.keys(node.properties.style ? node.properties.style : {})
+                   .filter(function(key) {
+                       return typeof node.properties.style[key] === 'string';
+                   })
+                   .map(function(key) {
+                       return [0, key, node.properties.style[key]]
+                   });
+               var hooks =
+                   Object.keys(node.properties)
+                   .filter(function(key) {
+                       return typeof node.properties[key] === 'object' &&
+                           typeof node.properties[key]['extra'] === 'object';
+                   })
+                   .map(function(key) {
+                       return [0, key, node.properties[key]['extra']]
+                   });
+               return make_element_node(
+                   node.tagName,
+                   children,
+                   handlers,
+                   attr_list,
+                   string_properties,
+                   bool_properties,
+                   styles,
+                   hooks,
+                   node.key || null);
+           default:
+               raise_unknown_node_type("" + node.type);
+       }
    })
    |js}
   in
@@ -465,4 +528,19 @@ module User_actions = struct
     let event_names = [ "oninput"; "onchange" ] in
     trigger_many element ~extra_fields ~event_names
   ;;
+
+  let prevent_default = [ "preventDefault", Js.Unsafe.inject Fn.id ]
+
+  let enter element =
+    trigger element ~event_name:"ondragenter" ~extra_fields:prevent_default
+  ;;
+
+  let over element =
+    trigger element ~event_name:"ondragover" ~extra_fields:prevent_default
+  ;;
+
+  let drag element = trigger element ~event_name:"ondragstart"
+  let leave element = trigger element ~event_name:"ondragleave"
+  let drop element = trigger element ~event_name:"ondrop"
+  let end_ element = trigger element ~event_name:"ondragend"
 end

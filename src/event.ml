@@ -22,7 +22,20 @@ module Obj = struct
   end
 end
 
-type t += Viewport_changed | Stop_propagation | Prevent_default
+type t +=
+  | Viewport_changed
+  | Stop_propagation
+  | Stop_immediate_propagation
+  | Prevent_default
+
+let sequence_as_sibling left ~unless_stopped =
+  let rec contains_stop = function
+    | Many es -> List.exists es ~f:contains_stop
+    | Stop_immediate_propagation -> true
+    | _ -> false
+  in
+  if contains_stop left then left else Ui_event.Many [ left; unless_stopped () ]
+;;
 
 (* We need to keep track of the current dom event here so that
    movement between [Vdom.Event.Expert.handle] and

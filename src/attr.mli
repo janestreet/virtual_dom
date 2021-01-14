@@ -4,9 +4,6 @@ open Base
 (** This type covers both properties and attributes, despite the name. *)
 type t
 
-(** [get_name] returns the attribute or property name *)
-val get_name : t -> string
-
 (** [create name value] creates a simple string-only attribute *)
 val create : string -> string -> t
 
@@ -22,15 +19,48 @@ val bool_property : string -> bool -> t
 (** [property name value] creates a property with a generic value *)
 val property : string -> Js.Unsafe.any -> t
 
+(** This function does not affect hooks, styles, classes, or [on_*] handlers,
+    since warnings due to merging those can be avoided. It allows
+    disabling warnings for attributes that are unmergeable. Note that no
+    merging behavior is changed by this function - it only changes whether
+    warnings are emitted.
+
+    Example: If [href] is already on a node, then adding
+    a [suppress_merge_warning (href input)] attribute to the node will not
+    trigger a warning. However, adding another [href] which does not use
+    [suppress_merge_warnings] to the node will again emit a warning. In other
+    words, this function only suppresses warnings for an instance of an
+    attribute, not all attributes of the same type.
+ **)
+val suppress_merge_warnings : t -> t
+
 (** [create_hook name hook] creates a hook attribute with a name *)
 val create_hook : string -> Hooks.t -> t
+
+(** [many] merges several attributes into one. It merges hooks, on_* event
+    handlers, classes, and styles.
+
+    - Hooks get merged via their [Input.combine] function
+    - All handlers get runin the order they appear
+    - The set of classes is unioned
+    - Styles are merged via concatenation
+*)
+val many : t list -> t
+
+(** Equivalent to [many []]. It adds no attributes to the DOM. *)
+val empty : t
+
+(** Equivalent to [combine] *)
+val ( @ ) : t -> t -> t
+
+(** Equivalent to [many [x; y]] *)
+val combine : t -> t -> t
 
 val autofocus : bool -> t
 
 
 val checked : t
 val class_ : string -> t
-val to_class : t -> Set.M(String).t option
 val classes : string list -> t
 val classes' : Set.M(String).t -> t
 val disabled : t
@@ -44,10 +74,8 @@ val hidden : t
 val style : Css_gen.t -> t
 val min : float -> t
 val max : float -> t
-
-(** [to_style (style c) = Some c], [None] otherwise *)
-val to_style : t -> Css_gen.t option
-
+val colspan : int -> t
+val draggable : bool -> t
 val tabindex : int -> t
 val type_ : string -> t
 val value : string -> t
@@ -55,6 +83,29 @@ val title : string -> t
 val src : string -> t
 val on_focus : (Dom_html.focusEvent Js.t -> Event.t) -> t
 val on_blur : (Dom_html.focusEvent Js.t -> Event.t) -> t
+
+module Unmerged_warning_mode : sig
+  (** Controls whether [to_raw] should print warning messages when one attribute
+      overrides another of the same name (for example, if there are two [title]
+      attributes, the second will end up in the result, and a warning will be
+      emitted).
+
+      If an application never emits any warnings, it is probably safe to always
+      use good merge semantics (that is, use [many] or [@] to combine lists of
+      attributes) for everything. *)
+  type t =
+    | No_warnings
+    | All_warnings
+    | Stop_after_quota of int
+
+  (** Defaults to [Stop_after_quota 100] *)
+  val current : t ref
+
+  module For_testing : sig
+    val reset_warning_count : unit -> unit
+  end
+end
+
 val to_raw : t list -> Raw.Attrs.t
 
 (** [on_input] fires every time the input changes, i.e., whenever a key is pressed in
@@ -70,6 +121,13 @@ val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
 val on_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_contextmenu : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_double_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
+val on_drag : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_dragstart : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_dragend : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_dragenter : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_dragleave : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_dragover : (Dom_html.dragEvent Js.t -> Event.t) -> t
+val on_drop : (Dom_html.dragEvent Js.t -> Event.t) -> t
 val on_mousemove : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_mouseup : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_mousedown : (Dom_html.mouseEvent Js.t -> Event.t) -> t
@@ -90,6 +148,30 @@ val on_cut : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_paste : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_reset : (Dom_html.event Js.t -> Event.t) -> t
 
+module Multi : sig
+  (** A collection of CSS attributes. *)
+
+  type attr = t
+  type t = attr list
+
+  (** [merge_classes_and_styles] groups together the class attributes and style attributes
+      from the given list into a single style and class attribute, e.g.:
+
+      [ class="foo"; style="color:blue"; class="bar"; id="id"; style="margin:30px;" ]
+
+      becomes
+
+      [ class="foo bar"; style="color:blue; margin:30px;"; id="id" ]
+  *)
+  val merge_classes_and_styles : t -> t
+
+  (** If there is no style attribute the empty Css_gen.t will be passed to f.
+      Most of the time you probably want to use add_style instead. *)
+  val map_style : t -> f:(Css_gen.t -> Css_gen.t) -> t
+
+  val add_style : t -> Css_gen.t -> t
+  val add_class : t -> string -> t
+end
 
 module Always_focus_hook : sig
   (* This hook always causes the element to which it is attached to become
@@ -120,4 +202,13 @@ module Single_focus_hook () : sig
      Incremental graph, or you will not get the desired effect. *)
 
   val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:Ui_event.t -> t
+end
+
+module Expert : sig
+  (** [get_name] checks the attribute or group of attributes contains anything
+      with the specified name.
+
+      You probably shouldn't use this function.
+  *)
+  val contains_name : string -> t -> bool
 end

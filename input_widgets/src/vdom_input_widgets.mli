@@ -134,6 +134,7 @@ module Multi_select : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?repeated_click_behavior:Repeated_click_behavior.t (** default [No_action] *)
     -> ?disabled:bool (** default false *)
+    -> ?size:int (** default: length of the values list *)
     -> (module Set with type t = 'a and type comparator_witness = 'cmp)
     -> 'a list
     -> selected:('a, 'cmp) Set.t
@@ -144,6 +145,7 @@ module Multi_select : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?repeated_click_behavior:Repeated_click_behavior.t (** default [No_action] *)
     -> ?disabled:bool (** default false *)
+    -> ?size:int (** default: number of enum values *)
     -> (module Enum_set with type t = 'a and type comparator_witness = 'cmp)
     -> selected:('a, 'cmp) Set.t
     -> on_change:(('a, 'cmp) Set.t -> Event.t)

@@ -6,6 +6,20 @@ module type S = sig
 
   module Input : sig
     type t [@@deriving sexp_of]
+
+    (* [combine first second] describes how more than one of the same hook should
+       be merged. This function will only be used if the hooks are combined
+       using [Attr.many]'s merge semantics. It is common for [t] to by
+       a function type like ['a -> Ui_event.t]; in this case, the proper
+       implementation is probably the following:
+
+       {[
+         let combine f g event =
+           Vdom.Event.sequence_as_sibling
+             (f event)
+             ~unless_stopped:(fun () -> g event)
+       ]} *)
+    val combine : t -> t -> t
   end
 
   (** [init] is called the first time that this attribute is attached to
@@ -21,7 +35,9 @@ module type S = sig
   (** [update] is called when a previous attribute of the same kind existed on
       the vdom node.  You get access to the [Input.t] that the previous node was
       created with, as well as the State.t for that hook, which you can mutate if you
-      like. *)
+      like. There is no guarantee that [update] will be called instead of
+      a sequence of [destroy] followed by [init], so [update] should behave the
+      same as that sequence (except it might be faster). *)
   val update
     :  old_input:Input.t
     -> new_input:Input.t
@@ -40,6 +56,7 @@ module type Hooks = sig
 
   type t
 
+  val combine : t -> t -> t
   val pack : t -> Js.Unsafe.any
 
   module Make (S : S) : sig

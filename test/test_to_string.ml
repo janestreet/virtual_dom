@@ -74,6 +74,15 @@ let%expect_test "empty div with string property" =
     <div #foo="bar"> </div> |}]
 ;;
 
+let%expect_test "empty div with bool property" =
+  show (Node.div [ Attr.bool_property "foo" true ] []);
+  [%expect
+    {|
+    (Element ((tag_name div) (bool_properties ((foo true)))))
+    ----------------------
+    <div #foo="true"> </div> |}]
+;;
+
 let%expect_test "nested div with span" =
   show (Node.div [] [ Node.span [] [] ]);
   [%expect
@@ -159,4 +168,121 @@ let%expect_test "empty div with id" =
     (Element ((tag_name div) (attributes ((id my-id)))))
     ----------------------
     <div id="my-id"> </div> |}]
+;;
+
+let%expect_test "later attributes override earlier ones" =
+  show (Node.div [ Attr.id "overwritten-id"; Attr.id "final-id" ] []);
+  [%expect
+    {|
+    ("WARNING: not combining attributes" (name id))
+    (Element ((tag_name div) (attributes ((id final-id)))))
+    ----------------------
+    <div id="final-id"> </div> |}]
+;;
+
+let%expect_test "later properties override earlier ones" =
+  show
+    (Node.div
+       [ Attr.string_property "prop" "overwritten-prop"
+       ; Attr.string_property "prop" "final-prop"
+       ]
+       []);
+  [%expect
+    {|
+    ("WARNING: not combining properties" (name prop))
+    (Element ((tag_name div) (string_properties ((prop final-prop)))))
+    ----------------------
+    <div #prop="final-prop"> </div> |}]
+;;
+
+let%expect_test "no merging without [many]" =
+  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.class_ "c" ] []);
+  [%expect
+    {|
+    ("WARNING: not combining classes" (first (a)) (second (b)))
+    ("WARNING: not combining classes" (first (b)) (second (c)))
+    (Element ((tag_name div) (attributes ((class c)))))
+    ----------------------
+    <div class="c"> </div> |}]
+;;
+
+let%expect_test "merging only within [many]" =
+  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []);
+  [%expect
+    {|
+    ("WARNING: not combining classes" (first (a)) (second (b)))
+    ("WARNING: not combining classes" (first (b)) (second (c)))
+    (Element ((tag_name div) (attributes ((class c)))))
+    ----------------------
+    <div class="c"> </div> |}]
+;;
+
+let%expect_test "empty div with [many] classes" =
+  show (Node.div [ Attr.many [ Attr.class_ "a"; Attr.class_ "b"; Attr.class_ "c" ] ] []);
+  [%expect
+    {|
+    (Element ((tag_name div) (attributes ((class "a b c")))))
+    ----------------------
+    <div class="a b c"> </div> |}]
+;;
+
+let%expect_test "empty div with [many] different attributes" =
+  show
+    (Node.div
+       [ Attr.many
+           [ Attr.class_ "a"
+           ; Attr.on_click (fun _ -> Ui_event.Ignore)
+           ; Attr.style Css_gen.bold
+           ; Attr.class_ "b"
+           ; Attr.style (Css_gen.z_index 42)
+           ; Attr.id "my-id"
+           ; Attr.class_ "c"
+           ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
+           ; Attr.style (Css_gen.display `Table)
+           ; Attr.class_ "d"
+           ; Attr.on_click (fun _ -> Ui_event.Ignore)
+           ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
+           ]
+       ]
+       []);
+  [%expect
+    {|
+    (Element
+     ((tag_name div) (attributes ((id my-id) (class "a b c d")))
+      (styles ((font-weight bold) (z-index 42) (display table)))
+      (handlers ((onclick <handler>))) (hooks ((always-focus-hook ())))))
+    ----------------------
+    <div id="my-id"
+         class="a b c d"
+         always-focus-hook=()
+         onclick={handler}
+         style={
+           font-weight: bold;
+           z-index: 42;
+           display: table;
+         }> </div> |}]
+;;
+
+let%expect_test "empty div with tree of nested [many]" =
+  show
+    (Node.div
+       [ Attr.many
+           [ Attr.many [ Attr.class_ "a"; Attr.style (Css_gen.text_align `Center) ]
+           ; Attr.many [ Attr.many [ Attr.class_ "b"; Attr.class_ "c" ] ]
+           ; Attr.many
+               [ Attr.many
+                   [ Attr.many
+                       [ Attr.id "my-id"; Attr.style (Css_gen.box_sizing `Border_box) ]
+                   ]
+               ]
+           ]
+       ]
+       []);
+  [%expect
+    {|
+    (Element
+     ((tag_name div) (attributes ((id my-id) (class "a b c")))
+      (styles ((text-align center) (box-sizing border-box)))))
+    ----------------------
+    <div id="my-id" class="a b c" style={ text-align: center; box-sizing: border-box; }> </div> |}]
 ;;

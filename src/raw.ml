@@ -20,6 +20,8 @@ module Attrs : sig
   val t_of_js : Ojs.t -> t
   val t_to_js : t -> Ojs.t
   val create : unit -> t
+  val has_property : t -> string -> bool
+  val has_attribute : t -> string -> bool
   val set_property : t -> string -> Ojs.t -> unit
   val set_attribute : t -> string -> Ojs.t -> unit
 end = struct
@@ -29,12 +31,17 @@ end = struct
   let t_to_js x = x
   let create () : t = Ojs.empty_obj ()
   let set_property : t -> string -> t -> unit = fun t name value -> Ojs.set t name value
+  let has_property : t -> string -> bool = Ojs.has_property
+
+  let has_attribute t name =
+    Ojs.has_property t "attributes" && Ojs.has_property (Ojs.get t "attributes") name
+  ;;
 
   let set_attribute : t -> string -> t -> unit =
     fun t name value ->
-    if phys_equal (Ojs.get t "attributes") (Ojs.variable "undefined")
-    then Ojs.set t "attributes" (Ojs.empty_obj ());
-    Ojs.set (Ojs.get t "attributes") name value
+      if phys_equal (Ojs.get t "attributes") (Ojs.variable "undefined")
+      then Ojs.set t "attributes" (Ojs.empty_obj ());
+      Ojs.set (Ojs.get t "attributes") name value
   ;;
 end
 

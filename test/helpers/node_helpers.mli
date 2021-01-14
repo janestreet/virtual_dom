@@ -5,6 +5,7 @@ type element =
   { tag_name : string
   ; attributes : (string * string) list
   ; string_properties : (string * string) list
+  ; bool_properties : (string * bool) list
   ; styles : (string * string) list
   ; handlers : (string * Handler.t) list
   ; hooks : (string * Virtual_dom.Vdom.Attr.Hooks.For_testing.Extra.t) list
@@ -32,7 +33,7 @@ val select_first_exn : t -> selector:string -> t
    JavaScript because of limitations in the tail-call optimizer.
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
-val to_string_html : t -> string
+val to_string_html : ?should_print_styles:bool -> t -> string
 val unsafe_convert_exn : Virtual_dom.Vdom.Node.t -> t
 
 val trigger
@@ -60,4 +61,10 @@ module User_actions : sig
 
   val click_on : t -> unit
   val input_text : t -> text:string -> unit
+  val drag : t -> unit
+  val enter : t -> unit
+  val leave : t -> unit
+  val over : t -> unit
+  val drop : t -> unit
+  val end_ : t -> unit
 end

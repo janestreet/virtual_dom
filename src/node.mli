@@ -8,10 +8,10 @@ module Element : sig
   type t
 
   val tag : t -> string
-  val attrs : t -> Attrs.t
+  val attrs : t -> Attr.Multi.t
   val key : t -> string option
   val with_key : t -> string -> t
-  val map_attrs : t -> f:(Attrs.t -> Attrs.t) -> t
+  val map_attrs : t -> f:(Attr.Multi.t -> Attr.Multi.t) -> t
   val add_style : t -> Css_gen.t -> t
   val add_class : t -> string -> t
 end
