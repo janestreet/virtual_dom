@@ -35,4 +35,6 @@ module type Event = sig
 
     val handlers : (t -> unit) Int.Table.t
   end
+
+  val print_s : Sexp.t -> t
 end

@@ -73,8 +73,13 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
     | Element
         { tag_name
         ; attributes
-        ; string_properties
-        ; bool_properties
+        (* We ignore [string_properties] / [bool_properties] as their names can overlap
+           with attributes. Ignoring them here currently just means that people cannot
+           select on them when triggering events.
+
+           *)
+        ; string_properties = _
+        ; bool_properties = _
         ; handlers
         ; key
         ; children
@@ -98,18 +103,8 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
         List.map handlers ~f:(fun (name, _) -> name, "<event-handler>")
       in
       let hook_attrs = List.map hooks ~f:(fun (name, _) -> name, "<hook>") in
-      let bool_properties =
-        List.map bool_properties ~f:(fun (name, bool) -> name, Bool.to_string bool)
-      in
       let attributes =
-        [ hook_attrs
-        ; key_attrs
-        ; soup_id_attrs
-        ; handler_attrs
-        ; attributes
-        ; string_properties
-        ; bool_properties
-        ]
+        [ hook_attrs; key_attrs; soup_id_attrs; handler_attrs; attributes ]
         |> List.concat
         |> String.Map.of_alist_exn (* Raise on duplicate attributes *)
         |> Map.to_alist
@@ -494,7 +489,10 @@ let trigger_hook t ~type_id ~name ~arg =
 ;;
 
 module User_actions = struct
-  let click_on node = trigger ~event_name:"onclick" node
+  let prevent_default = [ "preventDefault", Js.Unsafe.inject Fn.id ]
+  let click_on node = trigger ~event_name:"onclick" node ~extra_fields:prevent_default
+  let focus node = trigger ~event_name:"onfocus" node ~extra_fields:prevent_default
+  let blur node = trigger ~event_name:"onblur" node ~extra_fields:prevent_default
 
   let input_text element ~text =
     let tag_name =
@@ -528,8 +526,6 @@ module User_actions = struct
     let event_names = [ "oninput"; "onchange" ] in
     trigger_many element ~extra_fields ~event_names
   ;;
-
-  let prevent_default = [ "preventDefault", Js.Unsafe.inject Fn.id ]
 
   let enter element =
     trigger element ~event_name:"ondragenter" ~extra_fields:prevent_default

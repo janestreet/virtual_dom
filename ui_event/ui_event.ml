@@ -45,3 +45,11 @@ module Expert = struct
 
   let handlers = handlers
 end
+
+module Print_s = Define (struct
+    module Action = Sexp
+
+    let handle s = print_s s
+  end)
+
+let print_s = Print_s.inject

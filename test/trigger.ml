@@ -294,3 +294,22 @@ let%expect_test "add class in the middle of a [many]" =
     ("WARNING: not combining handlers" (name click))
     1 3 4 |}]
 ;;
+
+let%expect_test "bug with attributes and properties with the same name" =
+  (* There is currently a bug with selecting elements that have attributes and properties
+     with the same name. This is fixed in a subfeature. *)
+  let node =
+    Node.input
+      [ Attr.checked
+      ; Attr.bool_property "checked" true
+      ; Attr.on_click (fun _ev -> Print_int_event.inject 1)
+      ; Attr.id "x"
+      ]
+      []
+  in
+  node
+  |> Node_helpers.unsafe_convert_exn
+  |> Node_helpers.select_first_exn ~selector:"#x"
+  |> Node_helpers.User_actions.click_on;
+  [%expect {| 1 |}]
+;;
