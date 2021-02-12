@@ -71,6 +71,7 @@ val name : string -> t
 val placeholder : string -> t
 val selected : t
 val hidden : t
+val readonly : t
 val style : Css_gen.t -> t
 val min : float -> t
 val max : float -> t
@@ -147,6 +148,7 @@ val on_copy : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_cut : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_paste : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
 val on_reset : (Dom_html.event Js.t -> Event.t) -> t
+val on_animationend : (Dom_html.animationEvent Js.t -> Event.t) -> t
 
 module Multi : sig
   (** A collection of CSS attributes. *)

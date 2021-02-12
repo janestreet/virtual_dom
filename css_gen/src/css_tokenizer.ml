@@ -206,9 +206,10 @@ let quoted_string t ~quote =
 
 let exponential_part t =
   let mark = mark t in
-  if accept t (function
-    | 'e' | 'E' -> true
-    | _ -> false)
+  if
+    accept t (function
+      | 'e' | 'E' -> true
+      | _ -> false)
   then
     if accept t plus_or_minus
     then many1 t Char.is_digit

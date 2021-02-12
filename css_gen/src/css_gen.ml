@@ -231,6 +231,7 @@ let display v =
            to use [flex_container] below *)
         `Flex
       | `Inline_flex
+      | `Inline_grid
       | css_global_values
       ]]
       v

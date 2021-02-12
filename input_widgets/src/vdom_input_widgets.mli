@@ -323,3 +323,42 @@ module Button : sig
     -> on_click:('a -> Event.t)
     -> Node.t
 end
+
+module Radio_buttons : sig
+  module Style : sig
+    type t =
+      | Native
+      | Button_like of { extra_attrs : checked:bool -> Attr.t list }
+
+    (** applies background-color and color alteration to current selection *)
+    val barebones_button_like : t
+  end
+
+  (** Creates a radio button input with a button for each of the corresponding [values]
+      passed in. Extra attrs for individual buttons can be passed through
+      [extra_element_attrs], which gets access to whether the current element is selected
+      or not. *)
+  val of_values
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?disabled:bool (** default false *)
+    -> ?style:Style.t (** default [Native] *)
+    -> (module Equal with type t = 'a)
+    -> name:string
+    -> on_click:('a -> Event.t)
+    -> selected:'a option
+    -> 'a list
+    -> Node.t
+
+  (** Identical to [of_values], but adds some style tags so that the list is displayed
+      horizontally instead of vertically. *)
+  val of_values_horizontal
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?disabled:bool (** default false *)
+    -> ?style:Style.t (** default [Native] *)
+    -> (module Equal with type t = 'a)
+    -> name:string
+    -> on_click:('a -> Event.t)
+    -> selected:'a option
+    -> 'a list
+    -> Node.t
+end

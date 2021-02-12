@@ -98,6 +98,28 @@ module App = struct
             (module Example)
             ~selected:model.example_opt
             ~on_change:(fun example_opt -> inject (Set { model with example_opt })) )
+      ; ( "Radio_buttons.of_values"
+        , Radio_buttons.of_values
+            (module Example)
+            ~name:"radio_buttons_of_values"
+            ~on_click:(fun example -> inject (Set { model with example }))
+            ~selected:(Some model.example)
+            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
+      ; ( "Radio_buttons.of_values_horizontal"
+        , Radio_buttons.of_values_horizontal
+            (module Example)
+            ~name:"radio_buttons_of_values_horizontal"
+            ~on_click:(fun example -> inject (Set { model with example }))
+            ~selected:(Some model.example)
+            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
+      ; ( "Radio_buttons.of_values_horizontal with button-like style"
+        , Radio_buttons.of_values_horizontal
+            (module Example)
+            ~style:Radio_buttons.Style.barebones_button_like
+            ~name:"radio_buttons_of_values_horizontal_button_like"
+            ~on_click:(fun example -> inject (Set { model with example }))
+            ~selected:(Some model.example)
+            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
       ; ( "Checkbox.checkbox"
         , Checkbox.simple
             ~is_checked:(Set.mem model.examples Foo)

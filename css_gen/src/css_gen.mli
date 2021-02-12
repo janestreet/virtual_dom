@@ -132,7 +132,7 @@ val box_sizing : [ `Content_box | `Border_box | css_global_values ] -> t
 
 val display
   :  [ `Inline | `Block | `Inline_block | `List_item | `Table
-     | `Inline_table | `None | css_global_values ]
+     | `Inline_table | `None | `Inline_grid | css_global_values ]
   -> t
 
 val visibility : [ `Visible | `Hidden | `Collapse | css_global_values ] -> t

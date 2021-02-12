@@ -196,7 +196,8 @@ let to_raw attrs =
      takes two attributes of the same kind, ignores a first, and emits
      a warning if [warn_about_unmerged_attributes] is enabled. *)
   let take_second_styles first second =
-    if not (Css_gen.is_empty first)
+    if
+      not (Css_gen.is_empty first)
     then
       Unmerged_warning_mode.warn_s
         [%message
@@ -387,6 +388,7 @@ let href r = create "href" r
 let checked = create "checked" ""
 let selected = create "selected" ""
 let hidden = create "hidden" ""
+let readonly = create "readonly" ""
 let disabled = create "disabled" ""
 let placeholder x = create "placeholder" x
 let autofocus b = create "autofocus" (Bool.to_string b)
@@ -414,6 +416,7 @@ module Type_id = struct
   let (clipboard : Dom_html.clipboardEvent Type_equal.Id.t) = create "clipboardEvent"
   let (drag : Dom_html.dragEvent Type_equal.Id.t) = create "dragEvent"
   let (pointer : Dom_html.pointerEvent Type_equal.Id.t) = create "pointerEvent"
+  let (animation : Dom_html.animationEvent Type_equal.Id.t) = create "animationEvent"
 end
 
 let on type_id name (handler : #Dom_html.event Js.t -> Ui_event.t) : t =
@@ -450,6 +453,7 @@ let on_copy = on Type_id.clipboard "copy"
 let on_cut = on Type_id.clipboard "cut"
 let on_paste = on Type_id.clipboard "paste"
 let on_reset = on Type_id.event "reset"
+let on_animationend = on Type_id.animation "animationend"
 let const_ignore _ = Event.Ignore
 
 class type value_element =

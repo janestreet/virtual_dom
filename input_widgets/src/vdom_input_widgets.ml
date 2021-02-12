@@ -148,6 +148,20 @@ end
 let maybe_disabled ~disabled attrs = if disabled then Attr.disabled :: attrs else attrs
 let add_attrs attrs' attrs = attrs @ attrs' |> Attrs.merge_classes_and_styles
 
+let structural_list ?(orientation = `Vertical) attrs children =
+  let layout_style =
+    match orientation with
+    | `Vertical -> Css_gen.(display `Block)
+    | `Horizontal -> Css_gen.(display `Inline_block)
+  in
+  Node.ul
+    ([ Attr.style
+         Css_gen.(create ~field:"list-style" ~value:"none" @> margin_left (`Px 0))
+     ]
+     |> add_attrs attrs)
+    (List.map children ~f:(fun child -> Node.li [ Attr.style layout_style ] [ child ]))
+;;
+
 module Value_normalizing_hook = struct
   module Unsafe = Js_of_ocaml.Js.Unsafe
   open Js_of_ocaml
@@ -351,23 +365,17 @@ module Checklist = struct
         ~on_toggle
         ~to_string
     =
-    Node.ul
-      ([ Attr.classes [ "widget-checklist"; "checkbox-container" ]
-       ; Attr.style
-           Css_gen.(create ~field:"list-style" ~value:"none" @> margin_left (`Px 0))
-       ]
+    structural_list
+      ([ Attr.classes [ "widget-checklist"; "checkbox-container" ] ]
        |> add_attrs extra_attrs)
       (List.map values ~f:(fun item ->
-         Node.li
-           []
-           [ Checkbox.impl
-               ~extra_attrs
-               ~disabled
-               ~is_checked:(is_checked item)
-               ~label:(to_string item)
-               ~on_toggle:(fun () -> on_toggle item)
-               ()
-           ]))
+         Checkbox.impl
+           ~extra_attrs
+           ~disabled
+           ~is_checked:(is_checked item)
+           ~label:(to_string item)
+           ~on_toggle:(fun () -> on_toggle item)
+           ()))
   ;;
 
   let of_values
@@ -761,5 +769,125 @@ module Button = struct
        |> maybe_disabled ~disabled
        |> add_attrs extra_attrs)
       [ Node.text text ]
+  ;;
+end
+
+module Radio_buttons = struct
+  module Style = struct
+    type t =
+      | Native
+      | Button_like of { extra_attrs : checked:bool -> Attr.t list }
+
+    let barebones_button_like =
+      Button_like
+        { extra_attrs =
+            (fun ~checked ->
+               if checked
+               then
+                 [ Attr.style
+                     Css_gen.(
+                       border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                       @> background_color (`Hex "#404040")
+                       @> color (`Hex "#F7F7F7"))
+                 ]
+               else
+                 [ Attr.style
+                     Css_gen.(
+                       border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                       @> background_color (`Hex "#EFEFEF"))
+                 ])
+        }
+    ;;
+  end
+
+  let hide_native_inputs =
+    Css_gen.(create ~field:"appearance" ~value:"none" @> uniform_margin (`Px 0))
+  ;;
+
+  let impl
+        ?(extra_attrs = [])
+        ?(disabled = false)
+        ?(style : Style.t = Native)
+        ~orientation
+        ~name
+        ~on_click
+        ~selected
+        ~to_string
+        ~equal
+        values
+    =
+    let input_attrs, label_attrs =
+      match style with
+      | Native -> [], fun ~checked:_ -> []
+      | Button_like { extra_attrs } -> [ Attr.style hide_native_inputs ], extra_attrs
+    in
+    structural_list
+      ~orientation
+      ([ Attr.classes [ "widget-radio-buttons"; "radio-button-container" ] ]
+       |> add_attrs extra_attrs)
+      (List.map values ~f:(fun item ->
+         let checked = Option.value_map selected ~default:false ~f:(equal item) in
+         Node.label
+           (label_attrs ~checked)
+           [ Node.input
+               ([ Attr.type_ "radio"
+                ; Attr.name name
+                ; Attr.classes [ "radio-button" ]
+                ; Attr.on_click (fun _ev -> on_click item)
+                ; Attr.bool_property "checked" checked
+                ]
+                @ input_attrs
+                |> maybe_disabled ~disabled)
+               []
+           ; Node.text (to_string item)
+           ]))
+  ;;
+
+  let of_values
+        (type t)
+        ?extra_attrs
+        ?disabled
+        ?style
+        (module E : Equal with type t = t)
+        ~name
+        ~on_click
+        ~selected
+        values
+    =
+    impl
+      ?extra_attrs
+      ?disabled
+      ?style
+      ~orientation:`Vertical
+      ~name
+      ~on_click
+      ~selected
+      ~to_string:E.to_string
+      ~equal:E.equal
+      values
+  ;;
+
+  let of_values_horizontal
+        (type t)
+        ?extra_attrs
+        ?disabled
+        ?style
+        (module E : Equal with type t = t)
+        ~name
+        ~on_click
+        ~selected
+        values
+    =
+    impl
+      ?extra_attrs
+      ?disabled
+      ?style
+      ~orientation:`Horizontal
+      ~name
+      ~on_click
+      ~selected
+      ~to_string:E.to_string
+      ~equal:E.equal
+      values
   ;;
 end
