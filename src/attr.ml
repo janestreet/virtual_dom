@@ -385,6 +385,7 @@ let classes classnames =
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
+let target s = create "target" s
 let checked = create "checked" ""
 let selected = create "selected" ""
 let hidden = create "hidden" ""
@@ -401,6 +402,7 @@ let src x = create "src" x
 let min x = create_float "min" x
 let max x = create_float "max" x
 let colspan x = create "colspan" (Int.to_string x)
+let rowspan x = create "rowspan" (Int.to_string x)
 let draggable b = create "draggable" (Bool.to_string b)
 
 module Type_id = struct

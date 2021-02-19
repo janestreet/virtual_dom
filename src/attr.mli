@@ -66,6 +66,7 @@ val classes' : Set.M(String).t -> t
 val disabled : t
 val for_ : string -> t
 val href : string -> t
+val target : string -> t
 val id : string -> t
 val name : string -> t
 val placeholder : string -> t
@@ -76,6 +77,7 @@ val style : Css_gen.t -> t
 val min : float -> t
 val max : float -> t
 val colspan : int -> t
+val rowspan : int -> t
 val draggable : bool -> t
 val tabindex : int -> t
 val type_ : string -> t

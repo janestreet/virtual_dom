@@ -16,8 +16,8 @@ depends: [
   "ppx_jane"
   "dune"            {>= "2.0.0"}
   "gen_js_api"      {= "1.0.6+newsyntax"}
-  "js_of_ocaml"     {>= "3.4.1"}
-  "js_of_ocaml-ppx"
+  "js_of_ocaml"     {>= "3.9.0"}
+  "js_of_ocaml-ppx" {>= "3.9.0"}
   "lambdasoup"      {>= "0.6.3"}
   "tyxml"           {>= "4.3.0"}
 ]

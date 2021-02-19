@@ -132,6 +132,25 @@ module Widget = struct
      but constrained a little bit *)
   external ojs_of_js : (_, _) widget Js.t -> Ojs.t = "%identity"
 
+  module State_keeper = struct
+    type box = T : ('a * _) Type_equal.Id.t * 'a -> box
+
+    let t : (Js.Unsafe.any, box) Js_map.t = Js_map.create ()
+    let set ~id element state = Js_map.set t (Js.Unsafe.inject element) (T (id, state))
+
+    let get : type a b. id:(a * b) Type_equal.Id.t -> _ -> a =
+      fun ~id element ->
+      let element = Js.Unsafe.inject element in
+      match Js_map.get t element with
+      | None -> failwith "BUG: element state not found"
+      | Some (T (f_id, state)) ->
+        let T = Type_equal.Id.same_witness_exn id f_id in
+        state
+    ;;
+
+    let delete element = Js_map.delete t (Js.Unsafe.inject element)
+  end
+
   let create
         (type s)
         ?info
@@ -149,20 +168,25 @@ module Widget = struct
     obj##.init
     := Js.wrap_callback (fun () ->
       let s0, dom_node = init () in
-      obj##.state := s0;
+      State_keeper.set ~id dom_node s0;
       dom_node);
     obj##.update
     := Js.wrap_callback (fun prev dom_node ->
       (* The [update] method of [obj] is only called by virtual-dom after it has checked
          that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
-         never raise.
-      *)
+         never raise. *)
       match Type_equal.Id.same_witness_exn prev##.id id with
       | Type_equal.T ->
-        let state', dom_node' = update prev##.state dom_node in
-        obj##.state := state';
+        let prev_state = State_keeper.get ~id dom_node in
+        let state', dom_node' = update prev_state dom_node in
+        State_keeper.delete dom_node;
+        State_keeper.set ~id dom_node' state';
         dom_node');
-    obj##.destroy := Js.wrap_callback (fun dom_node -> destroy obj##.state dom_node);
+    obj##.destroy
+    := Js.wrap_callback (fun dom_node ->
+      let prev_state = State_keeper.get ~id dom_node in
+      destroy prev_state dom_node;
+      State_keeper.delete dom_node);
     Node.t_of_js (ojs_of_js obj)
   ;;
 end
