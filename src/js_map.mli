@@ -6,6 +6,6 @@ open! Gen_js_api
 type ('a, 'b) t
 
 val create : unit -> ('a, 'b) t [@@js.new "Map"]
-val set : ('a, 'b) t -> 'a -> 'b -> unit
-val get : ('a, 'b) t -> 'a -> 'b option
-val delete : ('a, 'b) t -> 'a -> unit
+val set : ('a, 'b) t -> 'a -> 'b -> unit [@@js.call]
+val get : ('a, 'b) t -> 'a -> 'b option [@@js.call]
+val delete : ('a, 'b) t -> 'a -> unit [@@js.call]

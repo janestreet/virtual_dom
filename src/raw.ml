@@ -30,18 +30,23 @@ end = struct
   let t_of_js x = x
   let t_to_js x = x
   let create () : t = Ojs.empty_obj ()
-  let set_property : t -> string -> t -> unit = fun t name value -> Ojs.set t name value
+
+  let set_property : t -> string -> t -> unit =
+    fun t name value -> Ojs.set_prop_ascii t name value
+  ;;
+
   let has_property : t -> string -> bool = Ojs.has_property
 
   let has_attribute t name =
-    Ojs.has_property t "attributes" && Ojs.has_property (Ojs.get t "attributes") name
+    Ojs.has_property t "attributes"
+    && Ojs.has_property (Ojs.get_prop_ascii t "attributes") name
   ;;
 
   let set_attribute : t -> string -> t -> unit =
     fun t name value ->
-      if phys_equal (Ojs.get t "attributes") (Ojs.variable "undefined")
-      then Ojs.set t "attributes" (Ojs.empty_obj ());
-      Ojs.set (Ojs.get t "attributes") name value
+      if phys_equal (Ojs.get_prop_ascii t "attributes") (Ojs.variable "undefined")
+      then Ojs.set_prop_ascii t "attributes" (Ojs.empty_obj ());
+      Ojs.set_prop_ascii (Ojs.get_prop_ascii t "attributes") name value
   ;;
 end
 

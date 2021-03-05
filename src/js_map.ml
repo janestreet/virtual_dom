@@ -9,7 +9,8 @@ and (t_to_js : ('a -> Ojs.t) -> ('b -> Ojs.t) -> ('a, 'b) t -> Ojs.t) =
   fun _ -> fun _ -> fun x1 -> x1
 let (create : unit -> ('a, 'b) t) =
   fun () ->
-    t_of_js Obj.magic Obj.magic (Ojs.new_obj (Ojs.get Ojs.global "Map") [||])
+    t_of_js Obj.magic Obj.magic
+      (Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Map") [||])
 let (set : ('a, 'b) t -> 'a -> 'b -> unit) =
   fun x7 ->
     fun x5 ->

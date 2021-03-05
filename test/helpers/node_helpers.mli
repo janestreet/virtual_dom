@@ -33,7 +33,7 @@ val select_first_exn : t -> selector:string -> t
    JavaScript because of limitations in the tail-call optimizer.
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
-val to_string_html : ?should_print_styles:bool -> t -> string
+val to_string_html : ?filter_printed_attributes:(string -> bool) -> t -> string
 val unsafe_convert_exn : Virtual_dom.Vdom.Node.t -> t
 
 val trigger

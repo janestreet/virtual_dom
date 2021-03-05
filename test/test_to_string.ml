@@ -1,11 +1,11 @@
 open! Core_kernel
 open! Import
 
-let show node =
+let show ?filter_printed_attributes node =
   let t = node |> Node_helpers.unsafe_convert_exn in
   t |> [%sexp_of: Node_helpers.t] |> print_s;
   print_endline "----------------------";
-  t |> Node_helpers.to_string_html |> print_endline
+  t |> Node_helpers.to_string_html ?filter_printed_attributes |> print_endline
 ;;
 
 let%expect_test "basic text" =
@@ -285,4 +285,39 @@ let%expect_test "empty div with tree of nested [many]" =
       (styles ((text-align center) (box-sizing border-box)))))
     ----------------------
     <div id="my-id" class="a b c" style={ text-align: center; box-sizing: border-box; }> </div> |}]
+;;
+
+let%expect_test "empty div with [many] different attributes" =
+  let view =
+    Node.div
+      [ Attr.class_ "a"
+      ; Attr.on_click (fun _ -> Ui_event.Ignore)
+      ; Attr.on_blur (fun _ -> Ui_event.Ignore)
+      ; Attr.style Css_gen.bold
+      ; Attr.id "my-id"
+      ; Attr.checked
+      ]
+      []
+  in
+  show ~filter_printed_attributes:(String.is_prefix ~prefix:"on") view;
+  [%expect
+    {|
+    (Element
+     ((tag_name div) (attributes ((id my-id) (checked "") (class a)))
+      (styles ((font-weight bold)))
+      (handlers ((onblur <handler>) (onclick <handler>)))))
+    ----------------------
+    <div onblur={handler} onclick={handler}> </div> |}];
+  show
+    ~filter_printed_attributes:(fun attribute ->
+      not (String.is_prefix ~prefix:"on" attribute))
+    view;
+  [%expect
+    {|
+    (Element
+     ((tag_name div) (attributes ((id my-id) (checked "") (class a)))
+      (styles ((font-weight bold)))
+      (handlers ((onblur <handler>) (onclick <handler>)))))
+    ----------------------
+    <div id="my-id" checked="" class="a" style={ font-weight: bold; }> </div> |}]
 ;;

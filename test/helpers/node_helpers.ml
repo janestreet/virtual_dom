@@ -139,7 +139,7 @@ let bprint_element
       buffer
       ~sep
       ~before_styles
-      ~should_print_styles
+      ~filter_printed_attributes
       { tag_name
       ; attributes
       ; string_properties
@@ -160,40 +160,44 @@ let bprint_element
       has_printed_an_attribute := true;
       bprintf buffer " ")
   in
-  Option.iter key ~f:(fun key ->
-    bprint_aligned_indent ();
-    bprintf buffer "@key=%s" key);
-  List.iter attributes ~f:(fun (k, v) ->
+  let list_iter_filter l ~f =
+    List.filter l ~f:(fun (k, _) -> filter_printed_attributes k) |> List.iter ~f
+  in
+  if filter_printed_attributes "@key"
+  then
+    Option.iter key ~f:(fun key ->
+      bprint_aligned_indent ();
+      bprintf buffer "@key=%s" key);
+  list_iter_filter attributes ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "%s=\"%s\"" k v);
-  List.iter string_properties ~f:(fun (k, v) ->
+  list_iter_filter string_properties ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "#%s=\"%s\"" k v);
-  List.iter bool_properties ~f:(fun (k, v) ->
+  list_iter_filter bool_properties ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "#%s=\"%b\"" k v);
-  List.iter hooks ~f:(fun (k, v) ->
+  list_iter_filter hooks ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf
       buffer
       "%s=%s"
       k
       (v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach));
-  List.iter handlers ~f:(fun (k, _) ->
+  list_iter_filter handlers ~f:(fun (k, _) ->
     bprint_aligned_indent ();
     bprintf buffer "%s={handler}" k);
-  if not (List.is_empty styles)
-  then (
-    bprint_aligned_indent ();
-    bprintf buffer "style={";
-    if should_print_styles
+  if filter_printed_attributes "style"
+  then
+    if not (List.is_empty styles)
     then (
+      bprint_aligned_indent ();
+      bprintf buffer "style={";
       List.iter styles ~f:(fun (k, v) ->
         bprint_aligned_indent ();
         bprintf buffer "%s%s: %s;" before_styles k v);
-      bprint_aligned_indent ())
-    else bprintf buffer "...";
-    bprintf buffer "}");
+      bprint_aligned_indent ();
+      bprintf buffer "}");
   bprintf buffer ">"
 ;;
 
@@ -207,7 +211,7 @@ let bprint_element_multi_line buffer ~indent element =
   bprint_element buffer ~sep ~before_styles:"  " element
 ;;
 
-let to_string_html ?(should_print_styles = true) t =
+let to_string_html ?(filter_printed_attributes = Fn.const true) t =
   (* Keep around the buffer so that it is not re-allocated for every element *)
   let single_line_buffer = Buffer.create 200 in
   let rec recurse buffer ~depth =
@@ -217,10 +221,10 @@ let to_string_html ?(should_print_styles = true) t =
     | Element element ->
       bprintf buffer "%s" indent;
       Buffer.reset single_line_buffer;
-      bprint_element_single_line ~should_print_styles single_line_buffer element;
+      bprint_element_single_line ~filter_printed_attributes single_line_buffer element;
       if Buffer.length single_line_buffer < 100 - String.length indent
       then Buffer.add_buffer buffer single_line_buffer
-      else bprint_element_multi_line ~should_print_styles buffer ~indent element;
+      else bprint_element_multi_line ~filter_printed_attributes buffer ~indent element;
       let children_should_collapse =
         List.for_all element.children ~f:(function
           | Text _ -> true

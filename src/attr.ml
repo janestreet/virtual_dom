@@ -336,7 +336,7 @@ let to_raw attrs =
       let props = Css_gen.to_string_list merge.styles in
       let obj = Gen_js_api.Ojs.empty_obj () in
       List.iter props ~f:(fun (k, v) ->
-        Gen_js_api.Ojs.set obj k (Gen_js_api.Ojs.string_to_js v));
+        Gen_js_api.Ojs.set_prop_ascii obj k (Gen_js_api.Ojs.string_to_js v));
       Raw.Attrs.set_property attrs_obj "style" obj)
   in
   let () =
