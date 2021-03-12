@@ -891,3 +891,48 @@ module Radio_buttons = struct
       values
   ;;
 end
+
+module File_select = struct
+  module Js = Js_of_ocaml.Js
+
+  let accept_attrs = function
+    | None -> Attr.empty
+    | Some accepts ->
+      Attr.create
+        "accept"
+        (List.map accepts ~f:(function
+           | `Extension s -> if String.is_prefix s ~prefix:"." then s else "." ^ s
+           | `Mimetype s -> s)
+         |> String.concat ~sep:",")
+  ;;
+
+  let list ?(extra_attrs = []) ?accept ~on_input () =
+    Node.input
+      ([ Attr.type_ "file"
+       ; accept_attrs accept
+       ; Attr.create "multiple" ""
+       ; Attr.on_file_input (fun _ev file_list ->
+           let files =
+             List.init file_list##.length ~f:(fun i ->
+               file_list##item i
+               |> Js.Opt.to_option
+               |> Option.value_exn ~message:[%string "couldn't get file %{i#Int}"])
+           in
+           on_input files)
+       ]
+       |> add_attrs extra_attrs)
+      []
+  ;;
+
+  let single ?(extra_attrs = []) ?accept ~on_input () =
+    Node.input
+      ([ Attr.type_ "file"
+       ; accept_attrs accept
+       ; Attr.on_file_input (fun _ev file_list ->
+           let file = file_list##item 0 |> Js.Opt.to_option in
+           on_input file)
+       ]
+       |> add_attrs extra_attrs)
+      []
+  ;;
+end

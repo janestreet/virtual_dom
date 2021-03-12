@@ -1,4 +1,5 @@
 open Core_kernel
+open Import
 open Virtual_dom.Vdom
 include module type of Vdom_input_widgets_intf
 
@@ -360,5 +361,25 @@ module Radio_buttons : sig
     -> on_click:('a -> Event.t)
     -> selected:'a option
     -> 'a list
+    -> Node.t
+end
+
+module File_select : sig
+  (** Elements for selecting files from local disk *)
+
+  val single
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?accept:[ `Extension of string | `Mimetype of string ] list
+    (** Restrict the user's choice to certain files, by extension or by mimetype. *)
+    -> on_input:(Js_of_ocaml.File.file Js.t option -> Event.t)
+    -> unit
+    -> Node.t
+
+  val list
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?accept:[ `Extension of string | `Mimetype of string ] list
+    (** Restrict the user's choice to certain files, by extension or by mimetype. *)
+    -> on_input:(Js_of_ocaml.File.file Js.t list -> Event.t)
+    -> unit
     -> Node.t
 end

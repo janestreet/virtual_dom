@@ -91,6 +91,7 @@ val ul : node_creator
 val ol : node_creator
 val br : node_creator_childless
 val hr : node_creator_childless
+val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (** This function can be used to build a node with the tag and html content of
     that node provided as a string.  If this function was called with

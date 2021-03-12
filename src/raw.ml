@@ -147,7 +147,9 @@ module Widget = struct
       fun ~id element ->
       let element = Js.Unsafe.inject element in
       match Js_map.get t element with
-      | None -> failwith "BUG: element state not found"
+      | None ->
+        let id_sexp = Type_equal.Id.sexp_of_t (fun _ -> Sexp.Atom "<opaque>") id in
+        raise_s [%message "BUG: element state not found" (id_sexp : Sexp.t)]
       | Some (T (f_id, state)) ->
         let T = Type_equal.Id.same_witness_exn id f_id in
         state

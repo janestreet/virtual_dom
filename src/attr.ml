@@ -396,6 +396,7 @@ let autofocus b = create "autofocus" (Bool.to_string b)
 let for_ x = create "for" x
 let type_ x = create "type" x
 let value x = create "value" x
+let value_prop x = string_property "value" x
 let tabindex x = create "tabindex" (Int.to_string x)
 let title x = create "title" x
 let src x = create "src" x
@@ -495,6 +496,13 @@ let on_input_event type_id event handler =
 let on_change = on_input_event Type_id.event "change"
 let on_input = on_input_event Type_id.event "input"
 let to_raw l = to_raw l
+
+let on_file_input handler =
+  on Type_id.event "input" (fun ev ->
+    Js.Opt.case ev##.target const_ignore (fun target ->
+      Js.Opt.case (Dom_html.CoerceTo.input target) const_ignore (fun target ->
+        Js.Optdef.case target##.files const_ignore (fun files -> handler ev files))))
+;;
 
 module Always_focus_hook = struct
   module T = struct

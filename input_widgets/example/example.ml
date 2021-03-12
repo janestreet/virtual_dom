@@ -35,6 +35,7 @@ module App = struct
       ; time_ns_opt : Time_ns.t option
       ; time_of_day_opt : Time_ns.Ofday.t option
       ; time_span : Time_ns.Span.t Validated.t
+      ; selected_files : string list
       }
     [@@deriving sexp_of]
 
@@ -68,6 +69,7 @@ module App = struct
     ; time_ns_opt = None
     ; time_of_day_opt = None
     ; time_span = Validated.initial_empty
+    ; selected_files = []
     }
   ;;
 
@@ -201,6 +203,24 @@ module App = struct
                  model.string_opt
                  ~error:"You must type something in [Entry.text]")
             ~on_click:(fun _input -> inject (Set { model with string_opt = None })) )
+      ; ( "File_select.single"
+        , File_select.single
+            ~accept:[ `Extension ".png"; `Mimetype "image/jpeg" ]
+            ~on_input:(fun file ->
+              let selected_files =
+                Option.map file ~f:(fun file -> Js_of_ocaml.Js.to_string file##.name)
+                |> Option.to_list
+              in
+              inject (Set { model with selected_files }))
+            () )
+      ; ( "File_select.list"
+        , File_select.list
+            ~on_input:(fun files ->
+              let selected_files =
+                List.map files ~f:(fun file -> Js_of_ocaml.Js.to_string file##.name)
+              in
+              inject (Set { model with selected_files }))
+            () )
       ]
     in
     let title text =

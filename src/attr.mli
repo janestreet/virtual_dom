@@ -82,6 +82,9 @@ val draggable : bool -> t
 val tabindex : int -> t
 val type_ : string -> t
 val value : string -> t
+
+(* "value" can be both an attribute and a property. *)
+val value_prop : string -> t
 val title : string -> t
 val src : string -> t
 val on_focus : (Dom_html.focusEvent Js.t -> Event.t) -> t
@@ -120,6 +123,15 @@ val on_input : (Dom_html.event Js.t -> string -> Event.t) -> t
     input field or the input field loses focus.  The current contents are returned as an
     OCaml string as a convenience *)
 val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
+
+(** [on_file_input] is like [on_input] but for file picker input elements (i.e.
+    [type=file]). Instead of passing the value of the input as a string, the list of
+    selected files is passed.
+
+    See Vdom_input_widgets.File_select, or, if you are a bonsai user,
+    Bonsai_web_ui_form.Elements.File_select, for a convenient API that wraps this.
+*)
+val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> Event.t) -> t
 
 val on_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
 val on_contextmenu : (Dom_html.mouseEvent Js.t -> Event.t) -> t

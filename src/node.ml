@@ -207,6 +207,10 @@ let ol = create "ol"
 let br = create_childless "br"
 let hr = create_childless "hr"
 
+let sexp_for_debugging ?indent sexp =
+  sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre []
+;;
+
 module Patch = struct
   type node = t
   type t = Raw.Patch.t
