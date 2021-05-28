@@ -60,9 +60,11 @@ module User_actions : sig
   (** Convenience functions for {!trigger}, closely modeling user interactions. *)
 
   val click_on : t -> unit
+  val submit_form : t -> unit
   val focus : t -> unit
   val blur : t -> unit
   val input_text : t -> text:string -> unit
+  val change : t -> value:string -> unit
   val drag : t -> unit
   val enter : t -> unit
   val leave : t -> unit

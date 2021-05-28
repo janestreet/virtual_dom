@@ -127,6 +127,26 @@ let%expect_test "widget" =
     <widget name_goes_here /> |}]
 ;;
 
+let%expect_test "widget inside of something else" =
+  let widget =
+    Node.div
+      []
+      [ Node.widget
+          ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
+          ~init:(fun _ -> failwith "unreachable")
+          ()
+      ]
+  in
+  show widget;
+  [%expect
+    {|
+    (Element ((tag_name div) (children ((Widget name_goes_here)))))
+    ----------------------
+    <div>
+      <widget name_goes_here />
+    </div> |}]
+;;
+
 let%expect_test "widget with info" =
   let widget =
     Node.widget

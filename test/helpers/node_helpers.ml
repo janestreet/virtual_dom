@@ -365,7 +365,7 @@ let unsafe_of_js_exn =
                    return [0, key, attributes[key].toString()];
                });
                var children = node.children.map(function(node) {
-                   return convert(node, make_text_node, make_element_node, raise_unknown_node_type);
+                   return convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type);
                });
                var handlers =
                    Object.keys(node.properties)
@@ -411,12 +411,20 @@ let unsafe_of_js_exn =
                    .map(function(key) {
                        return [0, key, node.properties[key]['extra']]
                    });
+               var soft_set_hooks = 
+                   Object.keys(node.properties)
+                   .filter(function(key) {
+                     return node.properties[key] instanceof joo_global_object.SoftSetHook;
+                   })
+                   .map(function(key) {
+                     return [0, key, "" + node.properties[key].value];
+                   });
                return make_element_node(
                    node.tagName,
                    children,
                    handlers,
                    attr_list,
-                   string_properties,
+                   string_properties.concat(soft_set_hooks),
                    bool_properties,
                    styles,
                    hooks,
@@ -493,12 +501,14 @@ let trigger_hook t ~type_id ~name ~arg =
 ;;
 
 module User_actions = struct
-  let prevent_default = [ "preventDefault", Js.Unsafe.inject Fn.id ]
-  let click_on node = trigger ~event_name:"onclick" node ~extra_fields:prevent_default
-  let focus node = trigger ~event_name:"onfocus" node ~extra_fields:prevent_default
-  let blur node = trigger ~event_name:"onblur" node ~extra_fields:prevent_default
+  let prevent_default = "preventDefault", Js.Unsafe.inject Fn.id
+  let stop_propagation = "stopPropagation", Js.Unsafe.inject Fn.id
+  let both_event_handlers = [ prevent_default; stop_propagation ]
+  let click_on node = trigger ~event_name:"onclick" node ~extra_fields:both_event_handlers
+  let focus node = trigger ~event_name:"onfocus" node ~extra_fields:both_event_handlers
+  let blur node = trigger ~event_name:"onblur" node ~extra_fields:both_event_handlers
 
-  let input_text element ~text =
+  let build_target ~element ~value =
     let tag_name =
       match element with
       | Element { tag_name; _ } -> tag_name
@@ -506,41 +516,68 @@ module User_actions = struct
         let node = to_string_html other in
         raise_s [%message (node : string) "is not an element"]
     in
-    let value_element =
-      (* When an [on_input] event is fired, in order to pull the value of
-         the element, [Virtual_dom.Vdom.Attr.on_input_event] looks at the
-         "target" property on the event and tries to coerce that value to one
-         of [input element, select element, textarea element].  This coercion
-         function is implemented in [Js_of_ocaml.Dom_html.CoerceTo], and the
-         way that the coercion function works is by comparing the value of
-         the [tagName] property on the event target to the string of the tag
-         name that the coercion is targeting.
+    (* When an [on_input] event is fired, in order to pull the value of
+       the element, [Virtual_dom.Vdom.Attr.on_input_event] looks at the
+       "target" property on the event and tries to coerce that value to one
+       of [input element, select element, textarea element].  This coercion
+       function is implemented in [Js_of_ocaml.Dom_html.CoerceTo], and the
+       way that the coercion function works is by comparing the value of
+       the [tagName] property on the event target to the string of the tag
+       name that the coercion is targeting.
 
-         By mocking out the [tagName] and [value] properties on the target of
-         the event, we can trick the virtual_dom code into handling our event
-         as though there was a real DOM element! *)
-      Js.Unsafe.inject
-        (object%js
-          val tagName = Js.string tag_name
+       By mocking out the [tagName] and [value] properties on the target of
+       the event, we can trick the virtual_dom code into handling our event
+       as though there was a real DOM element! *)
+    Js.Unsafe.inject
+      (object%js
+        val tagName = Js.string tag_name
 
-          val value = Js.string text
-        end)
-    in
-    let extra_fields = [ "target", value_element ] in
+        val value = Js.string value
+      end)
+  ;;
+
+  let input_text element ~text =
+    let target = build_target ~element ~value:text in
+    let extra_fields = [ "target", target ] in
     let event_names = [ "oninput"; "onchange" ] in
     trigger_many element ~extra_fields ~event_names
   ;;
 
   let enter element =
-    trigger element ~event_name:"ondragenter" ~extra_fields:prevent_default
+    trigger element ~event_name:"ondragenter" ~extra_fields:both_event_handlers
   ;;
 
   let over element =
-    trigger element ~event_name:"ondragover" ~extra_fields:prevent_default
+    trigger element ~event_name:"ondragover" ~extra_fields:both_event_handlers
   ;;
 
-  let drag element = trigger element ~event_name:"ondragstart"
+  let submit_form element =
+    trigger element ~event_name:"onsubmit" ~extra_fields:both_event_handlers
+  ;;
+
+  let change element ~value =
+    let target = build_target ~element ~value in
+    trigger
+      element
+      ~event_name:"onchange"
+      ~extra_fields:(("target", target) :: both_event_handlers)
+  ;;
+
+  let drag element =
+    trigger
+      element
+      ~event_name:"ondragstart"
+      ~extra_fields:[ "offsetX", Js.Unsafe.inject 0; "offsetY", Js.Unsafe.inject 0 ]
+  ;;
+
   let leave element = trigger element ~event_name:"ondragleave"
-  let drop element = trigger element ~event_name:"ondrop"
+
+  let drop element =
+    trigger
+      element
+      ~event_name:"ondrop"
+      ~extra_fields:[ "clientX", Js.Unsafe.inject 0; "clientY", Js.Unsafe.inject 0 ]
+  ;;
+
   let end_ element = trigger element ~event_name:"ondragend"
 end

@@ -166,6 +166,13 @@ val widget
   -> unit
   -> t
 
+(** [widget_of_module] is very similar to [widget], but it pulls all of the
+    callbacks out into a first-class module.  Read the comment for [widget] to learn more.
+
+    It is very important that you call [widget_of_module] exactly once for any
+    "widget class" that you want to construct.  Otherwise, the nodes created by
+    it won't be comparable against one another and the widget-diffing will just
+    run [destroy, init, destroy, init] over and over. *)
 val widget_of_module
   :  (module Widget.S with type Input.t = 'input)
   -> ('input -> t) Staged.t

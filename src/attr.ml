@@ -161,15 +161,8 @@ type merge =
 
 let combining_map_add map key value ~combine =
   Map.update map key ~f:(function
-    | Some existing_value -> combine existing_value value
+    | Some existing_value -> combine ~key existing_value value
     | None -> value)
-;;
-
-let combining_map_merge left right ~combine =
-  Map.merge left right ~f:(fun ~key value ->
-    match value with
-    | `Both (left, right) -> Some (combine key left right)
-    | `Left x | `Right x -> Some x)
 ;;
 
 let empty_merge =
@@ -212,12 +205,12 @@ let to_raw attrs =
           "WARNING: not combining classes" (first : String.Set.t) (second : String.Set.t)];
     second
   in
-  let take_second_handler name _first second =
+  let take_second_handler ~key:name _first second =
     Unmerged_warning_mode.warn_s
       [%message "WARNING: not combining handlers" (name : string)];
     second
   in
-  let take_second_hook name _first second =
+  let take_second_hook ~key:name _first second =
     Unmerged_warning_mode.warn_s [%message "WARNING: not combining hooks" (name : string)];
     second
   in
@@ -269,19 +262,17 @@ let to_raw attrs =
       | Class new_classes ->
         { acc with classes = combine_classes acc.classes new_classes }
       | Hook { name; hook } ->
-        { acc with
-          hooks = combining_map_add acc.hooks name hook ~combine:(combine_hook name)
-        }
+        { acc with hooks = combining_map_add acc.hooks name hook ~combine:combine_hook }
       | Handler { name; handler } ->
         { acc with
           handlers =
-            combining_map_add acc.handlers name handler ~combine:(combine_handler name)
+            combining_map_add acc.handlers name handler ~combine:combine_handler
         }
       | Many attrs ->
         let sub_merge =
           merge
-            ~combine_hook:(const Hooks.combine)
-            ~combine_handler:(const Event_handler.combine)
+            ~combine_hook:(fun ~key:_ -> Hooks.combine)
+            ~combine_handler:(fun ~key:_ -> Event_handler.combine)
             ~combine_styles:Css_gen.combine
             ~combine_classes:Set.union
             empty_merge
@@ -290,8 +281,8 @@ let to_raw attrs =
         { styles = combine_styles acc.styles sub_merge.styles
         ; classes = combine_classes acc.classes sub_merge.classes
         ; handlers =
-            combining_map_merge acc.handlers sub_merge.handlers ~combine:combine_handler
-        ; hooks = combining_map_merge acc.hooks sub_merge.hooks ~combine:combine_hook
+            Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
+        ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
         }
       | Many_only_merge_classes_and_styles (attrs, map_styles, map_classes) ->
         let sub_merge =
@@ -306,8 +297,8 @@ let to_raw attrs =
         { styles = map_styles (combine_styles acc.styles sub_merge.styles)
         ; classes = map_classes (combine_classes acc.classes sub_merge.classes)
         ; handlers =
-            combining_map_merge acc.handlers sub_merge.handlers ~combine:combine_handler
-        ; hooks = combining_map_merge acc.hooks sub_merge.hooks ~combine:combine_hook
+            Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
+        ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
         })
   in
   let merge =
