@@ -47,6 +47,8 @@ val create_hook : string -> Hooks.t -> t
 *)
 val many : t list -> t
 
+val many_without_merge : t list -> t
+
 (** Equivalent to [many []]. It adds no attributes to the DOM. *)
 val empty : t
 
@@ -112,7 +114,7 @@ module Unmerged_warning_mode : sig
   end
 end
 
-val to_raw : t list -> Raw.Attrs.t
+val to_raw : t -> Raw.Attrs.t
 
 (** [on_input] fires every time the input changes, i.e., whenever a key is pressed in
     the input field.  The current contents are returned as an OCaml string as

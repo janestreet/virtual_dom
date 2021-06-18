@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Js_of_ocaml
 
 type element =
@@ -34,6 +34,7 @@ val select_first_exn : t -> selector:string -> t
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
 val to_string_html : ?filter_printed_attributes:(string -> bool) -> t -> string
+val inner_text : t -> string
 val unsafe_convert_exn : Virtual_dom.Vdom.Node.t -> t
 
 val trigger

@@ -2,7 +2,7 @@
     to programmatically produce strings suitable for the HTML style attribute,
     e.g. style="display:flex;background-color:red". *)
 
-open Core_kernel
+open Core
 
 type css_global_values =
   [ `Inherit | `Initial ]
@@ -179,7 +179,7 @@ type background_image =
   | `Radial_gradient of radial_gradient
   ]
 
-
+val create_with_color : field:string -> color:Color.t -> t
 val color : Color.t -> t
 val background_color : Color.t -> t
 val background_image : background_image -> t

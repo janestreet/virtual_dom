@@ -1,6 +1,6 @@
 open Js_of_ocaml
 open Virtual_dom
-open Core_kernel
+open Core
 open Vdom
 
 let colors = [| "red"; "green"; "blue" |]
@@ -59,9 +59,7 @@ let terminal =
     Node.widget ~init ~id ()
 ;;
 
-let view count =
-  Node.div [] [ Node.div [] [ Node.text (Int.to_string count) ]; terminal () ]
-;;
+let view count = Node.div [ Node.div [ Node.text (Int.to_string count) ]; terminal () ]
 
 let () =
   Dom_html.window##.onload

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let show ?filter_printed_attributes node =
@@ -17,7 +17,7 @@ let%expect_test "basic text" =
 ;;
 
 let%expect_test "empty div" =
-  show (Node.div [] []);
+  show (Node.div []);
   [%expect
     {|
     (Element ((tag_name div)))
@@ -26,7 +26,7 @@ let%expect_test "empty div" =
 ;;
 
 let%expect_test "empty div" =
-  show (Node.div [] []);
+  show (Node.div []);
   [%expect
     {|
     (Element ((tag_name div)))
@@ -38,7 +38,7 @@ let%expect_test "inner_html" =
   show
     (Node.inner_html
        ~tag:"div"
-       []
+       ~attr:Attr.empty
        ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
   [%expect
     {|
@@ -48,7 +48,7 @@ let%expect_test "inner_html" =
 ;;
 
 let%expect_test "div with some text" =
-  show (Node.div [] [ Node.text "hello world" ]);
+  show (Node.div [ Node.text "hello world" ]);
   [%expect
     {|
     (Element ((tag_name div) (children ((Text "hello world")))))
@@ -57,7 +57,7 @@ let%expect_test "div with some text" =
 ;;
 
 let%expect_test "empty div with key" =
-  show (Node.div ~key:"keykey" [] []);
+  show (Node.div ~key:"keykey" []);
   [%expect
     {|
     (Element ((tag_name div) (key keykey)))
@@ -66,7 +66,7 @@ let%expect_test "empty div with key" =
 ;;
 
 let%expect_test "empty div with string property" =
-  show (Node.div [ Attr.string_property "foo" "bar" ] []);
+  show (Node.div ~attr:(Attr.string_property "foo" "bar") []);
   [%expect
     {|
     (Element ((tag_name div) (string_properties ((foo bar)))))
@@ -75,7 +75,7 @@ let%expect_test "empty div with string property" =
 ;;
 
 let%expect_test "empty div with bool property" =
-  show (Node.div [ Attr.bool_property "foo" true ] []);
+  show (Node.div ~attr:(Attr.bool_property "foo" true) []);
   [%expect
     {|
     (Element ((tag_name div) (bool_properties ((foo true)))))
@@ -84,7 +84,7 @@ let%expect_test "empty div with bool property" =
 ;;
 
 let%expect_test "nested div with span" =
-  show (Node.div [] [ Node.span [] [] ]);
+  show (Node.div [ Node.span [] ]);
   [%expect
     {|
     (Element ((tag_name div) (children ((Element ((tag_name span)))))))
@@ -95,7 +95,7 @@ let%expect_test "nested div with span" =
 ;;
 
 let%expect_test "empty div with string attribute" =
-  show (Node.div [ Attr.create "key" "value" ] []);
+  show (Node.div ~attr:(Attr.create "key" "value") []);
   [%expect
     {|
     (Element ((tag_name div) (attributes ((key value)))))
@@ -104,7 +104,7 @@ let%expect_test "empty div with string attribute" =
 ;;
 
 let%expect_test "empty div with float attribute" =
-  show (Node.div [ Attr.create_float "some_attr" 1.2345 ] []);
+  show (Node.div ~attr:(Attr.create_float "some_attr" 1.2345) []);
   [%expect
     {|
     (Element ((tag_name div) (attributes ((some_attr 1.2345)))))
@@ -130,7 +130,6 @@ let%expect_test "widget" =
 let%expect_test "widget inside of something else" =
   let widget =
     Node.div
-      []
       [ Node.widget
           ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
           ~init:(fun _ -> failwith "unreachable")
@@ -164,7 +163,7 @@ let%expect_test "widget with info" =
 ;;
 
 let%expect_test "empty div with callback" =
-  show (Node.div [ Attr.on_click (Fn.const Event.Ignore) ] []);
+  show (Node.div ~attr:(Attr.on_click (Fn.const Event.Ignore)) []);
   [%expect
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
@@ -173,7 +172,7 @@ let%expect_test "empty div with callback" =
 ;;
 
 let%expect_test "empty div with class list" =
-  show (Node.div [ Attr.classes [ "a"; "b"; "c" ] ] []);
+  show (Node.div ~attr:(Attr.classes [ "a"; "b"; "c" ]) []);
   [%expect
     {|
     (Element ((tag_name div) (attributes ((class "a b c")))))
@@ -182,7 +181,7 @@ let%expect_test "empty div with class list" =
 ;;
 
 let%expect_test "empty div with id" =
-  show (Node.div [ Attr.id "my-id" ] []);
+  show (Node.div ~attr:(Attr.id "my-id") []);
   [%expect
     {|
     (Element ((tag_name div) (attributes ((id my-id)))))
@@ -191,7 +190,8 @@ let%expect_test "empty div with id" =
 ;;
 
 let%expect_test "later attributes override earlier ones" =
-  show (Node.div [ Attr.id "overwritten-id"; Attr.id "final-id" ] []);
+  show
+    (Node.div ~attr:Attr.(many_without_merge [ id "overwritten-id"; id "final-id" ]) []);
   [%expect
     {|
     ("WARNING: not combining attributes" (name id))
@@ -203,9 +203,12 @@ let%expect_test "later attributes override earlier ones" =
 let%expect_test "later properties override earlier ones" =
   show
     (Node.div
-       [ Attr.string_property "prop" "overwritten-prop"
-       ; Attr.string_property "prop" "final-prop"
-       ]
+       ~attr:
+         Attr.(
+           many_without_merge
+             [ string_property "prop" "overwritten-prop"
+             ; string_property "prop" "final-prop"
+             ])
        []);
   [%expect
     {|
@@ -216,7 +219,8 @@ let%expect_test "later properties override earlier ones" =
 ;;
 
 let%expect_test "no merging without [many]" =
-  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.class_ "c" ] []);
+  show
+    (Node.div ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; class_ "c" ]) []);
   [%expect
     {|
     ("WARNING: not combining classes" (first (a)) (second (b)))
@@ -227,7 +231,10 @@ let%expect_test "no merging without [many]" =
 ;;
 
 let%expect_test "merging only within [many]" =
-  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []);
+  show
+    (Node.div
+       ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; many [ class_ "c" ] ])
+       []);
   [%expect
     {|
     ("WARNING: not combining classes" (first (a)) (second (b)))
@@ -238,7 +245,8 @@ let%expect_test "merging only within [many]" =
 ;;
 
 let%expect_test "empty div with [many] classes" =
-  show (Node.div [ Attr.many [ Attr.class_ "a"; Attr.class_ "b"; Attr.class_ "c" ] ] []);
+  show
+    (Node.div ~attr:(Attr.many [ Attr.class_ "a"; Attr.class_ "b"; Attr.class_ "c" ]) []);
   [%expect
     {|
     (Element ((tag_name div) (attributes ((class "a b c")))))
@@ -249,21 +257,21 @@ let%expect_test "empty div with [many] classes" =
 let%expect_test "empty div with [many] different attributes" =
   show
     (Node.div
-       [ Attr.many
-           [ Attr.class_ "a"
-           ; Attr.on_click (fun _ -> Ui_event.Ignore)
-           ; Attr.style Css_gen.bold
-           ; Attr.class_ "b"
-           ; Attr.style (Css_gen.z_index 42)
-           ; Attr.id "my-id"
-           ; Attr.class_ "c"
-           ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
-           ; Attr.style (Css_gen.display `Table)
-           ; Attr.class_ "d"
-           ; Attr.on_click (fun _ -> Ui_event.Ignore)
-           ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
-           ]
-       ]
+       ~attr:
+         (Attr.many
+            [ Attr.class_ "a"
+            ; Attr.on_click (fun _ -> Ui_event.Ignore)
+            ; Attr.style Css_gen.bold
+            ; Attr.class_ "b"
+            ; Attr.style (Css_gen.z_index 42)
+            ; Attr.id "my-id"
+            ; Attr.class_ "c"
+            ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
+            ; Attr.style (Css_gen.display `Table)
+            ; Attr.class_ "d"
+            ; Attr.on_click (fun _ -> Ui_event.Ignore)
+            ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
+            ])
        []);
   [%expect
     {|
@@ -286,17 +294,17 @@ let%expect_test "empty div with [many] different attributes" =
 let%expect_test "empty div with tree of nested [many]" =
   show
     (Node.div
-       [ Attr.many
-           [ Attr.many [ Attr.class_ "a"; Attr.style (Css_gen.text_align `Center) ]
-           ; Attr.many [ Attr.many [ Attr.class_ "b"; Attr.class_ "c" ] ]
-           ; Attr.many
-               [ Attr.many
-                   [ Attr.many
-                       [ Attr.id "my-id"; Attr.style (Css_gen.box_sizing `Border_box) ]
-                   ]
-               ]
-           ]
-       ]
+       ~attr:
+         (Attr.many
+            [ Attr.many [ Attr.class_ "a"; Attr.style (Css_gen.text_align `Center) ]
+            ; Attr.many [ Attr.many [ Attr.class_ "b"; Attr.class_ "c" ] ]
+            ; Attr.many
+                [ Attr.many
+                    [ Attr.many
+                        [ Attr.id "my-id"; Attr.style (Css_gen.box_sizing `Border_box) ]
+                    ]
+                ]
+            ])
        []);
   [%expect
     {|
@@ -310,13 +318,16 @@ let%expect_test "empty div with tree of nested [many]" =
 let%expect_test "empty div with [many] different attributes" =
   let view =
     Node.div
-      [ Attr.class_ "a"
-      ; Attr.on_click (fun _ -> Ui_event.Ignore)
-      ; Attr.on_blur (fun _ -> Ui_event.Ignore)
-      ; Attr.style Css_gen.bold
-      ; Attr.id "my-id"
-      ; Attr.checked
-      ]
+      ~attr:
+        Attr.(
+          many_without_merge
+            [ class_ "a"
+            ; on_click (fun _ -> Ui_event.Ignore)
+            ; on_blur (fun _ -> Ui_event.Ignore)
+            ; style Css_gen.bold
+            ; id "my-id"
+            ; checked
+            ])
       []
   in
   show ~filter_printed_attributes:(String.is_prefix ~prefix:"on") view;
@@ -340,4 +351,57 @@ let%expect_test "empty div with [many] different attributes" =
       (handlers ((onblur <handler>) (onclick <handler>)))))
     ----------------------
     <div id="my-id" checked="" class="a" style={ font-weight: bold; }> </div> |}]
+;;
+
+let%expect_test "[many_without_merge] inside merge" =
+  let view =
+    Node.div
+      ~attr:Attr.(class_ "a" @ many_without_merge [ class_ "b"; class_ "c" ] @ class_ "d")
+      []
+  in
+  show view;
+  [%expect
+    {|
+    ("WARNING: not combining classes" (first (b)) (second (c)))
+    (Element ((tag_name div) (attributes ((class "a c d")))))
+    ----------------------
+    <div class="a c d"> </div> |}];
+  let view =
+    Node.div
+      ~attr:
+        Attr.(
+          many_without_merge
+            (Multi.merge_classes_and_styles
+               [ class_ "a"; many_without_merge [ class_ "b"; class_ "c" ]; class_ "d" ]))
+      []
+  in
+  show view;
+  [%expect
+    {|
+    ("WARNING: not combining classes" (first (b)) (second (c)))
+    (Element ((tag_name div) (attributes ((class "a c d")))))
+    ----------------------
+    <div class="a c d"> </div> |}];
+  let view =
+    Node.div
+      ~attr:
+        Attr.(
+          class_ "a"
+          @ many_without_merge
+              [ class_ "b"
+              ; class_ "ba" @ class_ "bb"
+              ; class_ "c" @ many_without_merge [ class_ "baa"; class_ "bab" ]
+              ]
+          @ class_ "d")
+      []
+  in
+  show view;
+  [%expect
+    {|
+    ("WARNING: not combining classes" (first (b)) (second (ba bb)))
+    ("WARNING: not combining classes" (first (baa)) (second (bab)))
+    ("WARNING: not combining classes" (first (ba bb)) (second (bab c)))
+    (Element ((tag_name div) (attributes ((class "a bab c d")))))
+    ----------------------
+    <div class="a bab c d"> </div> |}]
 ;;

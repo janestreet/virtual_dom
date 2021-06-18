@@ -59,7 +59,7 @@ end
 type element =
   { tag : string
   ; key : string option
-  ; attrs : Attr.Multi.t
+  ; attrs : Attr.t
   ; raw_attrs : Raw.Attrs.t Lazy.t
   ; children : Raw.Node.t list
   ; kind : [ `Vnode | `Svg ]
@@ -85,8 +85,8 @@ module Element = struct
     { t with attrs; raw_attrs }
   ;;
 
-  let add_class t c = map_attrs t ~f:(fun a -> Attr.Multi.add_class a c)
-  let add_style t s = map_attrs t ~f:(fun a -> Attr.Multi.add_style a s)
+  let add_class t c = map_attrs t ~f:(fun a -> Attr.(a @ class_ c))
+  let add_style t s = map_attrs t ~f:(fun a -> Attr.(a @ style s))
 end
 
 let t_to_js = function
@@ -105,6 +105,7 @@ let t_to_js = function
 ;;
 
 let element kind ~tag ~key attrs children =
+  let attrs = attrs in
   let children =
     List.filter_map children ~f:(function
       | None -> None
@@ -120,20 +121,36 @@ let widget ?info ?destroy ?update ~id ~init () =
   Widget (Widget.create ?info ?destroy ?update ~id ~init ())
 ;;
 
-let create tag ?key attrs children = Element (element `Vnode ~tag ~key attrs children)
-let create_childless tag ?key attrs = create tag ?key attrs []
-let svg tag ?key attrs children = Element (element `Svg ~tag ~key attrs children)
+let create tag ?key attrs children =
+  Element (element `Vnode ~tag ~key (Attr.many_without_merge attrs) children)
+;;
+
+let create_monoid tag ?key ?(attr = Attr.empty) children =
+  Element (element `Vnode ~tag ~key attr children)
+;;
+
+let create_childless tag ?key attr = create_monoid tag ?key ~attr []
+
+let create_svg tag ?key ?(attr = Attr.empty) children =
+  Element (element `Svg ~tag ~key attr children)
+;;
+
+let create_svg_monoid tag ?key ?(attr = Attr.empty) children =
+  Element (element `Svg ~tag ~key attr children)
+;;
+
 let none = None
 let textf format = Printf.ksprintf text format
-let create_svg = svg
 
 let widget_of_module m =
   let f = Base.Staged.unstage (Widget.of_module m) in
   Base.Staged.stage (fun i -> Widget (f i))
 ;;
 
-type node_creator = ?key:string -> Attr.t list -> t list -> t
+type node_creator_old = ?key:string -> Attr.t list -> t list -> t
+type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
+type node_creator_childless_monoid = ?key:string -> Attr.t -> t
 
 let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
@@ -141,10 +158,10 @@ let to_dom t = Raw.Node.to_dom (to_raw t)
 let inner_html
       create
       ~tag
-      attrs
+      ~attr
       ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
   =
-  let element = create tag attrs [] in
+  let element = create tag ~attr [] in
   let build_sexp ~extra ~content =
     Sexp.List [ Sexp.Atom "inner-html"; extra; Sexp.Atom content ]
   in
@@ -169,46 +186,46 @@ let inner_html
     ()
 ;;
 
-let inner_html_svg = inner_html (fun tag attrs -> create_svg tag attrs)
-let inner_html = inner_html (fun tag attrs -> create tag attrs)
-let a = create "a"
-let body = create "body"
-let button = create "button"
-let code = create "code"
-let div = create "div"
-let footer = create "footer"
-let h1 = create "h1"
-let h2 = create "h2"
-let h3 = create "h3"
-let h4 = create "h4"
-let h5 = create "h5"
-let h6 = create "h6"
-let header = create "header"
-let html = create "html"
-let input = create "input"
-let textarea = create "textarea"
-let select = create "select"
-let option = create "option"
-let label = create "label"
-let li = create "li"
-let p = create "p"
-let pre = create "pre"
-let section = create "section"
-let span = create "span"
-let strong = create "strong"
-let table = create "table"
-let tbody = create "tbody"
-let td = create "td"
-let th = create "th"
-let thead = create "thead"
-let tr = create "tr"
-let ul = create "ul"
-let ol = create "ol"
+let inner_html_svg = inner_html (fun tag ~attr -> create_svg_monoid tag ?key:None ~attr)
+let inner_html = inner_html (fun tag ~attr -> create_monoid tag ?key:None ~attr)
+let a = create_monoid "a"
+let body = create_monoid "body"
+let button = create_monoid "button"
+let code = create_monoid "code"
+let div = create_monoid "div"
+let footer = create_monoid "footer"
+let h1 = create_monoid "h1"
+let h2 = create_monoid "h2"
+let h3 = create_monoid "h3"
+let h4 = create_monoid "h4"
+let h5 = create_monoid "h5"
+let h6 = create_monoid "h6"
+let header = create_monoid "header"
+let html = create_monoid "html"
+let input = create_monoid "input"
+let textarea = create_monoid "textarea"
+let select = create_monoid "select"
+let option = create_monoid "option"
+let label = create_monoid "label"
+let li = create_monoid "li"
+let p = create_monoid "p"
+let pre = create_monoid "pre"
+let section = create_monoid "section"
+let span = create_monoid "span"
+let strong = create_monoid "strong"
+let table = create_monoid "table"
+let tbody = create_monoid "tbody"
+let td = create_monoid "td"
+let th = create_monoid "th"
+let thead = create_monoid "thead"
+let tr = create_monoid "tr"
+let ul = create_monoid "ul"
+let ol = create_monoid "ol"
 let br = create_childless "br"
 let hr = create_childless "hr"
 
 let sexp_for_debugging ?indent sexp =
-  sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre []
+  sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre ~attr:Attr.empty
 ;;
 
 module Patch = struct

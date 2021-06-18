@@ -87,8 +87,13 @@ end
 module Xml_Svg = struct
   include Xml
 
-  let leaf ?(a = []) name = Vdom.Node.create_svg name (make_a a) []
-  let node ?(a = []) name children = Vdom.Node.create_svg name (make_a a) children
+  let leaf ?(a = []) name =
+    Vdom.Node.create_svg name ~attr:(Vdom.Attr.many_without_merge (make_a a)) []
+  ;;
+
+  let node ?(a = []) name children =
+    Vdom.Node.create_svg name ~attr:(Vdom.Attr.many_without_merge (make_a a)) children
+  ;;
 end
 
 module Svg = Svg_f.Make (Xml_Svg)

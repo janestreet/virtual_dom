@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Virtual_dom.Vdom.Attr
 module Number = Virtual_dom.Dom_float
 
@@ -425,3 +425,5 @@ module Text = struct
     length_helper c
   ;;
 end
+
+let ( @ ) = ( @ )

@@ -1,14 +1,14 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let%expect_test "empty div with triggered callback" =
   let node =
     Node_helpers.unsafe_convert_exn
       (Node.div
-         [ Attr.on_click (fun _ ->
-             print_endline "inside handler";
-             Event.Ignore)
-         ]
+         ~attr:
+           (Attr.on_click (fun _ ->
+              print_endline "inside handler";
+              Event.Ignore))
          [])
   in
   Node_helpers.trigger node ~event_name:"onclick";
@@ -19,10 +19,10 @@ let%expect_test "empty div with triggered callback (failing)" =
   let node =
     Node_helpers.unsafe_convert_exn
       (Node.div
-         [ Attr.on_click (fun e ->
-             print_s [%message (e##.screenX : int)];
-             Event.Ignore)
-         ]
+         ~attr:
+           (Attr.on_click (fun e ->
+              print_s [%message (e##.screenX : int)];
+              Event.Ignore))
          [])
   in
   Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
@@ -46,10 +46,10 @@ let%expect_test "empty input with on_change (success!)" =
   let node =
     Node_helpers.unsafe_convert_exn
       (Node.input
-         [ Attr.on_change (fun _e s ->
-             print_endline s;
-             Event.Ignore)
-         ]
+         ~attr:
+           (Attr.on_change (fun _e s ->
+              print_endline s;
+              Event.Ignore))
          [])
   in
   Node_helpers.trigger
@@ -67,10 +67,10 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
   let node =
     Node_helpers.unsafe_convert_exn
       (Node.input
-         [ Attr.on_change (fun _e s ->
-             print_endline s;
-             Event.Ignore)
-         ]
+         ~attr:
+           (Attr.on_change (fun _e s ->
+              print_endline s;
+              Event.Ignore))
          [])
   in
   Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
@@ -91,7 +91,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
 let%expect_test "fake event handler" =
   let node =
     Node_helpers.unsafe_convert_exn
-      (Node.div [ Attr.create "on_foo" "not a function" ] [])
+      (Node.div ~attr:(Attr.create "on_foo" "not a function") [])
   in
   print_s [%message (node : Node_helpers.t)];
   [%expect
@@ -149,7 +149,7 @@ module String_h = Attr.Hooks.Make (struct
 
 let%expect_test "fake event handler for hook" =
   let node =
-    Node.input [ Attr.create_hook "unique-name" (H.create Print_int_event.inject) ] []
+    Node.input ~attr:(Attr.create_hook "unique-name" (H.create Print_int_event.inject)) []
   in
   node
   |> Node_helpers.unsafe_convert_exn
@@ -160,9 +160,12 @@ let%expect_test "fake event handler for hook" =
 let%expect_test "not merged " =
   let node =
     Node.input
-      [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
-      ; Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
-      ]
+      ~attr:
+        Attr.(
+          many_without_merge
+            [ create_hook "not-so-unique-name" (H.create Print_int_event.inject)
+            ; create_hook "not-so-unique-name" (H.create Print_int_event.inject)
+            ])
       []
   in
   node
@@ -179,11 +182,11 @@ let%expect_test "not merged " =
 let%expect_test "bad merge" =
   let node =
     Node.input
-      [ Attr.many
-          [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
-          ; Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
-          ]
-      ]
+      ~attr:
+        (Attr.many
+           [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
+           ; Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
+           ])
       []
   in
   node
@@ -198,13 +201,13 @@ let%expect_test "bad merge" =
 let%expect_test "not merged " =
   let node =
     Node.input
-      [ Attr.many
-          [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
-          ; Attr.create_hook
-              "not-so-unique-name"
-              (String_h.create Print_string_event.inject)
-          ]
-      ]
+      ~attr:
+        (Attr.many
+           [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
+           ; Attr.create_hook
+               "not-so-unique-name"
+               (String_h.create Print_string_event.inject)
+           ])
       []
   in
   Expect_test_helpers_base.require_does_raise [%here] (fun () ->
@@ -223,7 +226,10 @@ let%expect_test "not merged " =
 
 let%expect_test "fake event handler for on_click" =
   let node =
-    Node.div [ Attr.id "x"; Attr.on_click (fun _ -> Print_int_event.inject 5) ] []
+    Node.div
+      ~attr:
+        Attr.(many_without_merge [ id "x"; on_click (fun _ -> Print_int_event.inject 5) ])
+      []
   in
   node
   |> Node_helpers.unsafe_convert_exn
@@ -235,10 +241,13 @@ let%expect_test "fake event handler for on_click" =
 let%expect_test "not merged" =
   let node =
     Node.div
-      [ Attr.id "x"
-      ; Attr.on_click (fun _ -> Print_int_event.inject 5)
-      ; Attr.on_click (fun _ -> Print_int_event.inject 6)
-      ]
+      ~attr:
+        Attr.(
+          many_without_merge
+            [ id "x"
+            ; on_click (fun _ -> Print_int_event.inject 5)
+            ; on_click (fun _ -> Print_int_event.inject 6)
+            ])
       []
   in
   node
@@ -253,12 +262,15 @@ let%expect_test "not merged" =
 let%expect_test "merged" =
   let node =
     Node.div
-      [ Attr.id "x"
-      ; Attr.many
-          [ Attr.on_click (fun _ -> Print_int_event.inject 5)
-          ; Attr.on_click (fun _ -> Print_int_event.inject 6)
-          ]
-      ]
+      ~attr:
+        Attr.(
+          many_without_merge
+            [ id "x"
+            ; many
+                [ on_click (fun _ -> Print_int_event.inject 5)
+                ; on_click (fun _ -> Print_int_event.inject 6)
+                ]
+            ])
       []
   in
   node
@@ -271,19 +283,19 @@ let%expect_test "merged" =
 let%expect_test "add class in the middle of a [many]" =
   let node =
     Node.div
-      [ Attr.many
-          ([ Attr.id "x"
-           ; Attr.class_ "abc"
-           ; Attr.on_click (fun _ -> Print_int_event.inject 1)
-           ]
-           @ Attr.Multi.add_class
-               [ Attr.class_ "def"
-               ; Attr.on_click (fun _ -> Print_int_event.inject 2)
-               ; Attr.on_click (fun _ -> Print_int_event.inject 3)
-               ]
-               "ghi"
-           @ [ Attr.class_ "jkl"; Attr.on_click (fun _ -> Print_int_event.inject 4) ])
-      ]
+      ~attr:
+        (Attr.many
+           ([ Attr.id "x"
+            ; Attr.class_ "abc"
+            ; Attr.on_click (fun _ -> Print_int_event.inject 1)
+            ]
+            @ Attr.Multi.add_class
+                [ Attr.class_ "def"
+                ; Attr.on_click (fun _ -> Print_int_event.inject 2)
+                ; Attr.on_click (fun _ -> Print_int_event.inject 3)
+                ]
+                "ghi"
+            @ [ Attr.class_ "jkl"; Attr.on_click (fun _ -> Print_int_event.inject 4) ]))
       []
   in
   node
@@ -300,11 +312,14 @@ let%expect_test "bug with attributes and properties with the same name" =
      with the same name. This is fixed in a subfeature. *)
   let node =
     Node.input
-      [ Attr.checked
-      ; Attr.bool_property "checked" true
-      ; Attr.on_click (fun _ev -> Print_int_event.inject 1)
-      ; Attr.id "x"
-      ]
+      ~attr:
+        Attr.(
+          many_without_merge
+            [ checked
+            ; bool_property "checked" true
+            ; on_click (fun _ev -> Print_int_event.inject 1)
+            ; id "x"
+            ])
       []
   in
   node

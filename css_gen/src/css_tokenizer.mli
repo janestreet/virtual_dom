@@ -12,7 +12,7 @@
     Also we generally only implement what we need to parse declaration lists.
     Not everything needed to parse complete css style sheets (e.g. cdo, cdc).
 *)
-open! Core_kernel
+open! Core
 
 type t
 

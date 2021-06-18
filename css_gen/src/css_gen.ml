@@ -1,5 +1,5 @@
 module Stable = struct
-  open Core_kernel.Core_kernel_stable
+  open Core.Core_stable
 
   module V1 = struct
     (** (field * value) list.  Where value should be escaped / quoted
@@ -8,7 +8,7 @@ module Stable = struct
   end
 end
 
-open Core_kernel
+open Core
 include Stable.V1
 
 let sanitize_sexp s =
@@ -364,11 +364,9 @@ let font ~size ~family ?style ?weight ?variant () =
   |> concat
 ;;
 
-let color c = create_raw ~field:"color" ~value:(Color.to_string_css c)
-
-let background_color c =
-  create_raw ~field:"background-color" ~value:(Color.to_string_css c)
-;;
+let create_with_color ~field ~color = create_raw ~field ~value:(Color.to_string_css color)
+let color color = create_with_color ~field:"color" ~color
+let background_color color = create_with_color ~field:"background-color" ~color
 
 type stops = (Percent.t * Color.t) list
 

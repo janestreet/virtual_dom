@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Virtual_dom.Vdom
 include Vdom_input_widgets_intf
 
@@ -155,11 +155,13 @@ let structural_list ?(orientation = `Vertical) attrs children =
     | `Horizontal -> Css_gen.(display `Inline_block)
   in
   Node.ul
-    ([ Attr.style
-         Css_gen.(create ~field:"list-style" ~value:"none" @> margin_left (`Px 0))
-     ]
-     |> add_attrs attrs)
-    (List.map children ~f:(fun child -> Node.li [ Attr.style layout_style ] [ child ]))
+    ~attr:
+      (Attr.many_without_merge
+         ([ Attr.style
+              Css_gen.(create ~field:"list-style" ~value:"none" @> margin_left (`Px 0))
+          ]
+          |> add_attrs attrs))
+    (List.map children ~f:(fun child -> Node.li ~attr:(Attr.style layout_style) [ child ]))
 ;;
 
 module Value_normalizing_hook = struct
@@ -241,17 +243,21 @@ module Dropdown = struct
         ~on_change
     =
     Node.select
-      ([ Attr.class_ "widget-dropdown"
-       ; Attr.on_change (fun _ value ->
-           on_change (Int.of_string value |> List.nth_exn values))
-       ]
-       |> maybe_disabled ~disabled
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           ([ Attr.class_ "widget-dropdown"
+            ; Attr.on_change (fun _ value ->
+                on_change (Int.of_string value |> List.nth_exn values))
+            ]
+            |> maybe_disabled ~disabled
+            |> add_attrs extra_attrs))
       (List.mapi values ~f:(fun index value ->
          Node.option
-           [ Attr.value (Int.to_string index)
-           ; Attr.bool_property "selected" (equal value selected)
-           ]
+           ~attr:
+             (Attr.many_without_merge
+                [ Attr.value (Int.to_string index)
+                ; Attr.bool_property "selected" (equal value selected)
+                ])
            [ Node.text (to_string value) ]))
   ;;
 
@@ -337,13 +343,15 @@ end
 module Checkbox = struct
   let impl ?(extra_attrs = []) ?(disabled = false) ~is_checked ~label ~on_toggle () =
     Node.label
-      extra_attrs
+      ~attr:(Attr.many_without_merge extra_attrs)
       [ Node.input
-          ([ Attr.type_ "checkbox"
-           ; Attr.on_click (fun _ev -> on_toggle ())
-           ; Attr.bool_property "checked" is_checked
-           ]
-           |> maybe_disabled ~disabled)
+          ~attr:
+            (Attr.many_without_merge
+               ([ Attr.type_ "checkbox"
+                ; Attr.on_click (fun _ev -> on_toggle ())
+                ; Attr.bool_property "checked" is_checked
+                ]
+                |> maybe_disabled ~disabled))
           []
       ; Node.text label
       ]
@@ -351,7 +359,7 @@ module Checkbox = struct
 
   let simple ?extra_attrs ?disabled ~is_checked ~label ~on_toggle () =
     Node.div
-      [ Attr.class_ "checkbox-container" ]
+      ~attr:(Attr.class_ "checkbox-container")
       [ impl ?extra_attrs ?disabled ~is_checked ~label ~on_toggle () ]
   ;;
 end
@@ -459,22 +467,24 @@ module Multi_select = struct
              property. [Attr.selected] modifies the DOM attribute so that selected options
              can be styled with CSS. [Attr.selected] alone does not update the state
              properly if the model changes, so both are needed. *)
-          ([ Some (Attr.bool_property "selected" is_selected)
-           ; Some
-               (Attr.on_click (fun evt ->
-                  let was_repeated_click =
-                    (not (Js.to_bool evt##.ctrlKey))
-                    && Set.equal selected (Set.singleton (module M) value)
-                  in
-                  match was_repeated_click, repeated_click_behavior with
-                  | false, _ | true, No_action -> Event.Ignore
-                  | true, Clear_all -> on_change (Set.empty (module M))
-                  | true, Select_all -> on_change (Set.of_list (module M) values)))
-           ]
-           |> List.filter_opt)
+          ~attr:
+            (Attr.many_without_merge
+               ([ Some (Attr.bool_property "selected" is_selected)
+                ; Some
+                    (Attr.on_click (fun evt ->
+                       let was_repeated_click =
+                         (not (Js.to_bool evt##.ctrlKey))
+                         && Set.equal selected (Set.singleton (module M) value)
+                       in
+                       match was_repeated_click, repeated_click_behavior with
+                       | false, _ | true, No_action -> Event.Ignore
+                       | true, Clear_all -> on_change (Set.empty (module M))
+                       | true, Select_all -> on_change (Set.of_list (module M) values)))
+                ]
+                |> List.filter_opt))
           [ Node.text (M.to_string value) ])
     in
-    Node.select attrs options
+    Node.select ~attr:(Attr.many_without_merge attrs) options
   ;;
 
   let of_values
@@ -548,10 +558,12 @@ module Entry = struct
 
   let input_node ?(extra_attrs = []) ?(disabled = false) ?(placeholder = "") attrs =
     Node.input
-      (attrs
-       |> add_attrs [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
-       |> maybe_disabled ~disabled
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           (attrs
+            |> add_attrs [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
+            |> maybe_disabled ~disabled
+            |> add_attrs extra_attrs))
       []
   ;;
 
@@ -734,12 +746,15 @@ module Entry = struct
         ()
     =
     Node.textarea
-      ([ Attr.placeholder placeholder
-       ; Call_on_input_when.listener call_on_input_when (fun _ev value -> on_input value)
-       ; Value_normalizing_hook.create value ~f:Fn.id
-       ]
-       |> maybe_disabled ~disabled
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           ([ Attr.placeholder placeholder
+            ; Call_on_input_when.listener call_on_input_when (fun _ev value ->
+                on_input value)
+            ; Value_normalizing_hook.create value ~f:Fn.id
+            ]
+            |> maybe_disabled ~disabled
+            |> add_attrs extra_attrs))
       []
   ;;
 end
@@ -749,25 +764,31 @@ module Button = struct
     match validation with
     | Ok result ->
       Node.button
-        ([ Attr.on_click (fun _ev -> on_click result); Attr.type_ "button" ]
-         |> add_attrs extra_attrs)
+        ~attr:
+          (Attr.many_without_merge
+             ([ Attr.on_click (fun _ev -> on_click result); Attr.type_ "button" ]
+              |> add_attrs extra_attrs))
         [ Node.text text ]
     | Error reason ->
       Node.button
-        ([ Attr.disabled
-         ; Attr.type_ "button"
-         ; Attr.create "tooltip" reason
-         ; Attr.create "tooltip-position" "top"
-         ]
-         |> add_attrs extra_attrs)
+        ~attr:
+          (Attr.many_without_merge
+             ([ Attr.disabled
+              ; Attr.type_ "button"
+              ; Attr.create "tooltip" reason
+              ; Attr.create "tooltip-position" "top"
+              ]
+              |> add_attrs extra_attrs))
         [ Node.text text ]
   ;;
 
   let simple ?(extra_attrs = []) ?(disabled = false) text ~on_click =
     Node.button
-      ([ Attr.type_ "button"; Attr.on_click (fun _ev -> on_click ()) ]
-       |> maybe_disabled ~disabled
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           ([ Attr.type_ "button"; Attr.on_click (fun _ev -> on_click ()) ]
+            |> maybe_disabled ~disabled
+            |> add_attrs extra_attrs))
       [ Node.text text ]
   ;;
 end
@@ -828,16 +849,18 @@ module Radio_buttons = struct
       (List.map values ~f:(fun item ->
          let checked = Option.value_map selected ~default:false ~f:(equal item) in
          Node.label
-           (label_attrs ~checked)
+           ~attr:(Attr.many_without_merge (label_attrs ~checked))
            [ Node.input
-               ([ Attr.type_ "radio"
-                ; Attr.name name
-                ; Attr.classes [ "radio-button" ]
-                ; Attr.on_click (fun _ev -> on_click item)
-                ; Attr.bool_property "checked" checked
-                ]
-                @ input_attrs
-                |> maybe_disabled ~disabled)
+               ~attr:
+                 (Attr.many_without_merge
+                    ([ Attr.type_ "radio"
+                     ; Attr.name name
+                     ; Attr.classes [ "radio-button" ]
+                     ; Attr.on_click (fun _ev -> on_click item)
+                     ; Attr.bool_property "checked" checked
+                     ]
+                     @ input_attrs
+                     |> maybe_disabled ~disabled))
                []
            ; Node.text (to_string item)
            ]))
@@ -908,31 +931,36 @@ module File_select = struct
 
   let list ?(extra_attrs = []) ?accept ~on_input () =
     Node.input
-      ([ Attr.type_ "file"
-       ; accept_attrs accept
-       ; Attr.create "multiple" ""
-       ; Attr.on_file_input (fun _ev file_list ->
-           let files =
-             List.init file_list##.length ~f:(fun i ->
-               file_list##item i
-               |> Js.Opt.to_option
-               |> Option.value_exn ~message:[%string "couldn't get file %{i#Int}"])
-           in
-           on_input files)
-       ]
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           ([ Attr.type_ "file"
+            ; accept_attrs accept
+            ; Attr.create "multiple" ""
+            ; Attr.on_file_input (fun _ev file_list ->
+                let files =
+                  List.init file_list##.length ~f:(fun i ->
+                    file_list##item i
+                    |> Js.Opt.to_option
+                    |> Option.value_exn
+                         ~message:[%string "couldn't get file %{i#Int}"])
+                in
+                on_input files)
+            ]
+            |> add_attrs extra_attrs))
       []
   ;;
 
   let single ?(extra_attrs = []) ?accept ~on_input () =
     Node.input
-      ([ Attr.type_ "file"
-       ; accept_attrs accept
-       ; Attr.on_file_input (fun _ev file_list ->
-           let file = file_list##item 0 |> Js.Opt.to_option in
-           on_input file)
-       ]
-       |> add_attrs extra_attrs)
+      ~attr:
+        (Attr.many_without_merge
+           ([ Attr.type_ "file"
+            ; accept_attrs accept
+            ; Attr.on_file_input (fun _ev file_list ->
+                let file = file_list##item 0 |> Js.Opt.to_option in
+                on_input file)
+            ]
+            |> add_attrs extra_attrs))
       []
   ;;
 end

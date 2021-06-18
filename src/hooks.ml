@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Js_of_ocaml
 
 module type S = Hooks_intf.S
@@ -35,9 +35,7 @@ type t =
           'input * Dom_html.animation_frame_request_id * 'state
           -> Dom_html.element Js.t
           -> unit
-      ; id :
-          ('input * Dom_html.animation_frame_request_id * 'state)
-            Core_kernel.Type_equal.Id.t
+      ; id : ('input * Dom_html.animation_frame_request_id * 'state) Core.Type_equal.Id.t
       }
       -> t
 

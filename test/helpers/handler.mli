@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Js_of_ocaml
 
 (** The type representing an event handler e.g. onclick, onkeydown, etc...

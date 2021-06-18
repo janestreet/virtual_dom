@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Js_of_ocaml
 module Vdom_raw = Raw
 
@@ -80,6 +80,7 @@ type t =
   | Many of t list
   | Many_only_merge_classes_and_styles of
       t list * (Css_gen.t -> Css_gen.t) * (String.Set.t -> String.Set.t)
+  | Many_without_merge of t list
 
 let create name value =
   Attribute
@@ -114,6 +115,7 @@ let suppress_merge_warnings = function
 
 let create_hook name hook = Hook { name; hook }
 let many attrs = Many attrs
+let many_without_merge attrs = Many_without_merge attrs
 let empty = Many []
 let combine left right = Many [ left; right ]
 let ( @ ) = combine
@@ -173,7 +175,8 @@ let empty_merge =
   }
 ;;
 
-let to_raw attrs =
+let to_raw attr =
+  let attrs = [ attr ] in
   (* When input elements have their value set to what it already is
      the cursor gets moved to the end of the field even when the user
      is editing in the middle. SoftSetHook (from ./soft-set-hook.js)
@@ -299,6 +302,22 @@ let to_raw attrs =
         ; handlers =
             Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
         ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
+        }
+      | Many_without_merge attrs ->
+        let sub_merge =
+          merge
+            ~combine_hook:take_second_hook
+            ~combine_handler:take_second_handler
+            ~combine_styles:take_second_styles
+            ~combine_classes:take_second_classes
+            empty_merge
+            attrs
+        in
+        { styles = combine_styles acc.styles sub_merge.styles
+        ; classes = combine_classes acc.classes sub_merge.classes
+        ; handlers =
+            Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
+        ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
         })
   in
   let merge =
@@ -342,10 +361,10 @@ let to_raw attrs =
   attrs_obj
 ;;
 
-let to_raw attrs =
-  match attrs with
-  | [] -> Raw.Attrs.create ()
-  | attrs -> to_raw attrs
+let to_raw attr =
+  match attr with
+  | Many [] | Many_without_merge [] -> Raw.Attrs.create ()
+  | attr -> to_raw attr
 ;;
 
 let style css = Style css
@@ -580,7 +599,8 @@ module Expert = struct
     | Handler { name; _ } -> String.equal ("on" ^ name) looking_for
     | Style _ -> String.equal looking_for "style"
     | Class _ -> String.equal looking_for "class"
-    | Many attrs | Many_only_merge_classes_and_styles (attrs, _, _) ->
-      List.exists ~f:(contains_name looking_for) attrs
+    | Many attrs
+    | Many_only_merge_classes_and_styles (attrs, _, _)
+    | Many_without_merge attrs -> List.exists ~f:(contains_name looking_for) attrs
   ;;
 end

@@ -8,10 +8,10 @@ module Element : sig
   type t
 
   val tag : t -> string
-  val attrs : t -> Attr.Multi.t
+  val attrs : t -> Attr.t
   val key : t -> string option
   val with_key : t -> string -> t
-  val map_attrs : t -> f:(Attr.Multi.t -> Attr.Multi.t) -> t
+  val map_attrs : t -> f:(Attr.t -> Attr.t) -> t
   val add_style : t -> Css_gen.t -> t
   val add_class : t -> string -> t
 end
@@ -50,8 +50,11 @@ type t =
   | Element of Element.t
   | Widget of Widget.t
 
-type node_creator = ?key:string -> Attr.t list -> t list -> t
+type node_creator_old = ?key:string -> Attr.t list -> t list -> t
+
+type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
 type node_creator_childless = ?key:string -> Attr.t list -> t
+type node_creator_childless_monoid = ?key:string -> Attr.t -> t
 
 val none : t
 val text : string -> t
@@ -89,8 +92,8 @@ val thead : node_creator
 val tr : node_creator
 val ul : node_creator
 val ol : node_creator
-val br : node_creator_childless
-val hr : node_creator_childless
+val br : node_creator_childless_monoid
+val hr : node_creator_childless_monoid
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (** This function can be used to build a node with the tag and html content of
@@ -103,25 +106,25 @@ val sexp_for_debugging : ?indent:int -> Sexp.t -> t
     the page, so use with extreme caution! *)
 val inner_html
   :  tag:string
-  -> Attr.t list
+  -> attr:Attr.t
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> t
 
 (** Same as [inner_html] but for svg elements *)
 val inner_html_svg
   :  tag:string
-  -> Attr.t list
+  -> attr:Attr.t
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> t
 
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
-val create : string -> ?key:string -> Attr.t list -> t list -> t
+val create : string -> node_creator_old
 
 (** Like [create] but for svg nodes (i.e. all to be placed inside <svg> tag). This is
     needed as browsers maintain separate namespaces for html and svg, and failing to use
     the correct one may result in delayed redraws. *)
-val create_svg : string -> ?key:string -> Attr.t list -> t list -> t
+val create_svg : string -> node_creator
 
 val to_dom : t -> Dom_html.element Js.t
 val to_raw : t -> Raw.Node.t

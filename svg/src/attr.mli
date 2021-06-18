@@ -1,5 +1,5 @@
 open Virtual_dom.Vdom.Attr
-open Core_kernel
+open Core
 
 type align_options =
   | None
@@ -264,8 +264,10 @@ module Text : sig
   val side : [ `Left | `Right ] -> t
 
   (** Nothing to do for <title>
-      Nothing to do for <tspan> as it shares everything with text 
+      Nothing to do for <tspan> as it shares everything with text
       Nothing to do for <use> as it shares href with <linearGradient>, x, y,
       width, and height with <image> *)
   val spacing : [ `Auto | `Exact ] -> t
 end
+
+val ( @ ) : t -> t -> t

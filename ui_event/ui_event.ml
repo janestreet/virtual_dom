@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 include Ui_event_intf
 
 type t = ..

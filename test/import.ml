@@ -1,3 +1,3 @@
-open! Core_kernel
+open! Core
 include Virtual_dom.Vdom
 include Virtual_dom_test_helpers

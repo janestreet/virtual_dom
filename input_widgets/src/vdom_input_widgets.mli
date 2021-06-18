@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Import
 open Virtual_dom.Vdom
 include module type of Vdom_input_widgets_intf

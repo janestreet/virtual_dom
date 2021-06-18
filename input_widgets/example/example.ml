@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Incr_dom
 open Vdom_input_widgets
 open Incr.Let_syntax
@@ -224,16 +224,12 @@ module App = struct
       ]
     in
     let title text =
-      Node.h2 [ Attr.style (Css_gen.font_family [ "monospace" ]) ] [ Node.text text ]
+      Node.h2 ~attr:(Attr.style (Css_gen.font_family [ "monospace" ])) [ Node.text text ]
     in
     Node.div
-      []
-      (List.map widgets ~f:(fun (name, node) -> Node.section [] [ title name; node ])
+      (List.map widgets ~f:(fun (name, node) -> Node.section [ title name; node ])
        @ [ Node.section
-             []
-             [ title "Model"
-             ; Node.pre [] [ Node.text (sprintf !"%{sexp:Model.t}" model) ]
-             ]
+             [ title "Model"; Node.pre [ Node.text (sprintf !"%{sexp:Model.t}" model) ] ]
          ])
   ;;
 

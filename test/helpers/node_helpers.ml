@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Js_of_ocaml
 open Virtual_dom
 
@@ -20,6 +20,20 @@ and t =
   | Element of element
   | Widget of Sexp.t
 [@@deriving sexp_of]
+
+let rec inner_text = function
+  | Text s ->
+    (match String.strip s with
+     | "" -> None
+     | s -> Some s)
+  | Element { children; _ } ->
+    (match children |> List.filter_map ~f:inner_text with
+     | [] -> None
+     | xs -> xs |> String.concat ~sep:" " |> Some)
+  | Widget _ -> None
+;;
+
+let inner_text t = inner_text t |> Option.value ~default:""
 
 let is_tag ~tag = function
   | Element { tag_name; _ } -> String.equal tag_name tag
@@ -187,17 +201,18 @@ let bprint_element
   list_iter_filter handlers ~f:(fun (k, _) ->
     bprint_aligned_indent ();
     bprintf buffer "%s={handler}" k);
-  if filter_printed_attributes "style"
-  then
-    if not (List.is_empty styles)
-    then (
+  let styles =
+    List.filter styles ~f:(fun (name, _) -> filter_printed_attributes ("style." ^ name))
+  in
+  if not (List.is_empty styles)
+  then (
+    bprint_aligned_indent ();
+    bprintf buffer "style={";
+    List.iter styles ~f:(fun (k, v) ->
       bprint_aligned_indent ();
-      bprintf buffer "style={";
-      List.iter styles ~f:(fun (k, v) ->
-        bprint_aligned_indent ();
-        bprintf buffer "%s%s: %s;" before_styles k v);
-      bprint_aligned_indent ();
-      bprintf buffer "}");
+      bprintf buffer "%s%s: %s;" before_styles k v);
+    bprint_aligned_indent ();
+    bprintf buffer "}");
   bprintf buffer ">"
 ;;
 
@@ -411,7 +426,7 @@ let unsafe_of_js_exn =
                    .map(function(key) {
                        return [0, key, node.properties[key]['extra']]
                    });
-               var soft_set_hooks = 
+               var soft_set_hooks =
                    Object.keys(node.properties)
                    .filter(function(key) {
                      return node.properties[key] instanceof joo_global_object.SoftSetHook;

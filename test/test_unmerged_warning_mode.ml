@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let show node =
@@ -9,7 +9,10 @@ let show node =
 let%expect_test "stop warning after message quota" =
   Attr.Unmerged_warning_mode.For_testing.reset_warning_count ();
   Attr.Unmerged_warning_mode.current := Stop_after_quota 1;
-  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []);
+  show
+    (Node.div
+       ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; many [ class_ "c" ] ])
+       []);
   [%expect
     {|
     ("WARNING: not combining classes" (first (a)) (second (b)))
@@ -21,7 +24,10 @@ let%expect_test "stop warning after message quota" =
 let%expect_test "No_warnings prints no warnings" =
   Attr.Unmerged_warning_mode.For_testing.reset_warning_count ();
   Attr.Unmerged_warning_mode.current := No_warnings;
-  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []);
+  show
+    (Node.div
+       ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; many [ class_ "c" ] ])
+       []);
   [%expect {|
     <div class="c"> </div> |}]
 ;;
@@ -29,7 +35,10 @@ let%expect_test "No_warnings prints no warnings" =
 let%expect_test "All_warnings prints warnings" =
   Attr.Unmerged_warning_mode.For_testing.reset_warning_count ();
   Attr.Unmerged_warning_mode.current := All_warnings;
-  show (Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []);
+  show
+    (Node.div
+       ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; many [ class_ "c" ] ])
+       []);
   [%expect
     {|
     ("WARNING: not combining classes" (first (a)) (second (b)))
@@ -39,7 +48,9 @@ let%expect_test "All_warnings prints warnings" =
 
 let%expect_test "mode transitions are predictable" =
   let node () =
-    Node.div [ Attr.class_ "a"; Attr.class_ "b"; Attr.many [ Attr.class_ "c" ] ] []
+    Node.div
+      ~attr:Attr.(many_without_merge [ class_ "a"; class_ "b"; many [ class_ "c" ] ])
+      []
   in
   Attr.Unmerged_warning_mode.For_testing.reset_warning_count ();
   Attr.Unmerged_warning_mode.current := No_warnings;

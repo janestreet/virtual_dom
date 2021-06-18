@@ -1,2 +1,2 @@
 (library (name ui_event) (public_name virtual_dom.ui_event)
- (libraries core_kernel) (preprocess (pps ppx_jane)))
+ (libraries core_kernel.core) (preprocess (pps ppx_jane)))

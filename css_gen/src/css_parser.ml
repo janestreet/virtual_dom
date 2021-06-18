@@ -12,7 +12,7 @@
    simple code that also allocates very little.
 *)
 
-open Core_kernel
+open Core
 open! Int.Replace_polymorphic_compare
 
 let rec next ct =
