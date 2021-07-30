@@ -50,15 +50,34 @@ end = struct
   ;;
 end
 
+module Element_array = struct
+  (* This type must only be instantiated with Node.t as the
+     type parameter because it ignores the inner-most conversion
+     function.  This is safe because Node.t is defined as Ojs.t,
+     but we can't take advantage of that fact because the Node
+     module is generated via ppx. *)
+
+  type 'a t = 'a Js_of_ocaml.Js.js_array Js.t
+
+  let t_of_js : _ -> Ojs.t -> 'a t = fun _ -> Caml.Obj.magic
+  let t_to_js : _ -> 'a t -> Ojs.t = fun _ -> Caml.Obj.magic
+end
+
 module Node =
   [%js:
     type t = private Ojs.t
 
     val t_of_js : Ojs.t -> t
     val t_to_js : t -> Ojs.t
-    val node : string -> Attrs.t -> t list -> string option -> t [@@js.new "VirtualDom.VNode"]
+
+    val node : string -> Attrs.t -> t Element_array.t -> string option -> t
+    [@@js.new "VirtualDom.VNode"]
+
     val text : string -> t [@@js.new "VirtualDom.VText"]
-    val svg : string -> Attrs.t -> t list -> string option -> t [@@js.new "VirtualDom.svg"]
+
+    val svg : string -> Attrs.t -> t Element_array.t -> string option -> t
+    [@@js.new "VirtualDom.svg"]
+
     val to_dom : t -> Native_node.t [@@js.global "VirtualDom.createElement"]]
 
 module Patch =

@@ -1,6 +1,6 @@
 open Base
 open Js_of_ocaml
-include Ui_event
+include Ui_effect
 
 (* All visibility handlers see all events, so a simple list is enough.  *)
 let visibility_handlers : (unit -> unit) list ref = ref []
@@ -22,7 +22,7 @@ module Obj = struct
   end
 end
 
-type t +=
+type _ t +=
   | Viewport_changed
   | Stop_propagation
   | Stop_immediate_propagation
@@ -34,12 +34,12 @@ let sequence_as_sibling left ~unless_stopped =
     | Stop_immediate_propagation -> true
     | _ -> false
   in
-  if contains_stop left then left else Ui_event.Many [ left; unless_stopped () ]
+  if contains_stop left then left else Ui_effect.Many [ left; unless_stopped () ]
 ;;
 
 (* We need to keep track of the current dom event here so that
-   movement between [Vdom.Event.Expert.handle] and
-   [Ui_concrete.Event.Expert.handle] keeps the original
+   movement between [Vdom.Effect.Expert.handle] and
+   [Ui_concrete.Effect.Expert.handle] keeps the original
    dom event around. *)
 let current_dom_event = ref None
 

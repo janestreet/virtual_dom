@@ -5,5 +5,5 @@ module Attr = struct
 end
 
 module Attrs = Attr.Multi
-module Event = Event
+module Effect = Effect
 module Node = Node

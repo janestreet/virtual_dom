@@ -8,7 +8,7 @@ let%expect_test "empty div with triggered callback" =
          ~attr:
            (Attr.on_click (fun _ ->
               print_endline "inside handler";
-              Event.Ignore))
+              Effect.Ignore))
          [])
   in
   Node_helpers.trigger node ~event_name:"onclick";
@@ -22,7 +22,7 @@ let%expect_test "empty div with triggered callback (failing)" =
          ~attr:
            (Attr.on_click (fun e ->
               print_s [%message (e##.screenX : int)];
-              Event.Ignore))
+              Effect.Ignore))
          [])
   in
   Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
@@ -49,7 +49,7 @@ let%expect_test "empty input with on_change (success!)" =
          ~attr:
            (Attr.on_change (fun _e s ->
               print_endline s;
-              Event.Ignore))
+              Effect.Ignore))
          [])
   in
   Node_helpers.trigger
@@ -70,7 +70,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
          ~attr:
            (Attr.on_change (fun _e s ->
               print_endline s;
-              Event.Ignore))
+              Effect.Ignore))
          [])
   in
   Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
@@ -98,13 +98,13 @@ let%expect_test "fake event handler" =
     {| (node (Element ((tag_name div) (attributes ((on_foo "not a function")))))) |}]
 ;;
 
-module Print_int_event = Ui_event.Define (struct
+module Print_int_event = Ui_effect.Define (struct
     module Action = Int
 
     let handle = printf "%d "
   end)
 
-module Print_string_event = Ui_event.Define (struct
+module Print_string_event = Ui_effect.Define (struct
     module Action = String
 
     let handle = printf "%s "
@@ -112,12 +112,12 @@ module Print_string_event = Ui_event.Define (struct
 
 module H = Attr.Hooks.Make (struct
     module Input = struct
-      type t = int -> Ui_event.t [@@deriving sexp]
+      type t = int -> unit Ui_effect.t [@@deriving sexp]
 
       let combine left right i =
         (* adding 10 to [i] is silly, but it'll be obvious in the tests *)
         let i = i + 10 in
-        Event.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
       ;;
     end
 
@@ -131,11 +131,11 @@ module H = Attr.Hooks.Make (struct
 
 module String_h = Attr.Hooks.Make (struct
     module Input = struct
-      type t = string -> Ui_event.t [@@deriving sexp]
+      type t = string -> unit Ui_effect.t [@@deriving sexp]
 
       let combine left right i =
         let i = i ^ "_combine" in
-        Event.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
       ;;
     end
 

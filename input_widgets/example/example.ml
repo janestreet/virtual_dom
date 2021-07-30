@@ -75,7 +75,7 @@ module App = struct
 
   let on_startup ~schedule_action:_ _model = Async_kernel.Deferred.unit
 
-  let view (model : Model.t Incr.t) ~(inject : Action.t -> Event.t) =
+  let view (model : Model.t Incr.t) ~(inject : Action.t -> unit Effect.t) =
     let%map model = model in
     let widgets =
       [ ( "Dropdown.of_values"

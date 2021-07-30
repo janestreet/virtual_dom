@@ -1,4 +1,5 @@
 open Base
+open Js_of_ocaml
 
 module Widget = struct
   open Js_of_ocaml
@@ -61,7 +62,7 @@ type element =
   ; key : string option
   ; attrs : Attr.t
   ; raw_attrs : Raw.Attrs.t Lazy.t
-  ; children : Raw.Node.t list
+  ; children : Raw.Node.t Js.js_array Js.t
   ; kind : [ `Vnode | `Svg ]
   }
 
@@ -105,12 +106,17 @@ let t_to_js = function
 ;;
 
 let element kind ~tag ~key attrs children =
-  let attrs = attrs in
-  let children =
-    List.filter_map children ~f:(function
-      | None -> None
-      | (Text _ | Element _ | Widget _) as other -> Some (t_to_js other))
-  in
+  let children_raw = new%js Js.array_empty in
+  List.iter children ~f:(function
+    | None -> ()
+    | (Text _ | Element _ | Widget _) as other ->
+      let (_ : int) = children_raw##push (t_to_js other) in
+      ());
+  let raw_attrs = lazy (Attr.to_raw attrs) in
+  { kind; tag; key; attrs; raw_attrs; children = children_raw }
+;;
+
+let element_expert kind ~tag ?key attrs children =
   let raw_attrs = lazy (Attr.to_raw attrs) in
   { kind; tag; key; attrs; raw_attrs; children }
 ;;
@@ -121,15 +127,11 @@ let widget ?info ?destroy ?update ~id ~init () =
   Widget (Widget.create ?info ?destroy ?update ~id ~init ())
 ;;
 
-let create tag ?key attrs children =
-  Element (element `Vnode ~tag ~key (Attr.many_without_merge attrs) children)
-;;
-
-let create_monoid tag ?key ?(attr = Attr.empty) children =
+let create tag ?key ?(attr = Attr.empty) children =
   Element (element `Vnode ~tag ~key attr children)
 ;;
 
-let create_childless tag ?key attr = create_monoid tag ?key ~attr []
+let create_childless tag ?key ?attr () = create tag ?key ?attr []
 
 let create_svg tag ?key ?(attr = Attr.empty) children =
   Element (element `Svg ~tag ~key attr children)
@@ -147,10 +149,8 @@ let widget_of_module m =
   Base.Staged.stage (fun i -> Widget (f i))
 ;;
 
-type node_creator_old = ?key:string -> Attr.t list -> t list -> t
 type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
-type node_creator_childless = ?key:string -> Attr.t list -> t
-type node_creator_childless_monoid = ?key:string -> Attr.t -> t
+type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
 
 let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
@@ -181,46 +181,46 @@ let inner_html
     ~info:(lazy (build_sexp ~extra:debug ~content))
     ~init:(fun () ->
       let element = to_dom element in
-      element##.innerHTML := Js_of_ocaml.Js.string content;
+      element##.innerHTML := Js.string content;
       (debug, content), element)
     ()
 ;;
 
 let inner_html_svg = inner_html (fun tag ~attr -> create_svg_monoid tag ?key:None ~attr)
-let inner_html = inner_html (fun tag ~attr -> create_monoid tag ?key:None ~attr)
-let a = create_monoid "a"
-let body = create_monoid "body"
-let button = create_monoid "button"
-let code = create_monoid "code"
-let div = create_monoid "div"
-let footer = create_monoid "footer"
-let h1 = create_monoid "h1"
-let h2 = create_monoid "h2"
-let h3 = create_monoid "h3"
-let h4 = create_monoid "h4"
-let h5 = create_monoid "h5"
-let h6 = create_monoid "h6"
-let header = create_monoid "header"
-let html = create_monoid "html"
-let input = create_monoid "input"
-let textarea = create_monoid "textarea"
-let select = create_monoid "select"
-let option = create_monoid "option"
-let label = create_monoid "label"
-let li = create_monoid "li"
-let p = create_monoid "p"
-let pre = create_monoid "pre"
-let section = create_monoid "section"
-let span = create_monoid "span"
-let strong = create_monoid "strong"
-let table = create_monoid "table"
-let tbody = create_monoid "tbody"
-let td = create_monoid "td"
-let th = create_monoid "th"
-let thead = create_monoid "thead"
-let tr = create_monoid "tr"
-let ul = create_monoid "ul"
-let ol = create_monoid "ol"
+let inner_html = inner_html (fun tag ~attr -> create tag ?key:None ~attr)
+let a = create "a"
+let body = create "body"
+let button = create "button"
+let code = create "code"
+let div = create "div"
+let footer = create "footer"
+let h1 = create "h1"
+let h2 = create "h2"
+let h3 = create "h3"
+let h4 = create "h4"
+let h5 = create "h5"
+let h6 = create "h6"
+let header = create "header"
+let html = create "html"
+let input = create "input"
+let textarea = create "textarea"
+let select = create "select"
+let option = create "option"
+let label = create "label"
+let li = create "li"
+let p = create "p"
+let pre = create "pre"
+let section = create "section"
+let span = create "span"
+let strong = create "strong"
+let table = create "table"
+let tbody = create "tbody"
+let td = create "td"
+let th = create "th"
+let thead = create "thead"
+let tr = create "tr"
+let ul = create "ul"
+let ol = create "ol"
 let br = create_childless "br"
 let hr = create_childless "hr"
 
@@ -238,4 +238,14 @@ module Patch = struct
 
   let apply t elt = Raw.Patch.apply elt t
   let is_empty t = Raw.Patch.is_empty t
+end
+
+module Expert = struct
+  let create ?key tag attrs children =
+    Element (element_expert `Vnode ?key ~tag attrs children)
+  ;;
+
+  let create_svg ?key tag attrs children =
+    Element (element_expert `Svg ?key ~tag attrs children)
+  ;;
 end

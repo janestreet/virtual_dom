@@ -24,7 +24,7 @@ module Event_handler = struct
   type t =
     | T :
         { type_id : 'a Type_equal.Id.t
-        ; handler : (#Dom_html.event as 'a) Js.t -> Ui_event.t
+        ; handler : (#Dom_html.event as 'a) Js.t -> unit Ui_effect.t
         }
         -> t
 
@@ -43,7 +43,7 @@ module Event_handler = struct
         { type_id = ltid
         ; handler =
             (fun value ->
-               Event.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
+               Effect.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
                  rhandler value))
         }
     | None ->
@@ -333,7 +333,7 @@ let to_raw attr =
     Raw.Attrs.set_property attrs_obj name (ojs_of_any (Hooks.pack hook)));
   Map.iteri merge.handlers ~f:(fun ~key:name ~data:(Event_handler.T { handler; _ }) ->
     let f e =
-      Event.Expert.handle e (handler e);
+      Effect.Expert.handle e (handler e);
       Js._true
     in
     Raw.Attrs.set_property
@@ -432,7 +432,7 @@ module Type_id = struct
   let (animation : Dom_html.animationEvent Type_equal.Id.t) = create "animationEvent"
 end
 
-let on type_id name (handler : #Dom_html.event Js.t -> Ui_event.t) : t =
+let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
   Handler { name; handler = T { handler; type_id } }
 ;;
 
@@ -467,7 +467,7 @@ let on_cut = on Type_id.clipboard "cut"
 let on_paste = on Type_id.clipboard "paste"
 let on_reset = on Type_id.event "reset"
 let on_animationend = on Type_id.animation "animationend"
-let const_ignore _ = Event.Ignore
+let const_ignore _ = Effect.Ignore
 
 class type value_element =
   object
@@ -497,7 +497,7 @@ let on_input_event type_id event handler =
     Js.Opt.case ev##.target const_ignore (fun target ->
       Option.value_map
         (coerce_value_element target)
-        ~default:Event.Ignore
+        ~default:Effect.Ignore
         ~f:(fun target ->
           let text = Js.to_string target##.value in
           handler ev text)))
@@ -546,9 +546,9 @@ module Single_focus_hook () = struct
     let has_been_used = ref false
 
     module Input = struct
-      type t = (Ui_event.t[@sexp.opaque]) [@@deriving sexp_of]
+      type t = (unit Ui_effect.t[@sexp.opaque]) [@@deriving sexp_of]
 
-      let combine left right = Ui_event.Many [ left; right ]
+      let combine left right = Ui_effect.Many [ left; right ]
     end
 
     let init _ _ = ()
@@ -558,7 +558,7 @@ module Single_focus_hook () = struct
       then (
         has_been_used := true;
         element##focus;
-        Event.Expert.handle_non_dom_event_exn event)
+        Effect.Expert.handle_non_dom_event_exn event)
     ;;
 
     let update ~old_input:_ ~new_input:_ () _ = ()

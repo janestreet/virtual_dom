@@ -188,8 +188,8 @@ module Value_normalizing_hook = struct
        model swaps back and forth with the value in the element. *)
     let change_handler _ =
       let value = Js.to_string (get_value element) in
-      let normalized = Js.string (f value) in
-      set_value element normalized;
+      Option.iter (f value) ~f:(fun normalized ->
+        set_value element (Js.string normalized));
       Js._true
     in
     let change_handler = Dom.handler change_handler in
@@ -204,7 +204,7 @@ module Value_normalizing_hook = struct
     module Input = struct
       type t =
         { value : string
-        ; f : string -> string
+        ; f : string -> string option
         }
 
       let sexp_of_t { value; _ } = Sexp.Atom value
@@ -229,6 +229,10 @@ module Value_normalizing_hook = struct
 
   include Attr.Hooks.Make (M)
 
+  (* [create value ~f] will set the "value" property to [value] if the element is not
+     focused and on each change, run the current value through [f] to re-set it. Again,
+     this only happens if the element is not focused. If [f] returns [None], no change
+     takes place. *)
   let create value ~f = Attr.create_hook "value:normalized" (create { value; f })
 end
 
@@ -477,7 +481,7 @@ module Multi_select = struct
                          && Set.equal selected (Set.singleton (module M) value)
                        in
                        match was_repeated_click, repeated_click_behavior with
-                       | false, _ | true, No_action -> Event.Ignore
+                       | false, _ | true, No_action -> Effect.Ignore
                        | true, Clear_all -> on_change (Set.empty (module M))
                        | true, Select_all -> on_change (Set.of_list (module M) values)))
                 ]
@@ -544,15 +548,17 @@ module Entry = struct
   end
 
   let normalize (module M : Stringable.S) s =
-    try M.to_string (M.of_string s) with
-    | _ -> ""
+    match M.to_string (M.of_string s) with
+    | exception _ -> Some ""
+    | v -> Some v
   ;;
 
   let maybe_on_return on_return attrs =
     match on_return with
     | None -> attrs
     | Some on_return ->
-      Attr.on_keydown (fun ev -> if ev##.keyCode = 13 then on_return () else Event.Ignore)
+      Attr.on_keydown (fun ev ->
+        if ev##.keyCode = 13 then on_return () else Effect.Ignore)
       :: attrs
   ;;
 
@@ -579,6 +585,7 @@ module Entry = struct
         ?(call_on_input_when = Call_on_input_when.Text_changed)
         ?disabled
         ?placeholder
+        ?(should_normalize = true)
         (module M : Stringable.S with type t = t)
         ~type_attrs
         ~value
@@ -586,7 +593,9 @@ module Entry = struct
     =
     let value =
       let value = Option.value_map ~f:M.to_string value ~default:"" in
-      Value_normalizing_hook.create value ~f:(normalize (module M))
+      if should_normalize
+      then Value_normalizing_hook.create value ~f:(normalize (module M))
+      else Value_normalizing_hook.create value ~f:(const None)
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev -> function
         | "" -> on_input None
@@ -685,6 +694,7 @@ module Entry = struct
       ?disabled
       ?placeholder
       (module Time_compat.Ofday)
+      ~should_normalize:false
       ~type_attrs:[ Attr.type_ "time" ]
       ~value
       ~on_input
@@ -697,6 +707,7 @@ module Entry = struct
       ?disabled
       ?placeholder
       (module Date)
+      ~should_normalize:false
       ~type_attrs:[ Attr.type_ "date" ]
       ~value
       ~on_input
@@ -732,6 +743,7 @@ module Entry = struct
       ?placeholder
       (module Zoned_time)
       ~type_attrs:[ Attr.type_ "datetime-local" ]
+      ~should_normalize:false
       ~value
       ~on_input
   ;;
@@ -751,7 +763,7 @@ module Entry = struct
            ([ Attr.placeholder placeholder
             ; Call_on_input_when.listener call_on_input_when (fun _ev value ->
                 on_input value)
-            ; Value_normalizing_hook.create value ~f:Fn.id
+            ; Value_normalizing_hook.create value ~f:Option.return
             ]
             |> maybe_disabled ~disabled
             |> add_attrs extra_attrs))

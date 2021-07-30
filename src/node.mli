@@ -50,11 +50,8 @@ type t =
   | Element of Element.t
   | Widget of Widget.t
 
-type node_creator_old = ?key:string -> Attr.t list -> t list -> t
-
 type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
-type node_creator_childless = ?key:string -> Attr.t list -> t
-type node_creator_childless_monoid = ?key:string -> Attr.t -> t
+type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
 
 val none : t
 val text : string -> t
@@ -92,8 +89,8 @@ val thead : node_creator
 val tr : node_creator
 val ul : node_creator
 val ol : node_creator
-val br : node_creator_childless_monoid
-val hr : node_creator_childless_monoid
+val br : node_creator_childless
+val hr : node_creator_childless
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (** This function can be used to build a node with the tag and html content of
@@ -119,7 +116,7 @@ val inner_html_svg
 
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
-val create : string -> node_creator_old
+val create : string -> node_creator
 
 (** Like [create] but for svg nodes (i.e. all to be placed inside <svg> tag). This is
     needed as browsers maintain separate namespaces for html and svg, and failing to use
@@ -187,4 +184,9 @@ module Patch : sig
   val create : previous:node -> current:node -> t
   val apply : t -> Dom_html.element Js.t -> Dom_html.element Js.t
   val is_empty : t -> bool
+end
+
+module Expert : sig
+  val create : ?key:string -> string -> Attr.t -> Raw.Node.t Js.js_array Js.t -> t
+  val create_svg : ?key:string -> string -> Attr.t -> Raw.Node.t Js.js_array Js.t -> t
 end

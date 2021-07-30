@@ -48,7 +48,7 @@ val trigger
     resulting function. *)
 val trigger_hook
   :  t
-  -> type_id:('a -> Virtual_dom.Vdom.Event.t) Type_equal.Id.t
+  -> type_id:('a -> unit Virtual_dom.Vdom.Effect.t) Type_equal.Id.t
   -> name:string
   -> arg:'a
   -> unit
@@ -65,6 +65,7 @@ module User_actions : sig
   val focus : t -> unit
   val blur : t -> unit
   val input_text : t -> text:string -> unit
+  val set_checkbox : t -> checked:bool -> unit
   val change : t -> value:string -> unit
   val drag : t -> unit
   val enter : t -> unit

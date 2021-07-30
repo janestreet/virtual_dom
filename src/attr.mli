@@ -89,8 +89,8 @@ val value : string -> t
 val value_prop : string -> t
 val title : string -> t
 val src : string -> t
-val on_focus : (Dom_html.focusEvent Js.t -> Event.t) -> t
-val on_blur : (Dom_html.focusEvent Js.t -> Event.t) -> t
+val on_focus : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
+val on_blur : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 
 module Unmerged_warning_mode : sig
   (** Controls whether [to_raw] should print warning messages when one attribute
@@ -119,12 +119,12 @@ val to_raw : t -> Raw.Attrs.t
 (** [on_input] fires every time the input changes, i.e., whenever a key is pressed in
     the input field.  The current contents are returned as an OCaml string as
     a convenience *)
-val on_input : (Dom_html.event Js.t -> string -> Event.t) -> t
+val on_input : (Dom_html.event Js.t -> string -> unit Effect.t) -> t
 
 (** [on_change] fires when the input is complete, i.e., when enter is pressed in the
     input field or the input field loses focus.  The current contents are returned as an
     OCaml string as a convenience *)
-val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
+val on_change : (Dom_html.event Js.t -> string -> unit Effect.t) -> t
 
 (** [on_file_input] is like [on_input] but for file picker input elements (i.e.
     [type=file]). Instead of passing the value of the input as a string, the list of
@@ -133,38 +133,38 @@ val on_change : (Dom_html.event Js.t -> string -> Event.t) -> t
     See Vdom_input_widgets.File_select, or, if you are a bonsai user,
     Bonsai_web_ui_form.Elements.File_select, for a convenient API that wraps this.
 *)
-val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> Event.t) -> t
+val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> unit Effect.t) -> t
 
-val on_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_contextmenu : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_double_click : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_drag : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_dragstart : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_dragend : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_dragenter : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_dragleave : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_dragover : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_drop : (Dom_html.dragEvent Js.t -> Event.t) -> t
-val on_mousemove : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mouseup : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mousedown : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mouseenter : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mouseleave : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mouseover : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_mouseout : (Dom_html.mouseEvent Js.t -> Event.t) -> t
-val on_keyup : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
-val on_keypress : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
-val on_keydown : (Dom_html.keyboardEvent Js.t -> Event.t) -> t
-val on_scroll : (Dom_html.event Js.t -> Event.t) -> t
-val on_submit : (Dom_html.submitEvent Js.t -> Event.t) -> t
-val on_pointerdown : (Dom_html.pointerEvent Js.t -> Event.t) -> t
+val on_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_contextmenu : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_double_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_drag : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_dragstart : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_dragend : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_dragenter : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_dragleave : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_dragover : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_drop : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
+val on_mousemove : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mouseup : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mousedown : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mouseenter : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mouseleave : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mouseover : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_mouseout : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_keyup : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
+val on_keypress : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
+val on_keydown : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
+val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
+val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
+val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 
-val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> Event.t) -> t
-val on_copy : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
-val on_cut : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
-val on_paste : (Dom_html.clipboardEvent Js.t -> Event.t) -> t
-val on_reset : (Dom_html.event Js.t -> Event.t) -> t
-val on_animationend : (Dom_html.animationEvent Js.t -> Event.t) -> t
+val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
+val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
+val on_cut : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
+val on_paste : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
+val on_reset : (Dom_html.event Js.t -> unit Effect.t) -> t
+val on_animationend : (Dom_html.animationEvent Js.t -> unit Effect.t) -> t
 
 module Multi : sig
   (** A collection of CSS attributes. *)
@@ -219,7 +219,7 @@ module Single_focus_hook () : sig
      functor instantiation is distinct, avoid calling this from within an
      Incremental graph, or you will not get the desired effect. *)
 
-  val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:Ui_event.t -> t
+  val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:unit Ui_effect.t -> t
 end
 
 module Expert : sig

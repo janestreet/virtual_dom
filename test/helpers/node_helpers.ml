@@ -200,7 +200,7 @@ let bprint_element
       (v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach));
   list_iter_filter handlers ~f:(fun (k, _) ->
     bprint_aligned_indent ();
-    bprintf buffer "%s={handler}" k);
+    bprintf buffer "%s" k);
   let styles =
     List.filter styles ~f:(fun (name, _) -> filter_printed_attributes ("style." ^ name))
   in
@@ -512,7 +512,7 @@ let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a 
 ;;
 
 let trigger_hook t ~type_id ~name ~arg =
-  Ui_event.Expert.handle ((get_hook_value t ~type_id ~name) arg)
+  Ui_effect.Expert.handle ((get_hook_value t ~type_id ~name) arg)
 ;;
 
 module User_actions = struct
@@ -523,14 +523,14 @@ module User_actions = struct
   let focus node = trigger ~event_name:"onfocus" node ~extra_fields:both_event_handlers
   let blur node = trigger ~event_name:"onblur" node ~extra_fields:both_event_handlers
 
+  let tag_name_exn = function
+    | Element { tag_name; _ } -> tag_name
+    | other ->
+      let node = to_string_html other in
+      raise_s [%message (node : string) "is not an element"]
+  ;;
+
   let build_target ~element ~value =
-    let tag_name =
-      match element with
-      | Element { tag_name; _ } -> tag_name
-      | other ->
-        let node = to_string_html other in
-        raise_s [%message (node : string) "is not an element"]
-    in
     (* When an [on_input] event is fired, in order to pull the value of
        the element, [Virtual_dom.Vdom.Attr.on_input_event] looks at the
        "target" property on the event and tries to coerce that value to one
@@ -545,10 +545,29 @@ module User_actions = struct
        as though there was a real DOM element! *)
     Js.Unsafe.inject
       (object%js
-        val tagName = Js.string tag_name
+        val tagName = Js.string (tag_name_exn element)
 
         val value = Js.string value
       end)
+  ;;
+
+  let set_checkbox element ~checked =
+    let target =
+      (* Similarly to [build_target] we inject a target field with some additional
+         attributes that are relied upon -- in this case by
+         Bonsai_web_ui_form.Elements.checkbox, which is a common way to construct checkbox
+         elements. *)
+      Js.Unsafe.inject
+        (object%js
+          val tagName = Js.string (tag_name_exn element)
+
+          val checked = Js.bool checked
+        end)
+    in
+    trigger
+      element
+      ~event_name:"onclick"
+      ~extra_fields:(("target", target) :: both_event_handlers)
   ;;
 
   let input_text element ~text =

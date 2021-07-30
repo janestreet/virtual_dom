@@ -6,10 +6,10 @@ open! Js_of_ocaml
 
     https://coderwall.com/p/79hkbw/js-mouse-events-that-work-even-when-mouse-is-moved-outside-the-window *)
 
-val mouseup : (Dom_html.mouseEvent Js.t -> Ui_event.t) -> Attr.t
-val mousemove : (Dom_html.mouseEvent Js.t -> Ui_event.t) -> Attr.t
+val mouseup : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) -> Attr.t
+val mousemove : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) -> Attr.t
 
 module For_testing : sig
-  val mouse_up_type_id : (Dom_html.mouseEvent Js.t -> Ui_event.t) Type_equal.Id.t
-  val mouse_move_type_id : (Dom_html.mouseEvent Js.t -> Ui_event.t) Type_equal.Id.t
+  val mouse_up_type_id : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) Type_equal.Id.t
+  val mouse_move_type_id : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) Type_equal.Id.t
 end

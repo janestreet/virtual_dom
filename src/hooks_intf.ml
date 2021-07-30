@@ -10,12 +10,12 @@ module type S = sig
     (* [combine first second] describes how more than one of the same hook should
        be merged. This function will only be used if the hooks are combined
        using [Attr.many]'s merge semantics. It is common for [t] to by
-       a function type like ['a -> Ui_event.t]; in this case, the proper
+       a function type like ['a -> unit Ui_effect.t]; in this case, the proper
        implementation is probably the following:
 
        {[
          let combine f g event =
-           Vdom.Event.sequence_as_sibling
+           Vdom.Effect.sequence_as_sibling
              (f event)
              ~unless_stopped:(fun () -> g event)
        ]} *)

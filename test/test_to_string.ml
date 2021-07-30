@@ -163,12 +163,12 @@ let%expect_test "widget with info" =
 ;;
 
 let%expect_test "empty div with callback" =
-  show (Node.div ~attr:(Attr.on_click (Fn.const Event.Ignore)) []);
+  show (Node.div ~attr:(Attr.on_click (Fn.const Effect.Ignore)) []);
   [%expect
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
     ----------------------
-    <div onclick={handler}> </div> |}]
+    <div onclick> </div> |}]
 ;;
 
 let%expect_test "empty div with class list" =
@@ -260,7 +260,7 @@ let%expect_test "empty div with [many] different attributes" =
        ~attr:
          (Attr.many
             [ Attr.class_ "a"
-            ; Attr.on_click (fun _ -> Ui_event.Ignore)
+            ; Attr.on_click (fun _ -> Ui_effect.Ignore)
             ; Attr.style Css_gen.bold
             ; Attr.class_ "b"
             ; Attr.style (Css_gen.z_index 42)
@@ -269,7 +269,7 @@ let%expect_test "empty div with [many] different attributes" =
             ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
             ; Attr.style (Css_gen.display `Table)
             ; Attr.class_ "d"
-            ; Attr.on_click (fun _ -> Ui_event.Ignore)
+            ; Attr.on_click (fun _ -> Ui_effect.Ignore)
             ; Attr.Always_focus_hook.attr `Read_the_docs__this_hook_is_unpredictable
             ])
        []);
@@ -283,7 +283,7 @@ let%expect_test "empty div with [many] different attributes" =
     <div id="my-id"
          class="a b c d"
          always-focus-hook=()
-         onclick={handler}
+         onclick
          style={
            font-weight: bold;
            z-index: 42;
@@ -322,8 +322,8 @@ let%expect_test "empty div with [many] different attributes" =
         Attr.(
           many_without_merge
             [ class_ "a"
-            ; on_click (fun _ -> Ui_event.Ignore)
-            ; on_blur (fun _ -> Ui_event.Ignore)
+            ; on_click (fun _ -> Ui_effect.Ignore)
+            ; on_blur (fun _ -> Ui_effect.Ignore)
             ; style Css_gen.bold
             ; id "my-id"
             ; checked
@@ -338,7 +338,7 @@ let%expect_test "empty div with [many] different attributes" =
       (styles ((font-weight bold)))
       (handlers ((onblur <handler>) (onclick <handler>)))))
     ----------------------
-    <div onblur={handler} onclick={handler}> </div> |}];
+    <div onblur onclick> </div> |}];
   show
     ~filter_printed_attributes:(fun attribute ->
       not (String.is_prefix ~prefix:"on" attribute))

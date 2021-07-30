@@ -6,10 +6,10 @@ open Vdom
 module type XML =
   Xml_sigs.T
   with type uri = string
-   and type event_handler = Dom_html.event Js.t -> Event.t
-   and type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
-   and type touch_event_handler = Dom_html.touchEvent Js.t -> Event.t
-   and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
+   and type event_handler = Dom_html.event Js.t -> unit Effect.t
+   and type mouse_event_handler = Dom_html.mouseEvent Js.t -> unit Effect.t
+   and type touch_event_handler = Dom_html.touchEvent Js.t -> unit Effect.t
+   and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> unit Effect.t
    and type elt = Vdom.Node.t
 
 module Xml = struct
@@ -23,10 +23,10 @@ module Xml = struct
   let string_of_uri s = s
 
   type aname = string
-  type event_handler = Dom_html.event Js.t -> Event.t
-  type mouse_event_handler = Dom_html.mouseEvent Js.t -> Event.t
-  type touch_event_handler = Dom_html.touchEvent Js.t -> Event.t
-  type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> Event.t
+  type event_handler = Dom_html.event Js.t -> unit Effect.t
+  type mouse_event_handler = Dom_html.mouseEvent Js.t -> unit Effect.t
+  type touch_event_handler = Dom_html.touchEvent Js.t -> unit Effect.t
+  type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> unit Effect.t
   type attrib = Attr.t
 
   let attr name value =
@@ -38,7 +38,7 @@ module Xml = struct
 
   let attr_ev name cvt_to_vdom_event =
     let f e =
-      Event.Expert.handle e (cvt_to_vdom_event e);
+      Effect.Expert.handle e (cvt_to_vdom_event e);
       Js._true
     in
     Attr.property name (Js.Unsafe.inject (Dom.handler f))
@@ -77,8 +77,14 @@ module Xml = struct
     Vdom.Node.text (Js.to_string entity)
   ;;
 
-  let leaf ?(a = []) name = Vdom.Node.create name (make_a a) []
-  let node ?(a = []) name children = Vdom.Node.create name (make_a a) children
+  let leaf ?(a = []) name =
+    Vdom.Node.create name ~attr:(Vdom.Attr.many_without_merge (make_a a)) []
+  ;;
+
+  let node ?(a = []) name children =
+    Vdom.Node.create name ~attr:(Vdom.Attr.many_without_merge (make_a a)) children
+  ;;
+
   let cdata s = pcdata s
   let cdata_script s = cdata s
   let cdata_style s = cdata s

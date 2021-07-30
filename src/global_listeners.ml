@@ -6,9 +6,9 @@ module Make (X : sig
 struct
   include Hooks.Make (struct
       module Input = struct
-        type t = Dom_html.mouseEvent Js.t -> Ui_event.t [@@deriving sexp_of]
+        type t = Dom_html.mouseEvent Js.t -> unit Ui_effect.t [@@deriving sexp_of]
 
-        let combine f g event = Ui_event.Many [ f event; g event ]
+        let combine f g event = Ui_effect.Many [ f event; g event ]
       end
 
       module State = struct
@@ -19,7 +19,7 @@ struct
       let set f =
         let handler =
           Dom.handler (fun ev ->
-            Event.Expert.handle_non_dom_event_exn (f ev);
+            Effect.Expert.handle_non_dom_event_exn (f ev);
             Js._true)
         in
         Dom_html.addEventListener Dom_html.window X.event_kind handler Js._true

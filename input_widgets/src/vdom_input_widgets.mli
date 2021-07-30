@@ -43,7 +43,7 @@ module Dropdown : sig
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a
-    -> on_change:('a -> Event.t)
+    -> on_change:('a -> unit Effect.t)
     -> Node.t
 
   (** Same as [of_values], but includes a blank first entry to represent [None]. *)
@@ -53,7 +53,7 @@ module Dropdown : sig
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a option
-    -> on_change:('a option -> Event.t)
+    -> on_change:('a option -> unit Effect.t)
     -> Node.t
 
   (** Instead of passing individual [values], uses [all] from the module to determine the
@@ -63,7 +63,7 @@ module Dropdown : sig
     -> ?disabled:bool (** default false *)
     -> (module Enum with type t = 'a)
     -> selected:'a
-    -> on_change:('a -> Event.t)
+    -> on_change:('a -> unit Effect.t)
     -> Node.t
 
   (** Instead of passing individual [values], uses [all] from the module to determine the
@@ -73,7 +73,7 @@ module Dropdown : sig
     -> ?disabled:bool (** default false *)
     -> (module Enum with type t = 'a)
     -> selected:'a option
-    -> on_change:('a option -> Event.t)
+    -> on_change:('a option -> unit Effect.t)
     -> Node.t
 end
 
@@ -83,7 +83,7 @@ module Checkbox : sig
     -> ?disabled:bool (** default false *)
     -> is_checked:bool
     -> label:string
-    -> on_toggle:(unit -> Event.t)
+    -> on_toggle:(unit -> unit Effect.t)
     -> unit
     -> Node.t
 end
@@ -97,7 +97,7 @@ module Checklist : sig
     -> (module Display with type t = 'a)
     -> 'a list
     -> is_checked:('a -> bool)
-    -> on_toggle:('a -> Event.t)
+    -> on_toggle:('a -> unit Effect.t)
     -> Node.t
 
   (** Instead of passing individual [values], uses [all] from the module to determine the
@@ -107,7 +107,7 @@ module Checklist : sig
     -> ?disabled:bool (** default false *)
     -> (module Enum with type t = 'a)
     -> is_checked:('a -> bool)
-    -> on_toggle:('a -> Event.t)
+    -> on_toggle:('a -> unit Effect.t)
     -> Node.t
 end
 
@@ -139,7 +139,7 @@ module Multi_select : sig
     -> (module Set with type t = 'a and type comparator_witness = 'cmp)
     -> 'a list
     -> selected:('a, 'cmp) Set.t
-    -> on_change:(('a, 'cmp) Set.t -> Event.t)
+    -> on_change:(('a, 'cmp) Set.t -> unit Effect.t)
     -> Node.t
 
   val of_enum
@@ -149,7 +149,7 @@ module Multi_select : sig
     -> ?size:int (** default: number of enum values *)
     -> (module Enum_set with type t = 'a and type comparator_witness = 'cmp)
     -> selected:('a, 'cmp) Set.t
-    -> on_change:(('a, 'cmp) Set.t -> Event.t)
+    -> on_change:(('a, 'cmp) Set.t -> unit Effect.t)
     -> Node.t
 end
 
@@ -171,9 +171,9 @@ module Entry : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
-    -> ?on_return:(unit -> Event.t) (** default no-op *)
+    -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
     -> value:string
-    -> on_input:(string -> Event.t)
+    -> on_input:(string -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -186,7 +186,7 @@ module Entry : sig
     -> ?placeholder:string (** default blank *)
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
-    -> on_input:('a option -> Event.t)
+    -> on_input:('a option -> unit Effect.t)
     -> Node.t
 
   (** Creates a text input of a serializable type, wrapping it in a type that stores
@@ -208,10 +208,10 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
-    -> ?on_return:(unit -> Event.t) (** default no-op *)
+    -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
     -> (module Stringable with type t = 'a)
     -> value:'a Validated.t
-    -> on_input:('a Validated.update -> Event.t)
+    -> on_input:('a Validated.update -> unit Effect.t)
     -> Node.t
 
   (** Creates a text input that equates an empty input with [None] and a non-empty input
@@ -222,7 +222,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> value:string option
-    -> on_input:(string option -> Event.t)
+    -> on_input:(string option -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -244,7 +244,7 @@ module Entry : sig
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> step:float
-    -> on_input:('a option -> Event.t)
+    -> on_input:('a option -> unit Effect.t)
     -> Node.t
 
   (** Creates a time input that equates an empty input with [None] and a non-empty input
@@ -255,7 +255,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> value:Time_ns.Ofday.t option
-    -> on_input:(Time_ns.Ofday.t option -> Event.t)
+    -> on_input:(Time_ns.Ofday.t option -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -267,7 +267,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> value:Date.t option
-    -> on_input:(Date.t option -> Event.t)
+    -> on_input:(Date.t option -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -286,7 +286,7 @@ module Entry : sig
     -> ?utc_offset:Time_ns.Span.t
     (** If blank the browser local timezone is used. Max accuracy 1h. *)
     -> value:Time_ns.t option
-    -> on_input:(Time_ns.t option -> Event.t)
+    -> on_input:(Time_ns.t option -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -297,7 +297,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> value:string
-    -> on_input:(string -> Event.t)
+    -> on_input:(string -> unit Effect.t)
     -> unit
     -> Node.t
 end
@@ -309,7 +309,7 @@ module Button : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> string
-    -> on_click:(unit -> Event.t)
+    -> on_click:(unit -> unit Effect.t)
     -> Node.t
 
   (** Takes a [('a, string) Result.t] that is typically the result of some validation
@@ -321,7 +321,7 @@ module Button : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> string
     -> validation:('a, string) Result.t
-    -> on_click:('a -> Event.t)
+    -> on_click:('a -> unit Effect.t)
     -> Node.t
 end
 
@@ -345,7 +345,7 @@ module Radio_buttons : sig
     -> ?style:Style.t (** default [Native] *)
     -> (module Equal with type t = 'a)
     -> name:string
-    -> on_click:('a -> Event.t)
+    -> on_click:('a -> unit Effect.t)
     -> selected:'a option
     -> 'a list
     -> Node.t
@@ -358,7 +358,7 @@ module Radio_buttons : sig
     -> ?style:Style.t (** default [Native] *)
     -> (module Equal with type t = 'a)
     -> name:string
-    -> on_click:('a -> Event.t)
+    -> on_click:('a -> unit Effect.t)
     -> selected:'a option
     -> 'a list
     -> Node.t
@@ -371,7 +371,7 @@ module File_select : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?accept:[ `Extension of string | `Mimetype of string ] list
     (** Restrict the user's choice to certain files, by extension or by mimetype. *)
-    -> on_input:(Js_of_ocaml.File.file Js.t option -> Event.t)
+    -> on_input:(Js_of_ocaml.File.file Js.t option -> unit Effect.t)
     -> unit
     -> Node.t
 
@@ -379,7 +379,7 @@ module File_select : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?accept:[ `Extension of string | `Mimetype of string ] list
     (** Restrict the user's choice to certain files, by extension or by mimetype. *)
-    -> on_input:(Js_of_ocaml.File.file Js.t list -> Event.t)
+    -> on_input:(Js_of_ocaml.File.file Js.t list -> unit Effect.t)
     -> unit
     -> Node.t
 end
