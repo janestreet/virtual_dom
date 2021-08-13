@@ -223,10 +223,16 @@ module Single_focus_hook () : sig
 end
 
 module Expert : sig
-  (** [get_name] checks the attribute or group of attributes contains anything
+  (** [contains_name] checks the attribute or group of attributes contains anything
       with the specified name.
 
       You probably shouldn't use this function.
   *)
   val contains_name : string -> t -> bool
+
+  (* removes all the attributes that don't pass the predicate. *)
+  val filter_by_kind
+    :  t
+    -> f:([> `Attribute | `Class | `Handler | `Hook | `Property | `Style ] -> bool)
+    -> t
 end

@@ -178,7 +178,7 @@ let of_string_css_exn s = Css_parser.parse_declaration_list s |> Or_error.ok_exn
 let create_raw ~field ~value = [ field, value ]
 
 module Expert = struct
-  let should_validate = ref true
+  let should_validate = ref false
 end
 
 let create ~field ~value =

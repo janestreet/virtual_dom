@@ -593,6 +593,21 @@ module Multi = struct
 end
 
 module Expert = struct
+  let rec filter_by_kind t ~f =
+    match t with
+    | Property _ -> if f `Property then t else empty
+    | Attribute _ -> if f `Attribute then t else empty
+    | Hook _ -> if f `Hook then t else empty
+    | Handler _ -> if f `Handler then t else empty
+    | Style _ -> if f `Style then t else empty
+    | Class _ -> if f `Class then t else empty
+    | Many attrs -> Many (List.map attrs ~f:(filter_by_kind ~f))
+    | Many_only_merge_classes_and_styles (attrs, a, b) ->
+      Many_only_merge_classes_and_styles (List.map attrs ~f:(filter_by_kind ~f), a, b)
+    | Many_without_merge attrs ->
+      Many_without_merge (List.map attrs ~f:(filter_by_kind ~f))
+  ;;
+
   let rec contains_name looking_for = function
     | Property { name; _ } | Attribute { name; _ } | Hook { name; _ } ->
       String.equal looking_for name
