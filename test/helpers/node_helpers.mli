@@ -60,7 +60,7 @@ val get_hook_value : t -> type_id:'a Type_equal.Id.t -> name:string -> 'a
 module User_actions : sig
   (** Convenience functions for {!trigger}, closely modeling user interactions. *)
 
-  val click_on : t -> unit
+  val click_on : ?shift_key_down:bool -> t -> unit
   val submit_form : t -> unit
   val focus : t -> unit
   val blur : t -> unit
@@ -73,4 +73,5 @@ module User_actions : sig
   val over : t -> unit
   val drop : t -> unit
   val end_ : t -> unit
+  val mousemove : t -> unit
 end

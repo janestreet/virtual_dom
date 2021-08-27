@@ -192,8 +192,7 @@ let to_raw attr =
      takes two attributes of the same kind, ignores a first, and emits
      a warning if [warn_about_unmerged_attributes] is enabled. *)
   let take_second_styles first second =
-    if
-      not (Css_gen.is_empty first)
+    if not (Css_gen.is_empty first)
     then
       Unmerged_warning_mode.warn_s
         [%message
@@ -472,7 +471,6 @@ let const_ignore _ = Effect.Ignore
 class type value_element =
   object
     inherit Dom_html.element
-
     method value : Js.js_string Js.t Js.prop
   end
 

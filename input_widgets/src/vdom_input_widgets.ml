@@ -687,6 +687,28 @@ module Entry = struct
       ~on_input
   ;;
 
+  let range
+        (type t)
+        ?extra_attrs
+        ?call_on_input_when
+        ?disabled
+        ?placeholder
+        (module M : Stringable.S with type t = t)
+        ~value
+        ~step
+        ~on_input
+    =
+    stringable_input_opt
+      ?extra_attrs
+      ?call_on_input_when
+      ?disabled
+      ?placeholder
+      (module M)
+      ~type_attrs:[ Attr.type_ "range"; Attr.create_float "step" step ]
+      ~value
+      ~on_input
+  ;;
+
   let time ?extra_attrs ?call_on_input_when ?disabled ?placeholder ~value ~on_input () =
     stringable_input_opt
       ?extra_attrs

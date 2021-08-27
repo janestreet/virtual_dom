@@ -110,7 +110,6 @@ module Widget = struct
   class type ['s, 'element] widget =
     object
       constraint 'element = #Dom_html.element Js.t
-
       method type_ : Js.js_string Js.t Js.writeonly_prop
 
       (* virtual-dom considers two widgets of being of the same "kind" if either
@@ -128,13 +127,9 @@ module Widget = struct
          So, we go with option 1 and must have a trivial field called [name].
       *)
       method name : unit Js.writeonly_prop
-
       method id : ('s * 'element) Type_equal.Id.t Js.prop
-
       method state : 's Js.prop
-
       method info : Sexp.t Lazy.t option Js.prop
-
       method destroy : ('element -> unit) Js.callback Js.writeonly_prop
 
       method update :

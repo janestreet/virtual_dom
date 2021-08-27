@@ -186,6 +186,18 @@ module App = struct
             ~step:1.0
             ~value:model.float_opt
             ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
+      ; ( "Entry.range (int)"
+        , Entry.range
+            (module Int)
+            ~step:1.0
+            ~value:model.int_opt
+            ~on_input:(fun int_opt -> inject (Set { model with int_opt })) )
+      ; ( "Entry.range (decimal)"
+        , Entry.range
+            (module Decimal)
+            ~step:0.1
+            ~value:model.float_opt
+            ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
       ; ( "Entry.datetime_local"
         , Entry.datetime_local () ~value:model.time_ns_opt ~on_input:(fun time_ns_opt ->
             inject (Set { model with time_ns_opt })) )

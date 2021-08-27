@@ -8,7 +8,6 @@ let colors = [| "red"; "green"; "blue" |]
 class type terminal =
   object
     method get_command_ : Js.js_string Js.t Js.meth
-
     method echo : Js.js_string Js.t -> unit Js.meth
   end
 
@@ -41,11 +40,8 @@ let terminal =
     let options =
       object%js
         val prompt = Js.string "> "
-
         val completion = Js.wrap_callback completion
-
         val exit = Js._false
-
         val clear = Js._false
       end
     in

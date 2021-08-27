@@ -285,8 +285,7 @@ let%expect_test "declaration" =
 let%expect_test "unicode" =
   let test = test_parser expect_declaration [%sexp_of: string * string] in
   test "content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶'";
-  print_endline
-    (Sexp.to_string (Sexp.Atom "← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"));
+  print_endline (Sexp.to_string (Sexp.Atom "← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"));
   [%expect
     {|
     content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶' --> (Ok

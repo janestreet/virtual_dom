@@ -519,7 +519,15 @@ module User_actions = struct
   let prevent_default = "preventDefault", Js.Unsafe.inject Fn.id
   let stop_propagation = "stopPropagation", Js.Unsafe.inject Fn.id
   let both_event_handlers = [ prevent_default; stop_propagation ]
-  let click_on node = trigger ~event_name:"onclick" node ~extra_fields:both_event_handlers
+
+  let click_on ?(shift_key_down = false) node =
+    trigger
+      ~event_name:"onclick"
+      node
+      ~extra_fields:
+        (("shiftKey", Js.Unsafe.inject (Js.bool shift_key_down)) :: both_event_handlers)
+  ;;
+
   let focus node = trigger ~event_name:"onfocus" node ~extra_fields:both_event_handlers
   let blur node = trigger ~event_name:"onblur" node ~extra_fields:both_event_handlers
 
@@ -546,7 +554,6 @@ module User_actions = struct
     Js.Unsafe.inject
       (object%js
         val tagName = Js.string (tag_name_exn element)
-
         val value = Js.string value
       end)
   ;;
@@ -560,7 +567,6 @@ module User_actions = struct
       Js.Unsafe.inject
         (object%js
           val tagName = Js.string (tag_name_exn element)
-
           val checked = Js.bool checked
         end)
     in
@@ -614,4 +620,5 @@ module User_actions = struct
   ;;
 
   let end_ element = trigger element ~event_name:"ondragend"
+  let mousemove element = trigger element ~event_name:"onmousemove"
 end

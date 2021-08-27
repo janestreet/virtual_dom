@@ -247,6 +247,20 @@ module Entry : sig
     -> on_input:('a option -> unit Effect.t)
     -> Node.t
 
+  (** A slider bar. Roughly equivalent to [number], but with a different appearance. We
+      still need to take a [Stringable.S] interface because the browser only gives us
+      values as strings. *)
+  val range
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
+    -> ?disabled:bool (** default false *)
+    -> ?placeholder:string (** default blank *)
+    -> (module Stringable.S with type t = 'a)
+    -> value:'a option
+    -> step:float
+    -> on_input:('a option -> unit Effect.t)
+    -> Node.t
+
   (** Creates a time input that equates an empty input with [None] and a non-empty input
       as [Some Time_ns.Ofday.t]. *)
   val time
