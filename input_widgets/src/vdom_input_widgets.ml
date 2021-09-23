@@ -85,6 +85,11 @@ module Validated = struct
     | Valid _ | Initial -> false
   ;;
 
+  let is_initial_empty = function
+    | Initial -> true
+    | _ -> false
+  ;;
+
   let update old new_ =
     match old, new_ with
     | Initial, _ -> new_

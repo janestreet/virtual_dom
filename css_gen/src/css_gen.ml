@@ -165,7 +165,7 @@ let concat l = List.concat l
 let to_string_list = Fn.id
 
 let to_string_css t =
-  List.map t ~f:(fun (field, value) -> sprintf "%s: %s" field value)
+  List.map t ~f:(fun (field, value) -> [%string "%{field}: %{value}"])
   |> String.concat ~sep:";"
 ;;
 

@@ -87,6 +87,7 @@ module Element = struct
   ;;
 
   let add_class t c = map_attrs t ~f:(fun a -> Attr.(a @ class_ c))
+  let add_classes t c = map_attrs t ~f:(fun a -> Attr.(a @ classes c))
   let add_style t s = map_attrs t ~f:(fun a -> Attr.(a @ style s))
 end
 

@@ -27,11 +27,16 @@ module Validated : sig
       widget, will reset the contents regardless of whether the user has focus or not. *)
   val initial_empty : 'a t
 
+  val is_initial_empty : _ t -> bool
   val return : 'a -> 'a t
   val get_current : 'a t -> 'a option
   val get_last : 'a t -> 'a option
   val get_error : 'a t -> string option
   val update : 'a t -> 'a update -> 'a t
+
+  val lift
+    :  (module Stringable with type t = 'a)
+    -> (module Stringable with type t = 'a t)
 end
 
 module Dropdown : sig

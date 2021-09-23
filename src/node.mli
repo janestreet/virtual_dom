@@ -14,6 +14,7 @@ module Element : sig
   val map_attrs : t -> f:(Attr.t -> Attr.t) -> t
   val add_style : t -> Css_gen.t -> t
   val add_class : t -> string -> t
+  val add_classes : t -> string list -> t
 end
 
 module Widget : sig
