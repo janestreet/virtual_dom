@@ -520,12 +520,20 @@ module User_actions = struct
   let stop_propagation = "stopPropagation", Js.Unsafe.inject Fn.id
   let both_event_handlers = [ prevent_default; stop_propagation ]
 
-  let click_on ?(shift_key_down = false) node =
+  let click_on
+        ?(shift_key_down = false)
+        ?(ctrl_key_down = false)
+        ?(alt_key_down = false)
+        node
+    =
     trigger
       ~event_name:"onclick"
       node
       ~extra_fields:
-        (("shiftKey", Js.Unsafe.inject (Js.bool shift_key_down)) :: both_event_handlers)
+        (("shiftKey", Js.Unsafe.inject (Js.bool shift_key_down))
+         :: ("ctrlKey", Js.Unsafe.inject (Js.bool ctrl_key_down))
+         :: ("altKey", Js.Unsafe.inject (Js.bool alt_key_down))
+         :: both_event_handlers)
   ;;
 
   let focus node = trigger ~event_name:"onfocus" node ~extra_fields:both_event_handlers

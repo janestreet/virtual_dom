@@ -644,6 +644,19 @@ let align_self a =
   create_raw ~field:"align-self" ~value
 ;;
 
+let resize (value : [ `None | `Both | `Horizontal | `Vertical | css_global_values ]) =
+  let value =
+    match value with
+    | `None -> "none"
+    | `Both -> "both"
+    | `Horizontal -> "horizontal"
+    | `Vertical -> "vertical"
+    | `Initial -> "initial"
+    | `Inherit -> "inherit"
+  in
+  create_raw ~field:"resize" ~value
+;;
+
 let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_function ()
   =
   let m = Option.map in

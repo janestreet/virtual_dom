@@ -289,6 +289,13 @@ val flex_item
 
 val align_self : item_alignment -> t
 
+val resize : [ `None
+             | `Both
+             | `Horizontal
+             | `Vertical
+             | css_global_values
+             ] -> t
+
 (** Note: You must include the [name]s @keyframes in the stylesheet *)
 val animation
   :  name:string
