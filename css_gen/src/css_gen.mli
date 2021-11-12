@@ -5,7 +5,9 @@
 open Core
 
 type css_global_values =
-  [ `Inherit | `Initial ]
+  [ `Inherit
+  | `Initial
+  ]
 [@@deriving sexp, compare]
 
 module Color : sig
@@ -20,7 +22,6 @@ module Color : sig
   end
 
   module HSLA : sig
-
     type t [@@deriving sexp, bin_io, compare]
 
     (** [create ~h ~s ~l ~a] creates a color that corresponds to hsla([h],[s],[l],[a])
@@ -31,7 +32,6 @@ module Color : sig
     val create : h:int -> s:Percent.t -> l:Percent.t -> ?a:Percent.t -> unit -> t
   end
 
-
   type t =
     [ `RGBA of RGBA.t
     | `HSLA of HSLA.t
@@ -39,7 +39,8 @@ module Color : sig
     | `Hex of string
     | `Var of string
     | css_global_values
-    ] [@@deriving sexp, bin_io, compare]
+    ]
+  [@@deriving sexp, bin_io, compare]
 
   val to_string_css : t -> string
 end
@@ -58,7 +59,8 @@ module Length : sig
     | `Vh of Percent.t
     | `Vw of Percent.t
     | css_global_values
-    ] [@@deriving sexp, compare]
+    ]
+  [@@deriving sexp, compare]
 
   (** Convenience around `Percent (Percent.of_percentage 100.) *)
   val percent100 : t
@@ -78,6 +80,7 @@ end
 
 type t [@@deriving sexp, compare, bin_io]
 
+
 (** Create a single property, value pair (a declaration in CSS parlance).
     The value must be a valid CSS literal.  We do run a simple CSS parser on the value
     to validate this and will throw an exception if that parser fails.  Note that
@@ -88,6 +91,7 @@ type t [@@deriving sexp, compare, bin_io]
     It is recommended to use one of the other constructors instead if they are
     available.  If they are not, consider adding them to this library. *)
 val create : field:string -> value:string -> t
+
 val empty : t
 val is_empty : t -> bool
 
@@ -117,11 +121,11 @@ val right : Length.t -> t
     For [combine x y], [y] will override [x] if they are the same attribute.
     For [concat l], the greatest index of an attribute will prevail. *)
 val combine : t -> t -> t
-val ( @> )  : t -> t -> t
-val concat  : t list -> t
 
+val ( @> ) : t -> t -> t
+val concat : t list -> t
 val to_string_list : t -> (string * string) list
-val to_string_css  : t -> string
+val to_string_css : t -> string
 
 (** The inverse of to_string_css.  Primarily useful if you want to reuse a css
     literal from the web (aka copy paste web design). Raises if the string
@@ -131,30 +135,62 @@ val of_string_css_exn : string -> t
 val box_sizing : [ `Content_box | `Border_box | css_global_values ] -> t
 
 val display
-  :  [ `Inline | `Block | `Inline_block | `List_item | `Table
-     | `Inline_table | `None | `Inline_grid | css_global_values ]
+  :  [ `Inline
+     | `Block
+     | `Inline_block
+     | `List_item
+     | `Table
+     | `Inline_table
+     | `None
+     | `Inline_grid
+     | css_global_values
+     ]
   -> t
 
 val visibility : [ `Visible | `Hidden | `Collapse | css_global_values ] -> t
 
-type overflow = [ `Visible | `Hidden | `Scroll | `Auto | css_global_values ]
+type overflow =
+  [ `Visible
+  | `Hidden
+  | `Scroll
+  | `Auto
+  | css_global_values
+  ]
 
-val overflow   : overflow -> t
+val overflow : overflow -> t
 val overflow_x : overflow -> t
 val overflow_y : overflow -> t
-
 val z_index : int -> t
 val opacity : float -> t
 
-type font_style = [ `Normal | `Italic | `Oblique | css_global_values ]
-type font_weight = [ `Normal | `Bold | `Bolder | `Lighter | `Number of int | css_global_values ]
-type font_variant = [ `Normal | `Small_caps | css_global_values ]
+type font_style =
+  [ `Normal
+  | `Italic
+  | `Oblique
+  | css_global_values
+  ]
+
+type font_weight =
+  [ `Normal
+  | `Bold
+  | `Bolder
+  | `Lighter
+  | `Number of int
+  | css_global_values
+  ]
+
+type font_variant =
+  [ `Normal
+  | `Small_caps
+  | css_global_values
+  ]
 
 val font_size : Length.t -> t
 val font_family : string list -> t
 val font_style : font_style -> t
 val font_weight : font_weight -> t
 val font_variant : font_variant -> t
+
 val font
   :  size:Length.t
   -> family:string list
@@ -163,16 +199,20 @@ val font
   -> ?variant:font_variant
   -> unit
   -> t
+
 val bold : t
 
 (* Note: css gradients are actually much more complicated. Please feel free to extend
    these if you need something more *)
 type stops = (Percent.t * Color.t) list
+
 type linear_gradient =
   { direction : [ `Deg of int ]
   ; stops : stops
   }
+
 type radial_gradient = { stops : stops }
+
 type background_image =
   [ `Url of string
   | `Linear_gradient of linear_gradient
@@ -192,20 +232,18 @@ val white_space
   -> t
 
 val float : [ `None | `Left | `Right | css_global_values ] -> t
-
-val width     : Length.t -> t
+val width : Length.t -> t
 val min_width : Length.t -> t
 val max_width : Length.t -> t
-
-val height     : Length.t -> t
+val height : Length.t -> t
 val min_height : Length.t -> t
 val max_height : Length.t -> t
-
-val padding_top     : Length.t -> t
-val padding_bottom  : Length.t -> t
-val padding_left    : Length.t -> t
-val padding_right   : Length.t -> t
+val padding_top : Length.t -> t
+val padding_bottom : Length.t -> t
+val padding_left : Length.t -> t
+val padding_right : Length.t -> t
 val uniform_padding : Length.t -> t
+
 val padding
   :  ?top:Length.t
   -> ?bottom:Length.t
@@ -214,11 +252,12 @@ val padding
   -> unit
   -> t
 
-val margin_top     : Auto_or_length.t -> t
-val margin_bottom  : Auto_or_length.t -> t
-val margin_left    : Auto_or_length.t -> t
-val margin_right   : Auto_or_length.t -> t
+val margin_top : Auto_or_length.t -> t
+val margin_bottom : Auto_or_length.t -> t
+val margin_left : Auto_or_length.t -> t
+val margin_right : Auto_or_length.t -> t
 val uniform_margin : Auto_or_length.t -> t
+
 val margin
   :  ?top:Auto_or_length.t
   -> ?bottom:Auto_or_length.t
@@ -228,29 +267,45 @@ val margin
   -> t
 
 type border_style =
-  [ `None | `Hidden | `Dotted | `Dashed | `Solid
-  | `Double | `Groove | `Ridge | `Inset | `Outset
-  | css_global_values ]
+  [ `None
+  | `Hidden
+  | `Dotted
+  | `Dashed
+  | `Solid
+  | `Double
+  | `Groove
+  | `Ridge
+  | `Inset
+  | `Outset
+  | css_global_values
+  ]
 
-val border_top    : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
+val border_top : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
 val border_bottom : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border_left   : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border_right  : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border        : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-
+val border_left : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
+val border_right : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
+val border : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
 val border_radius : Length.t -> t
-
 val border_collapse : [ `Separate | `Collapse | css_global_values ] -> t
-
 val border_spacing : Length.t -> t
-
 val outline : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
 
 type text_decoration_line =
-  [ `None | `Underline | `Overline | `Line_through | css_global_values ]
+  [ `None
+  | `Underline
+  | `Overline
+  | `Line_through
+  | css_global_values
+  ]
 
 type text_decoration_style =
-  [ `Solid | `Double | `Dotted | `Dashed | `Wavy | css_global_values ]
+  [ `Solid
+  | `Double
+  | `Dotted
+  | `Dashed
+  | `Wavy
+  | css_global_values
+  ]
 
 val text_decoration
   :  ?style:text_decoration_style
@@ -259,7 +314,14 @@ val text_decoration
   -> unit
   -> t
 
-type item_alignment = [ `Auto | `Flex_start | `Flex_end | `Center | `Baseline | `Stretch ]
+type item_alignment =
+  [ `Auto
+  | `Flex_start
+  | `Flex_end
+  | `Center
+  | `Baseline
+  | `Stretch
+  ]
 
 type justify_content =
   [ `Flex_start
@@ -288,20 +350,15 @@ val flex_item
   -> t
 
 val align_self : item_alignment -> t
-
-val resize : [ `None
-             | `Both
-             | `Horizontal
-             | `Vertical
-             | css_global_values
-             ] -> t
+val resize : [ `None | `Both | `Horizontal | `Vertical | css_global_values ] -> t
 
 (** Note: You must include the [name]s @keyframes in the stylesheet *)
 val animation
   :  name:string
   -> duration:Time_ns.Span.t
   -> ?delay:Time_ns.Span.t
-  -> ?direction:[ `Normal | `Reverse | `Alternate | `Alternate_reverse | css_global_values ]
+  -> ?direction:
+       [ `Normal | `Reverse | `Alternate | `Alternate_reverse | css_global_values ]
   -> ?fill_mode:[ `None | `Forwards | `Backwards | `Both | css_global_values ]
   -> ?iter_count:int
   -> ?timing_function:string
@@ -330,4 +387,8 @@ module Expert : sig
       [should_validate] allows the programmer to disable css value validation when
       necessary. *)
   val should_validate : bool ref
+end
+
+module Private : sig
+  val float_to_string_with_fixed : (int -> float -> string) ref
 end

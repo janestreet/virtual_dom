@@ -1,0 +1,3 @@
+(library (public_name virtual_dom.keyboard) (name vdom_keyboard)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane))
+ (libraries css_gen js_of_ocaml virtual_dom))

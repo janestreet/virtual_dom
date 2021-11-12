@@ -71,6 +71,15 @@ module User_actions : sig
   val focus : t -> unit
   val blur : t -> unit
   val input_text : t -> text:string -> unit
+
+  val keydown
+    :  ?shift_key_down:bool
+    -> ?ctrl_key_down:bool
+    -> ?alt_key_down:bool
+    -> t
+    -> key:Dom_html.Keyboard_code.t
+    -> unit
+
   val set_checkbox : t -> checked:bool -> unit
   val change : t -> value:string -> unit
   val drag : t -> unit

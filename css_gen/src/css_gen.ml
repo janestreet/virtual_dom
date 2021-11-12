@@ -11,17 +11,17 @@ end
 open Core
 include Stable.V1
 
-let sanitize_sexp s =
-  Sexp.to_string s
-  |> String.lowercase
-  |> String.substr_replace_all ~pattern:"_" ~with_:"-"
-;;
-
 type css_global_values =
   [ `Inherit
   | `Initial
   ]
 [@@deriving sexp, bin_io, compare]
+
+module Private = struct
+  let float_to_string_with_fixed = ref (fun digits f -> sprintf "%.*f" digits f)
+end
+
+let f2s digits f = !Private.float_to_string_with_fixed digits f
 
 module Color = struct
   module T = struct
@@ -64,29 +64,26 @@ module Color = struct
   include Sexpable.To_stringable (T)
 
   let to_string_css = function
-    | #css_global_values as c -> sexp_of_t c |> sanitize_sexp
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
     | `RGBA { RGBA.r; g; b; a } ->
       (match a with
-       | None -> sprintf "rgb(%i,%i,%i)" r g b
-       | Some p -> sprintf "rgba(%i,%i,%i,%.2f)" r g b (Percent.to_mult p))
+       | None -> [%string "rgb(%{r#Int},%{g#Int},%{b#Int})"]
+       | Some p ->
+         [%string "rgba(%{r#Int},%{g#Int},%{b#Int},%{f2s 2 (Percent.to_mult p)})"])
     | `HSLA { HSLA.h; s; l; a } ->
       (match a with
        | None ->
-         sprintf
-           "hsl(%i,%.0f%%,%.0f%%)"
-           h
-           (Percent.to_percentage s)
-           (Percent.to_percentage l)
+         [%string
+           "hsl(%{h#Int},%{f2s 0 (Percent.to_percentage s)}%,%{f2s 0 \
+            (Percent.to_percentage l)}%)"]
        | Some p ->
-         sprintf
-           "hsla(%i,%.0f%%,%.0f%%,%.2f)"
-           h
-           (Percent.to_percentage s)
-           (Percent.to_percentage l)
-           (Percent.to_mult p))
+         [%string
+           "hsla(%{h#Int},%{f2s 0 (Percent.to_percentage s)}%,%{f2s 0 \
+            (Percent.to_percentage l)}%,%{f2s 2 (Percent.to_mult p)})"])
     | `Name name -> name
     | `Hex hex -> hex
-    | `Var var -> sprintf "var(%s)" var
+    | `Var var -> [%string "var(%{var})"]
   ;;
 end
 
@@ -101,13 +98,19 @@ module Alignment = struct
     | `Justify (* text-align (in addition to [horizontal]) *)
     | css_global_values
     ]
-  [@@deriving sexp, bin_io, compare]
+  [@@deriving bin_io, compare]
 
-  include Sexpable.To_stringable (struct
-      type nonrec t = t [@@deriving sexp]
-    end)
-
-  let to_string_css = Fn.compose sanitize_sexp sexp_of_t
+  let to_string_css = function
+    | `Justify -> "justify"
+    | `Top -> "top"
+    | `Right -> "right"
+    | `Left -> "left"
+    | `Center -> "center"
+    | `Inherit -> "inherit"
+    | `Middle -> "middle"
+    | `Bottom -> "bottom"
+    | `Initial -> "initial"
+  ;;
 end
 
 module Length = struct
@@ -129,17 +132,18 @@ module Length = struct
 
   let to_string_css = function
     | `Raw s -> s
-    | `Ch c -> sprintf "%.2fch" c
-    | `Rem f -> sprintf "%.2frem" f
-    | `Em i -> sprintf "%iem" i
-    | `Em_float f -> sprintf "%.2fem" f
-    | `Percent p -> sprintf "%.2f%%" (Percent.to_percentage p)
-    | `Pt p -> sprintf "%.2fpt" p
-    | `Px i -> sprintf "%ipx" i
-    | `Px_float f -> sprintf "%.2fpx" f
-    | `Vh p -> sprintf "%.2fvh" (Percent.to_percentage p)
-    | `Vw p -> sprintf "%.2fvw" (Percent.to_percentage p)
-    | #css_global_values as l -> sexp_of_css_global_values l |> sanitize_sexp
+    | `Ch c -> [%string "%{f2s 2 c}ch"]
+    | `Rem f -> [%string "%{f2s 2 f}rem"]
+    | `Em i -> [%string "%{i#Int}em"]
+    | `Em_float f -> [%string "%{f2s 2 f}em"]
+    | `Percent p -> [%string "%{f2s 2 (Percent.to_percentage p)}%"]
+    | `Pt p -> [%string "%{f2s 2 p}pt"]
+    | `Px i -> [%string "%{i#Int}px"]
+    | `Px_float f -> [%string "%{f2s 2 f}px"]
+    | `Vh p -> [%string "%{f2s 2 (Percent.to_percentage p)}vh"]
+    | `Vw p -> [%string "%{f2s 2 (Percent.to_percentage p)}vw"]
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   ;;
 
   let percent100 = `Percent (Percent.of_percentage 100.)
@@ -212,37 +216,42 @@ let position ?top:tp ?bottom:bt ?left:lt ?right:rt pos =
 
 let box_sizing v =
   let value =
-    [%sexp_of: [ `Content_box | `Border_box | css_global_values ]] v |> sanitize_sexp
+    match v with
+    | `Content_box -> "content-box"
+    | `Border_box -> "border-box"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"box-sizing" ~value
 ;;
 
 let display v =
   let value =
-    [%sexp_of:
-      [ `Inline
-      | `Block
-      | `Inline_block
-      | `List_item
-      | `Table
-      | `Inline_table
-      | `None
-      | (* [ `Flex | `Inline_flex ] are intentionally left out of the mli to force the user
-           to use [flex_container] below *)
-        `Flex
-      | `Inline_flex
-      | `Inline_grid
-      | css_global_values
-      ]]
-      v
-    |> sanitize_sexp
+    match v with
+    | `Inline -> "inline"
+    | `Block -> "block"
+    | `Inline_block -> "inline-block"
+    | `List_item -> "list-item"
+    | `Table -> "table"
+    | `Inline_table -> "inline-table"
+    | `None -> "none"
+    | `Flex -> "flex"
+    | `Inline_flex -> "inline-flex"
+    | `Inline_grid -> "inline-grid"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"display" ~value
 ;;
 
 let visibility v =
   let value =
-    [%sexp_of: [ `Visible | `Hidden | `Collapse | css_global_values ]] v |> sanitize_sexp
+    match v with
+    | `Visible -> "visible"
+    | `Hidden -> "hidden"
+    | `Collapse -> "collapse"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"visibility" ~value
 ;;
@@ -257,8 +266,13 @@ type overflow =
 
 let make_overflow field v =
   let value =
-    [%sexp_of: [ `Visible | `Hidden | `Scroll | `Auto | css_global_values ]] v
-    |> sanitize_sexp
+    match v with
+    | `Visible -> "visible"
+    | `Hidden -> "hidden"
+    | `Scroll -> "scroll"
+    | `Auto -> "auto"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field ~value
 ;;
@@ -267,11 +281,7 @@ let overflow = make_overflow "overflow"
 let overflow_x = make_overflow "overflow-x"
 let overflow_y = make_overflow "overflow-y"
 let z_index i = create_raw ~field:"z-index" ~value:(Int.to_string i)
-
-(* We use [sprintf] here instead of [Float.to_string], because the latter generates
-   numbers which are not valid in CSS (e.g. 0.) and causes tags not to be added to
-   styles in the browser. *)
-let opacity i = create_raw ~field:"opacity" ~value:(sprintf "%.12g" i)
+let opacity i = create_raw ~field:"opacity" ~value:(f2s 6 i)
 
 let create_length_field field l =
   create_raw ~field ~value:(Auto_or_length.to_string_css l)
@@ -318,37 +328,39 @@ let font_family l = create_raw ~field:"font-family" ~value:(String.concat l ~sep
 
 let font_style s =
   let value =
-    [%sexp_of: [ `Normal | `Italic | `Oblique | css_global_values ]] s |> sanitize_sexp
+    match s with
+    | `Normal -> "normal"
+    | `Italic -> "italic"
+    | `Oblique -> "oblique"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"font-style" ~value
 ;;
 
-let font_weight =
-  let module Static_weight = struct
-    type t =
-      [ `Normal
-      | `Bold
-      | `Bolder
-      | `Lighter
-      | css_global_values
-      ]
-    [@@deriving sexp]
-  end
+let font_weight s =
+  let value =
+    match s with
+    | `Number i -> Int.to_string i
+    | `Bold -> "bold"
+    | `Normal -> "normal"
+    | `Lighter -> "lighter"
+    | `Inherit -> "inherit"
+    | `Bolder -> "bolder"
+    | `Initial -> "initial"
   in
-  fun s ->
-    let value =
-      match s with
-      | `Number i -> Int.to_string i
-      | #Static_weight.t as x -> Static_weight.sexp_of_t x |> sanitize_sexp
-    in
-    create_raw ~field:"font-weight" ~value
+  create_raw ~field:"font-weight" ~value
 ;;
 
 let bold = font_weight `Bold
 
 let font_variant s =
   let value =
-    [%sexp_of: [ `Normal | `Small_caps | css_global_values ]] s |> sanitize_sexp
+    match s with
+    | `Normal -> "normal"
+    | `Small_caps -> "small-caps"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"font-variant" ~value
 ;;
@@ -386,17 +398,17 @@ type background_image =
 let stops_to_string stops =
   List.map stops ~f:(fun (pct, color) ->
     (* Note: Percent.to_string produced e.g. "0x", "1x", won't work here. *)
-    sprintf "%s %f%%" (Color.to_string_css color) (Percent.to_percentage pct))
+    [%string "%{Color.to_string_css color} %{f2s 6 (Percent.to_percentage pct)}%"])
   |> String.concat ~sep:", "
 ;;
 
 let background_image spec =
   let value =
     match spec with
-    | `Url url -> sprintf "url(%s)" url
+    | `Url url -> [%string "url(%{url})"]
     | `Linear_gradient { direction = `Deg direction; stops } ->
-      sprintf "linear-gradient(%ddeg, %s)" direction (stops_to_string stops)
-    | `Radial_gradient { stops } -> sprintf "radial-gradient(%s)" (stops_to_string stops)
+      [%string "linear-gradient(%{direction#Int}deg, %{stops_to_string stops})"]
+    | `Radial_gradient { stops } -> [%string "radial-gradient(%{stops_to_string stops})"]
   in
   create_raw ~field:"background-image" ~value
 ;;
@@ -410,9 +422,15 @@ let horizontal_align = create_alignment "horizontal-align"
 let vertical_align = create_alignment "vertical-align"
 
 let float f =
-  create_raw
-    ~field:"float"
-    ~value:([%sexp_of: [ `None | `Left | `Right | css_global_values ]] f |> sanitize_sexp)
+  let value =
+    match f with
+    | `None -> "none"
+    | `Left -> "left"
+    | `Right -> "right"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
+  in
+  create_raw ~field:"float" ~value
 ;;
 
 let width = create_length_field "width"
@@ -469,7 +487,6 @@ type border_style =
   | `Outset
   | css_global_values
   ]
-[@@deriving sexp]
 
 (** Concat 2 values with a space in between.  If either is the empty string
     don't put in unnecessary whitespace. *)
@@ -483,8 +500,22 @@ let concat2v v1 v2 =
 (** Concat up to 3 values with spaces in between. *)
 let concat3v v1 v2 v3 = concat2v (concat2v v1 v2) v3
 
-let border_value ?width ?color ~style () =
-  let style = [%sexp_of: border_style] style |> sanitize_sexp in
+let border_value ?width ?color ~(style : border_style) () =
+  let style =
+    match style with
+    | `Ridge -> "ridge"
+    | `Outset -> "outset"
+    | `None -> "none"
+    | `Groove -> "groove"
+    | `Dashed -> "dashed"
+    | `Inherit -> "inherit"
+    | `Inset -> "inset"
+    | `Hidden -> "hidden"
+    | `Double -> "double"
+    | `Dotted -> "dotted"
+    | `Initial -> "initial"
+    | `Solid -> "solid"
+  in
   let width = value_map width ~f:Length.to_string_css in
   let color = value_map color ~f:Color.to_string_css in
   concat3v width style color
@@ -515,7 +546,11 @@ let outline ?width ?color ~style () =
 
 let border_collapse v =
   let value =
-    [%sexp_of: [ `Separate | `Collapse | css_global_values ]] v |> sanitize_sexp
+    match v with
+    | `Separate -> "separate"
+    | `Collapse -> "collapse"
+    | `Inherit -> "inherit"
+    | `Initial -> "initial"
   in
   create_raw ~field:"border-collapse" ~value
 ;;
@@ -545,11 +580,25 @@ type text_decoration_style =
 let text_decoration ?style ?color ~line () =
   let value =
     let line =
-      List.map line ~f:(fun l -> [%sexp_of: text_decoration_line] l |> sanitize_sexp)
+      List.map line ~f:(function
+        | `Line_through -> "line-through"
+        | `None -> "none"
+        | `Inherit -> "inherit"
+        | `Overline -> "overline"
+        | `Underline -> "underline"
+        | `Initial -> "initial")
       |> String.concat ~sep:" "
     in
     let style =
-      value_map style ~f:(fun s -> [%sexp_of: text_decoration_style] s |> sanitize_sexp)
+      match style with
+      | None -> ""
+      | Some `Solid -> "solid"
+      | Some `Double -> "double"
+      | Some `Dotted -> "dotted"
+      | Some `Dashed -> "dashed"
+      | Some `Wavy -> "wavy"
+      | Some `Inherit -> "inherit"
+      | Some `Initial -> "initial"
     in
     let color = value_map color ~f:Color.to_string_css in
     concat3v line style color
@@ -602,10 +651,18 @@ let flex_container
       ()
   =
   let direction =
-    [%sexp_of: [ `Row | `Row_reverse | `Column | `Column_reverse ]] direction
-    |> sanitize_sexp
+    match direction with
+    | `Row -> "row"
+    | `Row_reverse -> "row-reverse"
+    | `Column -> "column"
+    | `Column_reverse -> "column-reverse"
   in
-  let wrap = [%sexp_of: [ `Nowrap | `Wrap | `Wrap_reverse ]] wrap |> sanitize_sexp in
+  let wrap =
+    match wrap with
+    | `Nowrap -> "nowrap"
+    | `Wrap -> "wrap"
+    | `Wrap_reverse -> "wrap-reverse"
+  in
   let align_items =
     match align_items with
     | None -> empty
@@ -634,7 +691,7 @@ let flex_item ?order ?(basis = `Auto) ?(shrink = 1.) ~grow () =
   in
   let flex =
     let basis = Auto_or_length.to_string_css basis in
-    create_raw ~field:"flex" ~value:(sprintf "%f %f %s" grow shrink basis)
+    create_raw ~field:"flex" ~value:[%string "%{f2s 6 grow} %{f2s 6 shrink} %{basis}"]
   in
   concat [ flex; order ]
 ;;
@@ -660,27 +717,30 @@ let resize (value : [ `None | `Both | `Horizontal | `Vertical | css_global_value
 let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_function ()
   =
   let m = Option.map in
-  let span_to_string s = sprintf "%.2fs" (Time_ns.Span.to_sec s) in
+  let span_to_string s = [%string "%{f2s 2 (Time_ns.Span.to_sec s)}s"] in
   let direction =
     m direction ~f:(fun d ->
       let value =
-        d
-        |> [%sexp_of:
-          [ `Normal
-          | `Reverse
-          | `Alternate
-          | `Alternate_reverse
-          | css_global_values
-          ]]
-        |> sanitize_sexp
+        match d with
+        | `Normal -> "normal"
+        | `Reverse -> "reverse"
+        | `Alternate -> "alternate"
+        | `Alternate_reverse -> "alternate-reverse"
+        | `Inherit -> "inherit"
+        | `Initial -> "initial"
       in
       create_raw ~field:"animation-direction" ~value)
   in
   let fill_mode =
     m fill_mode ~f:(fun f ->
       let value =
-        [%sexp_of: [ `None | `Forwards | `Backwards | `Both | css_global_values ]] f
-        |> sanitize_sexp
+        match f with
+        | `None -> "none"
+        | `Forwards -> "forwards"
+        | `Backwards -> "backwards"
+        | `Both -> "both"
+        | `Inherit -> "inherit"
+        | `Initial -> "initial"
       in
       create_raw ~field:"animation-fill-mode" ~value)
   in

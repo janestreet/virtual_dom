@@ -591,6 +591,36 @@ module User_actions = struct
     trigger_many element ~extra_fields ~event_names
   ;;
 
+  let keydown
+        ?(shift_key_down = false)
+        ?(ctrl_key_down = false)
+        ?(alt_key_down = false)
+        element
+        ~key
+    =
+    let open Vdom_keyboard in
+    let key_code = Keystroke.Keyboard_code.to_key_code key in
+    let location = Keystroke.Keyboard_code.to_location key in
+    let int_to_any x = Js.Unsafe.coerce (Js.number_of_float (Int.to_float x)) in
+    let extra_fields =
+      [ "location", int_to_any location
+      ; "keyCode", int_to_any key_code
+      ; "code", Js.Unsafe.coerce (Js.string "")
+      ; "key", Js.Unsafe.coerce (Js.string "")
+      ; "shiftKey", Js.Unsafe.coerce (Js.bool shift_key_down)
+      ; "ctrlKey", Js.Unsafe.coerce (Js.bool ctrl_key_down)
+      ; "metaKey", Js.Unsafe.coerce (Js.bool alt_key_down)
+      ; ( "preventDefault"
+        , Js.Unsafe.inject
+            (Js.wrap_callback (fun _ ->
+               print_s [%message "default prevented" (key : Keystroke.Keyboard_code.t)]))
+        )
+      ]
+    in
+    let event_names = [ "onkeydown" ] in
+    trigger_many element ~extra_fields ~event_names
+  ;;
+
   let enter element =
     trigger element ~event_name:"ondragenter" ~extra_fields:both_event_handlers
   ;;
