@@ -225,7 +225,7 @@ val background_color : Color.t -> t
 val background_image : background_image -> t
 val text_align : [ `Left | `Right | `Center | `Justify | css_global_values ] -> t
 val horizontal_align : [ `Left | `Right | `Center | css_global_values ] -> t
-val vertical_align : [ `Top | `Bottom | `Middle | css_global_values ] -> t
+val vertical_align : [ `Top | `Bottom | `Middle | `Super | `Sub | css_global_values ] -> t
 
 val white_space
   :  [ `Normal | `Nowrap | `Pre | `Pre_line | `Pre_wrap | css_global_values ]

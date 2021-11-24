@@ -401,7 +401,12 @@ let hidden = create "hidden" ""
 let readonly = create "readonly" ""
 let disabled = create "disabled" ""
 let placeholder x = create "placeholder" x
-let autofocus b = create "autofocus" (Bool.to_string b)
+
+let autofocus = function
+  | true -> create "autofocus" ""
+  | false -> empty
+;;
+
 let for_ x = create "for" x
 let type_ x = create "type" x
 let value x = create "value" x

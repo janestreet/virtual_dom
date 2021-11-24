@@ -405,3 +405,34 @@ let%expect_test "[many_without_merge] inside merge" =
     ----------------------
     <div class="a bab c d"> </div> |}]
 ;;
+
+let%expect_test "combining hooks" =
+  let module H =
+    Virtual_dom.Vdom.Attr.Hooks.Make (struct
+      module State = Unit
+
+      module Input = struct
+        type t = string list [@@deriving sexp_of]
+
+        let combine a b =
+          print_endline "in combine";
+          a @ b
+        ;;
+      end
+
+      let init _ _ = ()
+      let on_mount _ () _ = ()
+      let update ~old_input:_ ~new_input:_ () _ = ()
+      let destroy _ () _ = ()
+    end)
+  in
+  let make s = Attr.create_hook "my-hook" (H.create [ s ]) in
+  show (Node.div ~attr:Attr.(class_ "x" @ make "hello" @ make "world") []);
+  [%expect
+    {|
+    in combine
+    (Element
+     ((tag_name div) (attributes ((class x))) (hooks ((my-hook (hello world))))))
+    ----------------------
+    <div class="x" my-hook=(hello world)> </div> |}]
+;;

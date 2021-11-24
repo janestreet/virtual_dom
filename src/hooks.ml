@@ -26,9 +26,12 @@ type t =
       ; input_id : 'input Type_equal.Id.t
       ; combine_inputs : 'input -> 'input -> 'input
       ; init :
-          Dom_html.element Js.t -> 'input * Dom_html.animation_frame_request_id * 'state
+          'input
+          -> Dom_html.element Js.t
+          -> 'input * Dom_html.animation_frame_request_id * 'state
       ; update :
-          'input * Dom_html.animation_frame_request_id * 'state
+          'input
+          -> 'input * Dom_html.animation_frame_request_id * 'state
           -> Dom_html.element Js.t
           -> 'input * Dom_html.animation_frame_request_id * 'state
       ; destroy :
@@ -47,8 +50,8 @@ let make_hook ~combine_inputs ~init ~extra:(input, input_id) ~update ~destroy ~i
 
 let pack (T { init; input; input_id; update; destroy; id; _ }) =
   let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
-  let init = wrap init in
-  let update = wrap update in
+  let init = wrap (init input) in
+  let update = wrap (update input) in
   let destroy = wrap destroy in
   let generic_hook = Lazy.force generic_hook in
   let extra = Extra.T { type_id = input_id; value = input } in
@@ -76,22 +79,25 @@ module Make (S : S) = struct
 
   let input_id = Type_equal.Id.create ~name:"" S.Input.sexp_of_t
 
+  let init input element =
+    let state = S.init input element in
+    let animation_id =
+      request_animation_frame (fun _ -> S.on_mount input state element)
+    in
+    input, animation_id, state
+  ;;
+
+  let update input (old_input, animation_id, state) element =
+    S.update ~old_input ~new_input:input state element;
+    input, animation_id, state
+  ;;
+
+  let destroy (old_input, animation_id, state) element =
+    cancel_animation_frame animation_id;
+    S.destroy old_input state element
+  ;;
+
   let create input =
-    let init element =
-      let state = S.init input element in
-      let animation_id =
-        request_animation_frame (fun _ -> S.on_mount input state element)
-      in
-      input, animation_id, state
-    in
-    let update (old_input, animation_id, state) element =
-      S.update ~old_input ~new_input:input state element;
-      input, animation_id, state
-    in
-    let destroy (old_input, animation_id, state) element =
-      cancel_animation_frame animation_id;
-      S.destroy old_input state element
-    in
     make_hook
       ~extra:(input, input_id)
       ~combine_inputs:S.Input.combine

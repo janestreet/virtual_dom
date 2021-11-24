@@ -39,7 +39,7 @@ let%expect_test "add class" =
        []);
   [%expect
     {|
-    (Element ((tag_name div) (attributes ((autofocus true) (class "abc def")))))
+    (Element ((tag_name div) (attributes ((autofocus "") (class "abc def")))))
     ----------------------
-    <div autofocus="true" class="abc def"> </div> |}]
+    <div autofocus="" class="abc def"> </div> |}]
 ;;

@@ -63,6 +63,7 @@ val button : node_creator
 val code : node_creator
 val div : node_creator
 val footer : node_creator
+val fieldset : node_creator
 val h1 : node_creator
 val h2 : node_creator
 val h3 : node_creator
