@@ -12,7 +12,7 @@ build: [
 depends: [
   "ocaml" {>= "4.08.0"}
   "base"
-  "core_kernel"
+  "core"
   "ppx_jane"
   "dune"            {>= "2.0.0"}
   "gen_js_api"      {>= "1.0.8"}

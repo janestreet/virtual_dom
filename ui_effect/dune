@@ -1,2 +1,2 @@
 (library (name ui_effect) (public_name virtual_dom.ui_effect)
- (libraries core_kernel.core) (preprocess (pps ppx_jane)))
+ (libraries core) (preprocess (pps ppx_jane)))
