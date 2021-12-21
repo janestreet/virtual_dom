@@ -2,6 +2,12 @@ open! Core
 open Js_of_ocaml
 module Vdom_raw = Raw
 
+let () =
+  (* use the native-javascript implementation of float -> string with a fixed number of
+     numbers after the decimal place. *)
+  Css_gen.Private.float_to_string_with_fixed := Dom_float.to_string_fixed
+;;
+
 (** This has 3 kinds of constructors.
     {v
       - constructors for properties / attributes for which we
@@ -465,6 +471,7 @@ let on_keydown = on Type_id.keyboard "keydown"
 let on_scroll = on Type_id.event "scroll"
 let on_submit = on Type_id.submit "submit"
 let on_pointerdown = on Type_id.pointer "pointerdown"
+let on_pointerup = on Type_id.pointer "pointerup"
 let on_mousewheel = on Type_id.mousewheel "mousewheel"
 let on_copy = on Type_id.clipboard "copy"
 let on_cut = on Type_id.clipboard "cut"

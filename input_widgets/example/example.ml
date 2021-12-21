@@ -36,6 +36,7 @@ module App = struct
       ; time_of_day_opt : Time_ns.Ofday.t option
       ; time_span : Time_ns.Span.t Validated.t
       ; selected_files : string list
+      ; color : [ `Hex of string ]
       }
     [@@deriving sexp_of]
 
@@ -70,6 +71,7 @@ module App = struct
     ; time_of_day_opt = None
     ; time_span = Validated.initial_empty
     ; selected_files = []
+    ; color = `Hex "#0000ff"
     }
   ;;
 
@@ -204,6 +206,9 @@ module App = struct
       ; ( "Entry.time (of_day)"
         , Entry.time () ~value:model.time_of_day_opt ~on_input:(fun time_of_day_opt ->
             inject (Set { model with time_of_day_opt })) )
+      ; ( "Entry.color_picker"
+        , Entry.color_picker () ~value:model.color ~on_input:(fun color ->
+            inject (Set { model with color })) )
       ; ( "Button.reset_date"
         , Button.simple "Set date to now" ~on_click:(fun () ->
             inject (Set { model with time_ns_opt = Some (Time_ns.now ()) })) )

@@ -158,6 +158,7 @@ val on_keydown : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
 val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
+val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t

@@ -110,8 +110,8 @@ module type Effect = sig
           (The difference between [Svar] and [Ivar] is that the former is synchronous. That
           is, when [fill_if_empty] is called, it will directly call all of the handlers rather
           than scheduling that they be called later. This semantics can be confusing to work
-          with in large-scale programs, as it means the control flow of tour application hops
-          around a lot more. However, it does mean that tou don't need a scheduler, so it's
+          with in large-scale programs, as it means the control flow of your application hops
+          around a lot more. However, it does mean that you don't need a scheduler, so it's
           easier to implement.) *)
 
       type 'a t
@@ -132,7 +132,7 @@ module type Effect = sig
     module Query_response_tracker : sig
       (** [Query_response_tracker] is an interface designed to make [of_svar] more
           convenient to use. When the function returned by [of_query_response_tracker t] is
-          called (typically by tour bonsai app), the query passed is stored within [t]. Your
+          called (typically by your bonsai app), the query passed is stored within [t]. Your
           test code can then call [maybe_respond] to cause those effects to 'become
           determined'. *)
       type ('q, 'r) t

@@ -319,6 +319,19 @@ module Entry : sig
     -> on_input:(string -> unit Effect.t)
     -> unit
     -> Node.t
+
+  (** Creates a color input that produces values are of the form (`Hex color) where
+      [color] is a hexadecimal string like "#ffcc00". Note that using
+      [~call_on_input_when:Text_changed] fires the [on_input] callback whenever a new
+      color is selected. *)
+  val color_picker
+    :  ?extra_attr:Attr.t (** default Attr.empty *)
+    -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
+    -> ?disabled:bool (** default false *)
+    -> value:[ `Hex of string ]
+    -> on_input:([> `Hex of string ] -> unit Effect.t)
+    -> unit
+    -> Node.t
 end
 
 module Button : sig

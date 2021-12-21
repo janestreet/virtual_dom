@@ -796,6 +796,24 @@ module Entry = struct
             |> add_attrs extra_attrs))
       []
   ;;
+
+  (* According to
+     https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color#Value the
+     value must be set in hex format and will always comes back in hex format. *)
+  let color_picker
+        ?(extra_attr = Attr.empty)
+        ?(call_on_input_when = Call_on_input_when.Text_changed)
+        ?disabled
+        ~value
+        ~on_input
+        ()
+    =
+    let (`Hex value_) = value in
+    [ Attr.(type_ "color" @ value_prop value_ @ extra_attr)
+    ; Call_on_input_when.listener call_on_input_when (fun _ev s -> on_input (`Hex s))
+    ]
+    |> input_node ?disabled
+  ;;
 end
 
 module Button = struct
