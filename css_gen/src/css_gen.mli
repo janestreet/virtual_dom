@@ -42,7 +42,7 @@ module Color : sig
     ]
   [@@deriving sexp, bin_io, compare]
 
-  val to_string_css : t -> string
+  val to_string_css : [< t ] -> string
 end
 
 module Length : sig
@@ -219,10 +219,11 @@ type background_image =
   | `Radial_gradient of radial_gradient
   ]
 
-val create_with_color : field:string -> color:Color.t -> t
-val color : Color.t -> t
-val background_color : Color.t -> t
+val create_with_color : field:string -> color:[< Color.t ] -> t
+val color : [< Color.t ] -> t
+val background_color : [< Color.t ] -> t
 val background_image : background_image -> t
+val fill : Color.t -> t
 val text_align : [ `Left | `Right | `Center | `Justify | css_global_values ] -> t
 val horizontal_align : [ `Left | `Right | `Center | css_global_values ] -> t
 val vertical_align : [ `Top | `Bottom | `Middle | `Super | `Sub | css_global_values ] -> t
@@ -280,15 +281,34 @@ type border_style =
   | css_global_values
   ]
 
-val border_top : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border_bottom : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border_left : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border_right : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
-val border : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
+val border_top : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
+
+val border_bottom
+  :  ?width:Length.t
+  -> ?color:[< Color.t ]
+  -> style:border_style
+  -> unit
+  -> t
+
+val border_left
+  :  ?width:Length.t
+  -> ?color:[< Color.t ]
+  -> style:border_style
+  -> unit
+  -> t
+
+val border_right
+  :  ?width:Length.t
+  -> ?color:[< Color.t ]
+  -> style:border_style
+  -> unit
+  -> t
+
+val border : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
 val border_radius : Length.t -> t
 val border_collapse : [ `Separate | `Collapse | css_global_values ] -> t
 val border_spacing : Length.t -> t
-val outline : ?width:Length.t -> ?color:Color.t -> style:border_style -> unit -> t
+val outline : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
 
 type text_decoration_line =
   [ `None
@@ -309,7 +329,7 @@ type text_decoration_style =
 
 val text_decoration
   :  ?style:text_decoration_style
-  -> ?color:Color.t
+  -> ?color:[< Color.t ]
   -> line:text_decoration_line list
   -> unit
   -> t

@@ -63,7 +63,7 @@ module Color = struct
   include T
   include Sexpable.To_stringable (T)
 
-  let to_string_css = function
+  let to_string_css : [< t ] -> string = function
     | `Inherit -> "inherit"
     | `Initial -> "initial"
     | `RGBA { RGBA.r; g; b; a } ->
@@ -383,6 +383,7 @@ let font ~size ~family ?style ?weight ?variant () =
 let create_with_color ~field ~color = create_raw ~field ~value:(Color.to_string_css color)
 let color color = create_with_color ~field:"color" ~color
 let background_color color = create_with_color ~field:"background-color" ~color
+let fill color = create_with_color ~field:"fill" ~color
 
 type stops = (Percent.t * Color.t) list
 
@@ -538,11 +539,23 @@ let create_border ?side () =
     create_raw ~field ~value:(border_value ?width ?color ~style ())
 ;;
 
-let border_top = create_border ~side:`Top ()
-let border_bottom = create_border ~side:`Bottom ()
-let border_left = create_border ~side:`Left ()
-let border_right = create_border ~side:`Right ()
-let border = create_border ()
+let border_top ?width ?color ~style () =
+  create_border ~side:`Top () ?width ?color ~style ()
+;;
+
+let border_bottom ?width ?color ~style () =
+  create_border ~side:`Bottom () ?width ?color ~style ()
+;;
+
+let border_left ?width ?color ~style () =
+  create_border ~side:`Left () ?width ?color ~style ()
+;;
+
+let border_right ?width ?color ~style () =
+  create_border ~side:`Right () ?width ?color ~style ()
+;;
+
+let border ?width ?color ~style () = create_border ?side:None ?width ?color ~style () ()
 
 let outline ?width ?color ~style () =
   create_raw ~field:"outline" ~value:(border_value ?width ?color ~style ())

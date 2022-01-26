@@ -72,6 +72,11 @@ and t =
   | Element of element
   | Widget of Widget.t
 
+module Aliases = struct
+  type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
+  type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
+end
+
 module Element = struct
   type t = element
 
@@ -149,9 +154,6 @@ let widget_of_module m =
   let f = Base.Staged.unstage (Widget.of_module m) in
   Base.Staged.stage (fun i -> Widget (f i))
 ;;
-
-type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
-type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
 
 let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
@@ -232,7 +234,6 @@ let sexp_for_debugging ?indent sexp =
 ;;
 
 module Patch = struct
-  type node = t
   type t = Raw.Patch.t
 
   let create ~previous ~current =

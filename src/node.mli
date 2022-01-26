@@ -51,8 +51,13 @@ type t =
   | Element of Element.t
   | Widget of Widget.t
 
-type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
-type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
+type node_creator := ?key:string -> ?attr:Attr.t -> t list -> t
+type node_creator_childless := ?key:string -> ?attr:Attr.t -> unit -> t
+
+module Aliases : sig
+  type nonrec node_creator = node_creator
+  type nonrec node_creator_childless = node_creator_childless
+end
 
 val none : t
 val text : string -> t
@@ -126,7 +131,17 @@ val create : string -> node_creator
     the correct one may result in delayed redraws. *)
 val create_svg : string -> node_creator
 
+(** Creates a new browser DOM element from a virtual-dom node. Note that
+    calling this function will give you a brand new element, which you then
+    have to put into the DOM yourself. Thus, you should probably not be calling
+    this very often, since Bonsai and Incr_dom both take care calling this
+    function on the top-level view node.
+
+    The one situation where [to_dom] is useful for the typical user is with the
+    Widget API, since building a Widget entails generating the browser DOM
+    element. *)
 val to_dom : t -> Dom_html.element Js.t
+
 val to_raw : t -> Raw.Node.t
 
 (** Creates a Node.t that has fine-grained control over the Browser DOM node.
@@ -181,7 +196,7 @@ val widget_of_module
   -> ('input -> t) Staged.t
 
 module Patch : sig
-  type node = t
+  type node := t
   type t
 
   val create : previous:node -> current:node -> t

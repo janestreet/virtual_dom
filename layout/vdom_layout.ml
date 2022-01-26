@@ -1,5 +1,4 @@
 open! Core
-open Poly
 module Attr = Virtual_dom.Vdom.Attr
 module Node = Virtual_dom.Vdom.Node
 
@@ -48,7 +47,7 @@ let as_box
       (direction : [ `Row | `Column ])
       ?gap
       ?align_items
-      (node_creator : Node.node_creator)
+      (node_creator : Node.Aliases.node_creator)
       ?key
       ?attr
       nodes
@@ -71,7 +70,8 @@ let as_box
         (map_style ~f:(fun style ->
            let has_flex_shrink_set =
              Css_gen.to_string_list style
-             |> List.exists ~f:(fun (f, _) -> f = "flex-shrink" || f = "flex")
+             |> List.exists ~f:(fun (f, _) ->
+               String.( = ) f "flex-shrink" || String.( = ) f "flex")
            in
            if has_flex_shrink_set
            then style

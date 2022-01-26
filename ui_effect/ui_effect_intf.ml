@@ -55,6 +55,12 @@ module type Effect = sig
   (** An effect that never completes *)
   val never : 'a t
 
+  (** If creating an effect could be expensive, you can
+      wrap its construction in a lazy and pass it to this function so that
+      its construction will be deferred until it's about to be evaluated. *)
+  val lazy_ : 'a t Lazy.t -> 'a t
+
+  (** Prints the sexp when scheduled. *)
   val print_s : Sexp.t -> unit t
 
   (** [of_sync_fun] is similar to [of_deferred_fun] but with a synchronous function

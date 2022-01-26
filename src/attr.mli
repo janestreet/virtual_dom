@@ -170,7 +170,7 @@ val on_animationend : (Dom_html.animationEvent Js.t -> unit Effect.t) -> t
 module Multi : sig
   (** A collection of CSS attributes. *)
 
-  type attr = t
+  type attr := t
   type t = attr list
 
   (** [merge_classes_and_styles] groups together the class attributes and style attributes

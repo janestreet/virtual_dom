@@ -206,8 +206,8 @@ val d : path_op list -> t
 (** {1 <polygon>} *)
 
 val points : (float * float) list -> t
-val fill : [ `Url of string | Css_gen.Color.t ] -> t
-val stroke : Css_gen.Color.t -> t
+val fill : [< `Url of string | Css_gen.Color.t ] -> t
+val stroke : [< Css_gen.Color.t ] -> t
 val stroke_width : float -> t
 val stroke_linecap : [ `Butt | `Round | `Square ] -> t
 val stroke_dasharray : float list -> t
@@ -231,7 +231,7 @@ val spread_method : [ `Pad | `Reflect | `Repeat ] -> t
 (** {1 <stop>} *)
 
 val offset : Percent.t -> t
-val stop_color : Css_gen.Color.t -> t
+val stop_color : [< Css_gen.Color.t ] -> t
 val stop_opacity : Percent.t -> t
 
 (** nothing to do for <style> *)

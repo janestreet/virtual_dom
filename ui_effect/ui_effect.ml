@@ -77,6 +77,7 @@ let print_s = Print_s.inject
 (* Effectful things *)
 type 'a t +=
   | Return : 'a -> 'a t
+  | Lazy : 'a t Lazy.t -> 'a t
   | Bind :
       { t : 'a t
       ; f : 'a -> 'b t
@@ -95,6 +96,7 @@ let bind (type a) (t : a t) ~f = Bind { t; f }
 let map (type a b) (t : a t) ~f : b t = Map { t; f }
 let never = Never
 let of_fun ~f = Fun f
+let lazy_ a = Lazy a
 
 include Core.Monad.Make (struct
     type nonrec 'a t = 'a t
@@ -110,6 +112,7 @@ let rec eval : type a. a t -> callback:(a -> unit) -> unit =
   | Fun f -> f ~callback
   | Ignore -> callback ()
   | Return a -> callback a
+  | Lazy (lazy t) -> eval t ~callback
   | Many l ->
     List.iter l ~f:(eval ~callback:ignore);
     callback ()

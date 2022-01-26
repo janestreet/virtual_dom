@@ -1,7 +1,9 @@
 
 open! Core
-module Attr = Virtual_dom.Vdom.Attr
-module Node = Virtual_dom.Vdom.Node
+module Attr := Virtual_dom.Vdom.Attr
+module Node := Virtual_dom.Vdom.Node
+
+type node_creator := ?key:string -> ?attr:Attr.t -> Node.t list -> Node.t
 
 (** If node is an Element, do nothing other than returning that Element.
     Otherwise put a div around the node and return the div's Element. *)
@@ -17,20 +19,20 @@ val as_box
   :  [ `Row | `Column ]
   -> ?gap:Css_gen.Length.t
   -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
-  -> Node.node_creator
+  -> node_creator
+  -> node_creator
 
 val as_hbox
   :  ?gap:Css_gen.Length.t
   -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
-  -> Node.node_creator
+  -> node_creator
+  -> node_creator
 
 val as_vbox
   :  ?gap:Css_gen.Length.t
   -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
-  -> Node.node_creator
+  -> node_creator
+  -> node_creator
 
 (** Set flex-grow to 1 on the given Node. *)
 val grow : Node.t -> Node.t
@@ -44,16 +46,10 @@ val grow_and_shrink : Node.t -> Node.t
 val scrollable : Node.t -> Node.t
 
 (** Convenience wrapper same as [as_hbox Node.div]. *)
-val hbox
-  :  ?gap:Css_gen.Length.t
-  -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
+val hbox : ?gap:Css_gen.Length.t -> ?align_items:Css_gen.item_alignment -> node_creator
 
 (** Convenience wrapper same as [as_vbox Node.div]. *)
-val vbox
-  :  ?gap:Css_gen.Length.t
-  -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
+val vbox : ?gap:Css_gen.Length.t -> ?align_items:Css_gen.item_alignment -> node_creator
 
 (** a blank div element *)
 val spacer
@@ -68,7 +64,7 @@ val body
   :  ?direction:[ `Row | `Column ]
   -> ?gap:Css_gen.Length.t
   -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
+  -> node_creator
 
 (** Display nodes (layouted as a box) in a smaller window on top of everything else (with
     everything else grayed out and inaccessible via the mouse). Note that this renders a
@@ -77,4 +73,4 @@ val modal
   :  ?direction:[ `Row | `Column ]
   -> ?gap:Css_gen.Length.t
   -> ?align_items:Css_gen.item_alignment
-  -> Node.node_creator
+  -> node_creator
