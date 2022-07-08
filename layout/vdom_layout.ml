@@ -2,13 +2,14 @@ open! Core
 module Attr = Virtual_dom.Vdom.Attr
 module Node = Virtual_dom.Vdom.Node
 
-let wrap_in_element_if_necessary node =
+let rec wrap_in_element_if_necessary node =
   match node with
   | Node.Text _ | Node.Widget _ | Node.None ->
     let div = Node.div [ node ] in
     (match div with
      | Node.Element e -> e
      | _ -> assert false)
+  | Node.Lazy { t; _ } -> wrap_in_element_if_necessary (Lazy.force t)
   | Node.Element e -> e
 ;;
 

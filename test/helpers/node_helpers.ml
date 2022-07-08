@@ -18,7 +18,7 @@ type element =
 and t =
   | Text of string
   | Element of element
-  | Widget of Sexp.t
+  | Widget
 [@@deriving sexp_of]
 
 let rec inner_text = function
@@ -30,7 +30,7 @@ let rec inner_text = function
     (match children |> List.filter_map ~f:inner_text with
      | [] -> None
      | xs -> xs |> String.concat ~sep:" " |> Some)
-  | Widget _ -> None
+  | Widget -> None
 ;;
 
 let inner_text t = inner_text t |> Option.value ~default:""
@@ -54,7 +54,7 @@ let rec map t ~f =
   | `Replace_with t -> t
   | `Continue ->
     (match t with
-     | Text _ | Widget _ -> t
+     | Text _ | Widget -> t
      | Element element ->
        let children = List.map element.children ~f:(fun ch -> map ch ~f) in
        Element { element with children })
@@ -79,10 +79,8 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
   let rec convert t =
     match t with
     | Text s -> Hidden_soup (Soup.create_text s)
-    | Widget w ->
-      let info_text = Soup.create_text (Sexp.to_string w) in
+    | Widget ->
       let element = Soup.create_element "widget" ~attributes:[] in
-      Soup.append_child element info_text;
       Hidden_soup element
     | Element
         { tag_name
@@ -260,7 +258,7 @@ let to_string_html ?(filter_printed_attributes = Fn.const true) t =
         bprintf buffer "\n";
         bprintf buffer "%s" indent);
       bprintf buffer "</%s>" element.tag_name
-    | Widget s -> bprintf buffer "%s<widget %s />" indent (Sexp.to_string s)
+    | Widget -> bprintf buffer "%s<widget/>" indent
   in
   let buffer = Buffer.create 100 in
   recurse buffer ~depth:0 t;
@@ -287,7 +285,7 @@ let select_first_exn t ~selector =
           ~from_node:(to_string_html t : string)]
 ;;
 
-let unsafe_of_js_exn =
+let rec unsafe_of_js_exn =
   let make_text_node (text : Js.js_string Js.t) = Text (Js.to_string text) in
   let make_element_node
         (tag_name : Js.js_string Js.t)
@@ -353,10 +351,13 @@ let unsafe_of_js_exn =
       ; styles
       }
   in
-  let make_widget_node (id : _ Type_equal.Id.t) (info : Sexp.t Lazy.t option) =
-    match info with
-    | Some sexp -> Widget (Lazy.force sexp)
-    | None -> Widget (Sexp.Atom (Type_equal.Id.name id))
+  let make_widget_node
+        (_id : _ Type_equal.Id.t)
+        (vdom_for_testing : Js.Unsafe.any Lazy.t option)
+    =
+    match vdom_for_testing with
+    | Some vdom -> unsafe_of_js_exn (Lazy.force vdom)
+    | None -> Widget
   in
   let raise_unknown_node_type node_type =
     let node_type = Js.to_string node_type in
@@ -370,10 +371,13 @@ let unsafe_of_js_exn =
    // on the type of node.
    (function convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type) {
        switch (node.type) {
+           case 'Thunk':
+               var n = node.fn(node.args);
+               return convert(n, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type);
            case 'VirtualText':
                return make_text_node(node.text);
            case 'Widget':
-               return make_widget_node(node.id, node.info);
+               return make_widget_node(node.id, node.vdomForTesting);
            case 'VirtualNode':
                var attributes = node.properties.attributes || {};
                var attr_list = Object.keys(attributes).map(function(key) {
@@ -508,11 +512,11 @@ let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a 
             ())
      | None -> failwithf "get_hook_value: no hook found with name %s" name ())
   | Text _ -> failwith "get_hook_value: expected Element, found Text"
-  | Widget _ -> failwith "get_hook_value: expected Element, found Widget"
+  | Widget -> failwith "get_hook_value: expected Element, found Widget"
 ;;
 
-let trigger_hook t ~type_id ~name ~arg =
-  Ui_effect.Expert.handle ((get_hook_value t ~type_id ~name) arg)
+let trigger_hook t ~type_id ~name ~f ~arg =
+  Ui_effect.Expert.handle (f (get_hook_value t ~type_id ~name) arg)
 ;;
 
 module User_actions = struct
@@ -520,24 +524,75 @@ module User_actions = struct
   let stop_propagation = "stopPropagation", Js.Unsafe.inject Fn.id
   let both_event_handlers = [ prevent_default; stop_propagation ]
 
-  let click_on
+  let build_event_object
         ?(shift_key_down = false)
         ?(ctrl_key_down = false)
         ?(alt_key_down = false)
-        node
+        ~extra_event_fields
+        ~include_modifier_keys
+        event_specific_fields
     =
+    let extra_event_fields = Option.value extra_event_fields ~default:[] in
+    let modifiers =
+      if include_modifier_keys
+      then
+        [ "shiftKey", Js.Unsafe.inject (Js.bool shift_key_down)
+        ; "ctrlKey", Js.Unsafe.inject (Js.bool ctrl_key_down)
+        ; "altKey", Js.Unsafe.inject (Js.bool alt_key_down)
+        ; "metaKey", Js.Unsafe.inject (Js.bool alt_key_down)
+        ]
+      else []
+    in
+    modifiers @ both_event_handlers @ extra_event_fields @ event_specific_fields
+  ;;
+
+  let click_on ?extra_event_fields ?shift_key_down ?ctrl_key_down ?alt_key_down node =
     trigger
       ~event_name:"onclick"
       node
       ~extra_fields:
-        (("shiftKey", Js.Unsafe.inject (Js.bool shift_key_down))
-         :: ("ctrlKey", Js.Unsafe.inject (Js.bool ctrl_key_down))
-         :: ("altKey", Js.Unsafe.inject (Js.bool alt_key_down))
-         :: both_event_handlers)
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [])
   ;;
 
-  let focus node = trigger ~event_name:"onfocus" node ~extra_fields:both_event_handlers
-  let blur node = trigger ~event_name:"onblur" node ~extra_fields:both_event_handlers
+  let focus ?extra_event_fields node =
+    trigger
+      ~event_name:"onfocus"
+      node
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
+  ;;
+
+  let blur ?extra_event_fields ?related_target node =
+    let related_target =
+      match related_target with
+      | Some related_target ->
+        Js.Unsafe.inject
+          (object%js
+            val id =
+              match related_target with
+              | Text _ | Widget -> Js.null
+              | Element { attributes; _ } ->
+                (match List.Assoc.find attributes ~equal:String.equal "id" with
+                 | Some id -> Js.Opt.return (Js.string id)
+                 | None -> Js.null)
+          end)
+      | None -> Js.Unsafe.inject Js.undefined
+    in
+    trigger
+      ~event_name:"onblur"
+      node
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:false
+           [ "relatedTarget", related_target ])
+  ;;
 
   let tag_name_exn = function
     | Element { tag_name; _ } -> tag_name
@@ -566,7 +621,14 @@ module User_actions = struct
       end)
   ;;
 
-  let set_checkbox element ~checked =
+  let set_checkbox
+        ?extra_event_fields
+        ?shift_key_down
+        ?ctrl_key_down
+        ?alt_key_down
+        element
+        ~checked
+    =
     let target =
       (* Similarly to [build_target] we inject a target field with some additional
          attributes that are relied upon -- in this case by
@@ -581,20 +643,34 @@ module User_actions = struct
     trigger
       element
       ~event_name:"onclick"
-      ~extra_fields:(("target", target) :: both_event_handlers)
+      ~extra_fields:
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [ "target", target ])
   ;;
 
-  let input_text element ~text =
+  let input_text ?extra_event_fields element ~text =
     let target = build_target ~element ~value:text in
-    let extra_fields = [ "target", target ] in
     let event_names = [ "oninput"; "onchange" ] in
-    trigger_many element ~extra_fields ~event_names
+    trigger_many
+      element
+      ~event_names
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [ "target", target ])
   ;;
 
   let keydown
-        ?(shift_key_down = false)
-        ?(ctrl_key_down = false)
-        ?(alt_key_down = false)
+        ?extra_event_fields
+        ?shift_key_down
+        ?ctrl_key_down
+        ?alt_key_down
         element
         ~key
     =
@@ -602,61 +678,126 @@ module User_actions = struct
     let key_code = Keystroke.Keyboard_code.to_key_code key in
     let location = Keystroke.Keyboard_code.to_location key in
     let int_to_any x = Js.Unsafe.coerce (Js.number_of_float (Int.to_float x)) in
-    let extra_fields =
-      [ "location", int_to_any location
-      ; "keyCode", int_to_any key_code
-      ; "code", Js.Unsafe.coerce (Js.string "")
-      ; "key", Js.Unsafe.coerce (Js.string "")
-      ; "shiftKey", Js.Unsafe.coerce (Js.bool shift_key_down)
-      ; "ctrlKey", Js.Unsafe.coerce (Js.bool ctrl_key_down)
-      ; "metaKey", Js.Unsafe.coerce (Js.bool alt_key_down)
-      ; ( "preventDefault"
-        , Js.Unsafe.inject
-            (Js.wrap_callback (fun _ ->
-               print_s [%message "default prevented" (key : Keystroke.Keyboard_code.t)]))
-        )
-      ]
-    in
     let event_names = [ "onkeydown" ] in
-    trigger_many element ~extra_fields ~event_names
+    let default_prevented _ =
+      print_s [%message "default prevented" (key : Keystroke.Keyboard_code.t)]
+    in
+    trigger_many
+      element
+      ~event_names
+      ~extra_fields:
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [ "location", int_to_any location
+           ; "keyCode", int_to_any key_code
+           ; "code", Js.Unsafe.coerce (Js.string "")
+           ; "key", Js.Unsafe.coerce (Js.string "")
+           ; "preventDefault", Js.Unsafe.inject (Js.wrap_callback default_prevented)
+           ])
   ;;
 
-  let enter element =
-    trigger element ~event_name:"ondragenter" ~extra_fields:both_event_handlers
+  let enter ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"ondragenter"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
   ;;
 
-  let over element =
-    trigger element ~event_name:"ondragover" ~extra_fields:both_event_handlers
+  let over ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"ondragover"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
   ;;
 
-  let submit_form element =
-    trigger element ~event_name:"onsubmit" ~extra_fields:both_event_handlers
+  let submit_form ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"onsubmit"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
   ;;
 
-  let change element ~value =
+  let change ?extra_event_fields element ~value =
     let target = build_target ~element ~value in
     trigger
       element
       ~event_name:"onchange"
-      ~extra_fields:(("target", target) :: both_event_handlers)
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:false
+           [ "target", target ])
   ;;
 
-  let drag element =
+  let drag ?extra_event_fields element =
     trigger
       element
       ~event_name:"ondragstart"
-      ~extra_fields:[ "offsetX", Js.Unsafe.inject 0; "offsetY", Js.Unsafe.inject 0 ]
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:false
+           [ "offsetX", Js.Unsafe.inject 0; "offsetY", Js.Unsafe.inject 0 ])
   ;;
 
-  let leave element = trigger element ~event_name:"ondragleave"
+  let leave ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"ondragleave"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
+  ;;
 
-  let drop element =
+  let drop ?extra_event_fields element =
     trigger
       element
       ~event_name:"ondrop"
-      ~extra_fields:[ "clientX", Js.Unsafe.inject 0; "clientY", Js.Unsafe.inject 0 ]
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:false
+           [ "clientX", Js.Unsafe.inject 0; "clientY", Js.Unsafe.inject 0 ])
   ;;
 
-  let end_ element = trigger element ~event_name:"ondragend"
-  let mousemove element = trigger element ~event_name:"onmousemove"
+  let end_ ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"ondragend"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
+  ;;
+
+  let mousemove ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"onmousemove"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
+  ;;
+
+  let mouseenter ?extra_event_fields element =
+    trigger
+      element
+      ~event_name:"onmouseenter"
+      ~extra_fields:
+        (build_event_object ~extra_event_fields ~include_modifier_keys:false [])
+  ;;
+
+  let wheel ?extra_event_fields element ~delta_y =
+    trigger
+      element
+      ~event_name:"onwheel"
+      ~extra_fields:
+        (build_event_object
+           ~extra_event_fields
+           ~include_modifier_keys:false
+           [ "deltaY", Js.Unsafe.inject delta_y ])
+  ;;
 end

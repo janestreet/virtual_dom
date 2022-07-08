@@ -21,6 +21,29 @@ module View_spec = struct
   ;;
 end
 
+(* Dedup keystrokes that map to the same string, e.g. Enter and NumpadEnter. *)
+let dedup_keys keys =
+  List.dedup_and_sort
+    keys
+    ~compare:(Comparable.lift String.compare ~f:Keystroke.to_string_hum)
+;;
+
+(* If a command has "consecutive" keystrokes, we display only the first and the last in
+   the range instead of listing out each one. Currently we only consider digits. *)
+let keys_are_consecutive (k0 : Keystroke.t) (k1 : Keystroke.t) =
+  let extract_digit k =
+    Option.try_with (fun () ->
+      Keystroke.key k |> Keystroke.create' |> Keystroke.to_string_hum |> Int.of_string)
+  in
+  match extract_digit k0, extract_digit k1 with
+  | None, _ | _, None -> false
+  | Some digit0, Some digit1 ->
+    digit0 + 1 = digit1
+    && List.for_all
+         Keystroke.[ ctrl; alt; shift; meta ]
+         ~f:(fun modifier -> Bool.( = ) (modifier k0) (modifier k1))
+;;
+
 module Command = struct
   type t =
     { keys : Keystroke.t list
@@ -49,12 +72,17 @@ module Command = struct
   let view_keys t (view_spec : View_spec.t) ~sep =
     let keys =
       t.keys
-      |> List.map ~f:Keystroke.to_string_hum
-      (* Dedup keystrokes that map to the same string, e.g. Enter and NumpadEnter. *)
-      |> List.dedup_and_sort ~compare:String.compare
-      |> List.map ~f:view_spec.key
+      |> dedup_keys
+      |> List.group ~break:(fun a b -> not (keys_are_consecutive a b))
+      |> List.map ~f:(function
+        | [] -> []
+        | first_key :: keys ->
+          let keys = first_key :: Option.to_list (List.last keys) in
+          List.map keys ~f:Keystroke.to_string_hum
+          |> List.map ~f:view_spec.key
+          |> List.intersperse ~sep:(view_spec.plain_text " to "))
     in
-    List.intersperse keys ~sep:(view_spec.plain_text sep)
+    List.intersperse keys ~sep:[ view_spec.plain_text sep ] |> List.concat
   ;;
 
   let view_description ?(f = Fn.id) t (view_spec : View_spec.t) =
@@ -79,10 +107,23 @@ let of_command_list = Fn.id
 let commands = Fn.id
 let add_command t command = t @ [ command ]
 
+let group_consecutive_commands (commands : Command.t list) =
+  List.group commands ~break:(fun c0 c1 ->
+    match dedup_keys c0.keys, dedup_keys c1.keys with
+    | [ k0 ], [ k1 ] ->
+      not (keys_are_consecutive k0 k1 && String.( = ) c0.description c1.description)
+    | _ -> true)
+  |> List.map ~f:(fun commands ->
+    { Command.keys = List.concat_map commands ~f:(fun c -> c.keys)
+    ; description = (List.hd_exn commands).description
+    })
+;;
+
 let view_rows ?(sep = " or ") t (view_spec : View_spec.t) =
   let open Vdom in
   let align how = Css_gen.(text_align how) |> Attr.style in
-  List.map (commands t) ~f:(fun command ->
+  let commands = group_consecutive_commands (commands t) in
+  List.map commands ~f:(fun command ->
     Node.tr
       [ Node.td
           ~attr:(align `Right)

@@ -349,6 +349,37 @@ module Dropdown = struct
   ;;
 end
 
+module Selectable_style = struct
+  type t =
+    | Native
+    | Button_like of { extra_attrs : checked:bool -> Attr.t list }
+
+  let barebones_button_like =
+    Button_like
+      { extra_attrs =
+          (fun ~checked ->
+             if checked
+             then
+               [ Attr.style
+                   Css_gen.(
+                     border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                     @> background_color (`Hex "#404040")
+                     @> color (`Hex "#F7F7F7"))
+               ]
+             else
+               [ Attr.style
+                   Css_gen.(
+                     border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                     @> background_color (`Hex "#EFEFEF"))
+               ])
+      }
+  ;;
+
+  let hide_native_inputs =
+    Css_gen.(create ~field:"appearance" ~value:"none" @> uniform_margin (`Px 0))
+  ;;
+end
+
 module Checkbox = struct
   let impl ?(extra_attrs = []) ?(disabled = false) ~is_checked ~label ~on_toggle () =
     Node.label
@@ -357,11 +388,11 @@ module Checkbox = struct
           ~attr:
             (Attr.many_without_merge
                ([ Attr.type_ "checkbox"
-                ; Attr.on_click (fun _ev -> on_toggle ())
+                ; Attr.on_click (fun _ev -> on_toggle)
                 ; Attr.bool_property "checked" is_checked
                 ]
                 |> maybe_disabled ~disabled))
-          []
+          ()
       ; Node.text label
       ]
   ;;
@@ -375,6 +406,7 @@ end
 
 module Checklist = struct
   let impl
+        ?(style = Selectable_style.Native)
         ?(extra_attrs = [])
         ?(disabled = false)
         values
@@ -382,21 +414,37 @@ module Checklist = struct
         ~on_toggle
         ~to_string
     =
+    let input_attrs, label_attrs =
+      match style with
+      | Native -> [], fun ~checked:_ -> []
+      | Button_like { extra_attrs } ->
+        [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
+    in
     structural_list
       ([ Attr.classes [ "widget-checklist"; "checkbox-container" ] ]
        |> add_attrs extra_attrs)
       (List.map values ~f:(fun item ->
-         Checkbox.impl
-           ~extra_attrs
-           ~disabled
-           ~is_checked:(is_checked item)
-           ~label:(to_string item)
-           ~on_toggle:(fun () -> on_toggle item)
-           ()))
+         Node.label
+           ~attr:
+             (Attr.many_without_merge
+                (extra_attrs @ label_attrs ~checked:(is_checked item)))
+           [ Node.input
+               ~attr:
+                 (Attr.many_without_merge
+                    ([ Attr.type_ "checkbox"
+                     ; Attr.on_click (fun _ev -> on_toggle item)
+                     ; Attr.bool_property "checked" (is_checked item)
+                     ]
+                     @ input_attrs
+                     |> maybe_disabled ~disabled))
+               ()
+           ; Node.text (to_string item)
+           ]))
   ;;
 
   let of_values
         (type t)
+        ?style
         ?extra_attrs
         ?disabled
         (module M : Display with type t = t)
@@ -404,18 +452,26 @@ module Checklist = struct
         ~is_checked
         ~on_toggle
     =
-    impl ?extra_attrs ?disabled values ~is_checked ~on_toggle ~to_string:M.to_string
+    impl
+      ?style
+      ?extra_attrs
+      ?disabled
+      values
+      ~is_checked
+      ~on_toggle
+      ~to_string:M.to_string
   ;;
 
   let of_enum
         (type t)
+        ?style
         ?extra_attrs
         ?disabled
         (module M : Enum with type t = t)
         ~is_checked
         ~on_toggle
     =
-    impl ?extra_attrs ?disabled M.all ~is_checked ~on_toggle ~to_string:M.to_string
+    impl ?style ?extra_attrs ?disabled M.all ~is_checked ~on_toggle ~to_string:M.to_string
   ;;
 end
 
@@ -575,7 +631,7 @@ module Entry = struct
             |> add_attrs [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
             |> maybe_disabled ~disabled
             |> add_attrs extra_attrs))
-      []
+      ()
   ;;
 
   let raw ?extra_attrs ?disabled ?placeholder ?on_return ~value ~on_input () =
@@ -762,7 +818,7 @@ module Entry = struct
         ~default:((new%js Js_of_ocaml.Js.date_now)##getTimezoneOffset / -60)
         ~f:(fun utc_offset -> Time_ns.Span.to_hr utc_offset |> Float.to_int)
     in
-    let (module Zoned_time) = Time_compat.zoned (Time.Zone.of_utc_offset ~hours) in
+    let (module Zoned_time) = Time_compat.zoned (Time_float.Zone.of_utc_offset ~hours) in
     stringable_input_opt
       ?extra_attrs
       ?call_on_input_when
@@ -851,41 +907,10 @@ module Button = struct
 end
 
 module Radio_buttons = struct
-  module Style = struct
-    type t =
-      | Native
-      | Button_like of { extra_attrs : checked:bool -> Attr.t list }
-
-    let barebones_button_like =
-      Button_like
-        { extra_attrs =
-            (fun ~checked ->
-               if checked
-               then
-                 [ Attr.style
-                     Css_gen.(
-                       border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                       @> background_color (`Hex "#404040")
-                       @> color (`Hex "#F7F7F7"))
-                 ]
-               else
-                 [ Attr.style
-                     Css_gen.(
-                       border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                       @> background_color (`Hex "#EFEFEF"))
-                 ])
-        }
-    ;;
-  end
-
-  let hide_native_inputs =
-    Css_gen.(create ~field:"appearance" ~value:"none" @> uniform_margin (`Px 0))
-  ;;
-
   let impl
         ?(extra_attrs = [])
         ?(disabled = false)
-        ?(style : Style.t = Native)
+        ?(style : Selectable_style.t = Native)
         ~orientation
         ~name
         ~on_click
@@ -897,7 +922,8 @@ module Radio_buttons = struct
     let input_attrs, label_attrs =
       match style with
       | Native -> [], fun ~checked:_ -> []
-      | Button_like { extra_attrs } -> [ Attr.style hide_native_inputs ], extra_attrs
+      | Button_like { extra_attrs } ->
+        [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
     in
     structural_list
       ~orientation
@@ -918,7 +944,7 @@ module Radio_buttons = struct
                      ]
                      @ input_attrs
                      |> maybe_disabled ~disabled))
-               []
+               ()
            ; Node.text (to_string item)
            ]))
   ;;
@@ -1004,7 +1030,7 @@ module File_select = struct
                 on_input files)
             ]
             |> add_attrs extra_attrs))
-      []
+      ()
   ;;
 
   let single ?(extra_attrs = []) ?accept ~on_input () =
@@ -1018,6 +1044,6 @@ module File_select = struct
                 on_input file)
             ]
             |> add_attrs extra_attrs))
-      []
+      ()
   ;;
 end

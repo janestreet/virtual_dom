@@ -17,9 +17,19 @@ module Element : sig
   val add_classes : t -> string list -> t
 end
 
-module Widget : sig
-  type t
+type widget
 
+type t =
+  | None
+  | Text of string
+  | Element of Element.t
+  | Widget of widget
+  | Lazy of
+      { key : string option
+      ; t : t Lazy.t
+      }
+
+module Widget : sig
   module type S = sig
     type dom = private #Dom_html.element
 
@@ -42,14 +52,14 @@ module Widget : sig
       -> State.t * dom Js.t
 
     val destroy : prev_input:Input.t -> state:State.t -> element:dom Js.t -> unit
+
+    (** Inside of tests, this widget can be printed and interacted with as though
+        it were instead, some other kind of vdom node. Use `Custom to choose that node,
+        or `Sexp_of_input to get a basic vdom node that just contains the sexp of the
+        current input to the widget. *)
+    val to_vdom_for_testing : [ `Custom of Input.t -> t | `Sexp_of_input ]
   end
 end
-
-type t =
-  | None
-  | Text of string
-  | Element of Element.t
-  | Widget of Widget.t
 
 type node_creator := ?key:string -> ?attr:Attr.t -> t list -> t
 type node_creator_childless := ?key:string -> ?attr:Attr.t -> unit -> t
@@ -78,7 +88,7 @@ val h5 : node_creator
 val h6 : node_creator
 val header : node_creator
 val html : node_creator
-val input : node_creator
+val input : node_creator_childless
 val textarea : node_creator
 val select : node_creator
 val option : node_creator
@@ -101,6 +111,12 @@ val br : node_creator_childless
 val hr : node_creator_childless
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
+(* [lazy_] allows you to defer the computation of a virtual-dom node until
+   the node is actually necessary for rendering.  This can be _very_ valuable
+   in situations where a node might be computed multiple-times per frame - but
+   only used once (at the end, for rendering) *)
+val lazy_ : ?key:string -> t Lazy.t -> t
+
 (** This function can be used to build a node with the tag and html content of
     that node provided as a string.  If this function was called with
     [~tag:"div" [] ~this_html...:"<b> hello world</b>"] then the resulting node would be
@@ -121,6 +137,12 @@ val inner_html_svg
   -> attr:Attr.t
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> t
+
+(** Use [input] instead of [input_deprecated]. The only difference is that
+    [input] does not accept a list of child nodes, but [input_deprecated] does.
+    HTML <input> tags are not meant to have any child elements. *)
+val input_deprecated : node_creator
+[@@deprecated "[since 2022-05] use [input] instead"]
 
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
@@ -176,7 +198,7 @@ val to_raw : t -> Raw.Node.t
     best-practices.
 *)
 val widget
-  :  ?info:Sexp.t Lazy.t
+  :  ?vdom_for_testing:t Lazy.t
   -> ?destroy:('s -> (#Dom_html.element as 'e) Js.t -> unit)
   -> ?update:('s -> 'e Js.t -> 's * 'e Js.t)
   -> id:('s * 'e Js.t) Type_equal.Id.t

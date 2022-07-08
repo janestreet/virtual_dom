@@ -32,6 +32,7 @@ module Color : sig
     val create : h:int -> s:Percent.t -> l:Percent.t -> ?a:Percent.t -> unit -> t
   end
 
+
   type t =
     [ `RGBA of RGBA.t
     | `HSLA of HSLA.t
@@ -219,12 +220,20 @@ type background_image =
   | `Radial_gradient of radial_gradient
   ]
 
+type text_align =
+  [ `Left
+  | `Right
+  | `Center
+  | `Justify
+  | css_global_values
+  ]
+
 val create_with_color : field:string -> color:[< Color.t ] -> t
 val color : [< Color.t ] -> t
 val background_color : [< Color.t ] -> t
 val background_image : background_image -> t
 val fill : Color.t -> t
-val text_align : [ `Left | `Right | `Center | `Justify | css_global_values ] -> t
+val text_align : text_align -> t
 val horizontal_align : [ `Left | `Right | `Center | css_global_values ] -> t
 val vertical_align : [ `Top | `Bottom | `Middle | `Super | `Sub | css_global_values ] -> t
 

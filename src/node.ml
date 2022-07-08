@@ -1,62 +1,6 @@
 open Base
 open Js_of_ocaml
 
-module Widget = struct
-  open Js_of_ocaml
-  include Raw.Widget
-
-  module type S = sig
-    type dom = private #Dom_html.element
-
-    module Input : sig
-      type t [@@deriving sexp_of]
-    end
-
-    module State : sig
-      type t [@@deriving sexp_of]
-    end
-
-    val name : string
-    val create : Input.t -> State.t * dom Js.t
-
-    val update
-      :  prev_input:Input.t
-      -> input:Input.t
-      -> state:State.t
-      -> element:dom Js.t
-      -> State.t * dom Js.t
-
-    val destroy : prev_input:Input.t -> state:State.t -> element:dom Js.t -> unit
-  end
-
-  let of_module (type input) (module M : S with type Input.t = input) =
-    let module State = struct
-      type t =
-        { input : M.Input.t
-        ; state : M.State.t
-        }
-      [@@deriving sexp_of]
-    end
-    in
-    let sexp_of_dom : M.dom Js.t -> Sexp.t = fun _ -> Sexp.Atom "<opaque>" in
-    let id = Type_equal.Id.create ~name:M.name [%sexp_of: State.t * dom] in
-    Base.Staged.stage (fun input ->
-      let info = lazy (M.Input.sexp_of_t input) in
-      create
-        ~id
-        ~info
-        ~init:(fun () ->
-          let state, element = M.create input in
-          { input; state }, element)
-        ~update:(fun { State.input = prev_input; state } element ->
-          let state, element = M.update ~prev_input ~input ~state ~element in
-          { input; state }, element)
-        ~destroy:(fun { State.input = prev_input; state } element ->
-          M.destroy ~prev_input ~state ~element)
-        ())
-  ;;
-end
-
 type element =
   { tag : string
   ; key : string option
@@ -66,11 +10,17 @@ type element =
   ; kind : [ `Vnode | `Svg ]
   }
 
+and widget = Raw.Widget.t
+
 and t =
   | None
   | Text of string
   | Element of element
-  | Widget of Widget.t
+  | Widget of widget
+  | Lazy of
+      { key : string option
+      ; t : t Lazy.t
+      }
 
 module Aliases = struct
   type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
@@ -96,7 +46,7 @@ module Element = struct
   let add_style t s = map_attrs t ~f:(fun a -> Attr.(a @ style s))
 end
 
-let t_to_js = function
+let rec t_to_js = function
   | None ->
     (* We normally filter these out, but if [to_js] is called directly on a [None] node,
        we use this hack. Aside from having a [Text] node without any text present in the
@@ -109,32 +59,116 @@ let t_to_js = function
   | Element { tag; key; attrs = _; raw_attrs = (lazy raw_attrs); children; kind = `Svg }
     -> Raw.Node.svg tag raw_attrs children key
   | Widget w -> w
-;;
+  | Lazy { t; key } -> Thunk.create ~key t ~f:t_to_js_lazy
+
+and t_to_js_lazy (lazy t) = t_to_js t
+
+let text s = Text s
 
 let element kind ~tag ~key attrs children =
   let children_raw = new%js Js.array_empty in
   List.iter children ~f:(function
     | None -> ()
-    | (Text _ | Element _ | Widget _) as other ->
+    | (Text _ | Element _ | Widget _ | Lazy _) as other ->
       let (_ : int) = children_raw##push (t_to_js other) in
       ());
   let raw_attrs = lazy (Attr.to_raw attrs) in
   { kind; tag; key; attrs; raw_attrs; children = children_raw }
 ;;
 
+let create tag ?key ?(attr = Attr.empty) children =
+  Element (element `Vnode ~tag ~key attr children)
+;;
+
+module Widget = struct
+  open Js_of_ocaml
+
+  let create_element = create
+
+  type vdom_node = t
+
+  include Raw.Widget
+
+  module type S = sig
+    type dom = private #Dom_html.element
+
+    module Input : sig
+      type t [@@deriving sexp_of]
+    end
+
+    module State : sig
+      type t [@@deriving sexp_of]
+    end
+
+    val name : string
+    val create : Input.t -> State.t * dom Js.t
+
+    val update
+      :  prev_input:Input.t
+      -> input:Input.t
+      -> state:State.t
+      -> element:dom Js.t
+      -> State.t * dom Js.t
+
+    val destroy : prev_input:Input.t -> state:State.t -> element:dom Js.t -> unit
+    val to_vdom_for_testing : [ `Custom of Input.t -> vdom_node | `Sexp_of_input ]
+  end
+
+  let of_module (type input) (module M : S with type Input.t = input) =
+    let module State = struct
+      type t =
+        { input : M.Input.t
+        ; state : M.State.t
+        }
+      [@@deriving sexp_of]
+    end
+    in
+    let sexp_of_dom : M.dom Js.t -> Sexp.t = fun _ -> Sexp.Atom "<opaque>" in
+    let id = Type_equal.Id.create ~name:M.name [%sexp_of: State.t * dom] in
+    Base.Staged.stage (fun input ->
+      let vdom_for_testing =
+        lazy
+          (t_to_js
+             (match M.to_vdom_for_testing with
+              | `Custom f -> f input
+              | `Sexp_of_input ->
+                let children =
+                  match M.Input.sexp_of_t input with
+                  | Atom "<opaque>" -> []
+                  | other -> [ text (Sexp.to_string_hum other) ]
+                in
+                create_element (M.name ^ "-widget") children))
+      in
+      create
+        ~id
+        ~vdom_for_testing
+        ~init:(fun () ->
+          let state, element = M.create input in
+          { input; state }, element)
+        ~update:(fun { State.input = prev_input; state } element ->
+          let state, element = M.update ~prev_input ~input ~state ~element in
+          { input; state }, element)
+        ~destroy:(fun { State.input = prev_input; state } element ->
+          M.destroy ~prev_input ~state ~element)
+        ())
+  ;;
+end
+
+let lazy_ ?key t = Lazy { key; t }
+
 let element_expert kind ~tag ?key attrs children =
   let raw_attrs = lazy (Attr.to_raw attrs) in
   { kind; tag; key; attrs; raw_attrs; children }
 ;;
 
-let text s = Text s
-
-let widget ?info ?destroy ?update ~id ~init () =
-  Widget (Widget.create ?info ?destroy ?update ~id ~init ())
-;;
-
-let create tag ?key ?(attr = Attr.empty) children =
-  Element (element `Vnode ~tag ~key attr children)
+let widget ?vdom_for_testing ?destroy ?update ~id ~init () =
+  let vdom_for_testing =
+    lazy
+      (match vdom_for_testing with
+       | Some t -> t_to_js (Lazy.force t)
+       | None -> t_to_js (create (Type_equal.Id.name id ^ "-widget") []))
+  in
+  Widget (Widget.create ~vdom_for_testing ?destroy ?update ~id ~init ())
 ;;
 
 let create_childless tag ?key ?attr () = create tag ?key ?attr []
@@ -178,10 +212,11 @@ let inner_html
     | Widget _ -> failwith "Vdom.Node.inner_html was given a 'widget'"
     | None -> failwith "Vdom.Node.inner_html was given a 'none'"
     | Text _ -> failwith "Vdom.Node.inner_html was given a 'text'"
+    | Lazy _ -> failwith "Vdom.Node.inner_html was given a 'lazy'"
   in
   widget
     ~id
-    ~info:(lazy (build_sexp ~extra:debug ~content))
+    ~vdom_for_testing:(lazy (create tag ~attr [ text content ]))
     ~init:(fun () ->
       let element = to_dom element in
       element##.innerHTML := Js.string content;
@@ -207,7 +242,8 @@ let h5 = create "h5"
 let h6 = create "h6"
 let header = create "header"
 let html = create "html"
-let input = create "input"
+let input = create_childless "input"
+let input_deprecated = create "input"
 let textarea = create "textarea"
 let select = create "select"
 let option = create "option"

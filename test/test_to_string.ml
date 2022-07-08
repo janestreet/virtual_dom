@@ -16,6 +16,32 @@ let%expect_test "basic text" =
     hello |}]
 ;;
 
+let%expect_test "lazy text" =
+  show (Node.lazy_ (lazy (Node.text "hello")));
+  [%expect {|
+    (Text hello)
+    ----------------------
+    hello |}]
+;;
+
+let%expect_test "lazy div" =
+  show (Node.lazy_ (lazy (Node.div [])));
+  [%expect
+    {|
+    (Element ((tag_name div)))
+    ----------------------
+    <div> </div> |}]
+;;
+
+let%expect_test "lazy lazy div" =
+  show (Node.lazy_ (lazy (Node.lazy_ (lazy (Node.div [])))));
+  [%expect
+    {|
+    (Element ((tag_name div)))
+    ----------------------
+    <div> </div> |}]
+;;
+
 let%expect_test "empty div" =
   show (Node.div []);
   [%expect
@@ -42,9 +68,9 @@ let%expect_test "inner_html" =
        ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
   [%expect
     {|
-    (Widget (inner-html div <b>hi</b>))
+    (Element ((tag_name div) (children ((Text <b>hi</b>)))))
     ----------------------
-    <widget (inner-html div <b>hi</b>) /> |}]
+    <div> <b>hi</b> </div> |}]
 ;;
 
 let%expect_test "div with some text" =
@@ -122,9 +148,32 @@ let%expect_test "widget" =
   show widget;
   [%expect
     {|
-    (Widget name_goes_here)
+    (Element ((tag_name name_goes_here-widget)))
     ----------------------
-    <widget name_goes_here /> |}]
+    <name_goes_here-widget> </name_goes_here-widget> |}]
+;;
+
+let%expect_test "widget with a vdom_for_testing" =
+  let widget =
+    Node.widget
+      ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
+      ~vdom_for_testing:
+        (lazy
+          (Node.div
+             ~attr:
+               (Attr.on_click (fun _ ->
+                  print_endline "inside handler";
+                  Effect.Ignore))
+             []))
+      ~init:(fun _ -> failwith "unreachable")
+      ()
+  in
+  show widget;
+  [%expect
+    {|
+    (Element ((tag_name div) (handlers ((onclick <handler>)))))
+    ----------------------
+    <div onclick> </div> |}]
 ;;
 
 let%expect_test "widget inside of something else" =
@@ -139,17 +188,18 @@ let%expect_test "widget inside of something else" =
   show widget;
   [%expect
     {|
-    (Element ((tag_name div) (children ((Widget name_goes_here)))))
+    (Element
+     ((tag_name div) (children ((Element ((tag_name name_goes_here-widget)))))))
     ----------------------
     <div>
-      <widget name_goes_here />
+      <name_goes_here-widget> </name_goes_here-widget>
     </div> |}]
 ;;
 
 let%expect_test "widget with info" =
   let widget =
     Node.widget
-      ~info:(lazy (Sexp.Atom "info name"))
+      ~vdom_for_testing:(lazy (Node.create "widget" [ Node.text "info name" ]))
       ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
       ~init:(fun _ -> failwith "unreachable")
       ()
@@ -157,9 +207,24 @@ let%expect_test "widget with info" =
   show widget;
   [%expect
     {|
-    (Widget "info name")
+    (Element ((tag_name widget) (children ((Text "info name")))))
     ----------------------
-    <widget "info name" /> |}]
+    <widget> info name </widget> |}]
+;;
+
+let%expect_test "opaque_widget" =
+  let widget =
+    Node.widget
+      ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
+      ~init:(fun _ -> failwith "unreachable")
+      ()
+  in
+  show widget;
+  [%expect
+    {|
+    (Element ((tag_name name_goes_here-widget)))
+    ----------------------
+    <name_goes_here-widget> </name_goes_here-widget> |}]
 ;;
 
 let%expect_test "empty div with callback" =

@@ -126,8 +126,6 @@ let empty = Many []
 let combine left right = Many [ left; right ]
 let ( @ ) = combine
 
-external ojs_of_any : Js.Unsafe.any -> Gen_js_api.Ojs.t = "%identity"
-
 module Unmerged_warning_mode = struct
   type t =
     | No_warnings
@@ -254,17 +252,17 @@ let to_raw attr =
             [%message "WARNING: not combining properties" (name : string)];
         (match name with
          | "value" ->
-           let softSetHook x : Gen_js_api.Ojs.t = Js.Unsafe.global ## SoftSetHook x in
+           let softSetHook x : Js.Unsafe.any = Js.Unsafe.global ## SoftSetHook x in
            let value = softSetHook value in
            Vdom_raw.Attrs.set_property attrs_obj "value" value
-         | name -> Raw.Attrs.set_property attrs_obj name (ojs_of_any value));
+         | name -> Raw.Attrs.set_property attrs_obj name value);
         acc
       | Attribute { suppress_merge_warnings; name; value } ->
         if Raw.Attrs.has_attribute attrs_obj name && not suppress_merge_warnings
         then
           Unmerged_warning_mode.warn_s
             [%message "WARNING: not combining attributes" (name : string)];
-        Raw.Attrs.set_attribute attrs_obj name (ojs_of_any value);
+        Raw.Attrs.set_attribute attrs_obj name value;
         acc
       | Style new_styles -> { acc with styles = combine_styles acc.styles new_styles }
       | Class new_classes ->
@@ -335,24 +333,21 @@ let to_raw attr =
       attrs
   in
   Map.iteri merge.hooks ~f:(fun ~key:name ~data:hook ->
-    Raw.Attrs.set_property attrs_obj name (ojs_of_any (Hooks.pack hook)));
+    Raw.Attrs.set_property attrs_obj name (Hooks.pack hook));
   Map.iteri merge.handlers ~f:(fun ~key:name ~data:(Event_handler.T { handler; _ }) ->
     let f e =
       Effect.Expert.handle e (handler e);
       Js._true
     in
-    Raw.Attrs.set_property
-      attrs_obj
-      ("on" ^ name)
-      (ojs_of_any (Js.Unsafe.inject (Dom.handler f))));
+    Raw.Attrs.set_property attrs_obj ("on" ^ name) (Js.Unsafe.inject (Dom.handler f)));
   let () =
     if not (Css_gen.is_empty merge.styles)
     then (
       let props = Css_gen.to_string_list merge.styles in
-      let obj = Gen_js_api.Ojs.empty_obj () in
+      let obj = Raw.Attrs.create () in
       List.iter props ~f:(fun (k, v) ->
-        Gen_js_api.Ojs.set_prop_ascii obj k (Gen_js_api.Ojs.string_to_js v));
-      Raw.Attrs.set_property attrs_obj "style" obj)
+        Raw.Attrs.set_property obj k (Js.Unsafe.inject (Js.string v)));
+      Raw.Attrs.set_property attrs_obj "style" (obj :> Js.Unsafe.any))
   in
   let () =
     if Set.is_empty merge.classes
@@ -361,7 +356,8 @@ let to_raw attr =
       Raw.Attrs.set_attribute
         attrs_obj
         "class"
-        (Gen_js_api.Ojs.string_to_js (String.concat (Set.to_list merge.classes) ~sep:" "))
+        (Js.Unsafe.inject
+           (Js.string (String.concat (Set.to_list merge.classes) ~sep:" ")))
   in
   attrs_obj
 ;;
@@ -436,6 +432,7 @@ module Type_id = struct
   let (keyboard : Dom_html.keyboardEvent Type_equal.Id.t) = create "keyboardEvent"
   let (submit : Dom_html.submitEvent Type_equal.Id.t) = create "submitEvent"
   let (mousewheel : Dom_html.mousewheelEvent Type_equal.Id.t) = create "mousewheelEvent"
+  let (wheel : Dom_html.wheelEvent Type_equal.Id.t) = create "wheelwheelEvent"
   let (clipboard : Dom_html.clipboardEvent Type_equal.Id.t) = create "clipboardEvent"
   let (drag : Dom_html.dragEvent Type_equal.Id.t) = create "dragEvent"
   let (pointer : Dom_html.pointerEvent Type_equal.Id.t) = create "pointerEvent"
@@ -473,6 +470,7 @@ let on_submit = on Type_id.submit "submit"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
 let on_mousewheel = on Type_id.mousewheel "mousewheel"
+let on_wheel = on Type_id.wheel "wheel"
 let on_copy = on Type_id.clipboard "copy"
 let on_cut = on Type_id.clipboard "cut"
 let on_paste = on Type_id.clipboard "paste"
@@ -586,8 +584,7 @@ end
 
 module Multi = struct
 
-  type attr = t
-  type t = attr list
+  type nonrec t = t list
 
   let map_style t ~f = [ Many_only_merge_classes_and_styles (t, f, Fn.id) ]
 
@@ -601,6 +598,44 @@ module Multi = struct
     [ Many_only_merge_classes_and_styles (t, Fn.id, Fn.id) ]
   ;;
 end
+
+module Css_var_hook = Hooks.Make (struct
+    open Js_of_ocaml
+    module State = Unit
+
+    module Input = struct
+      type t = (string * string) list [@@deriving sexp_of]
+
+      let combine = List.append
+    end
+
+    let init input (element : Dom_html.element Js.t) =
+      List.iter input ~f:(fun (k, v) ->
+        element##.style##setProperty (Js.string k) (Js.string v) Js.undefined
+        |> (ignore : Js.js_string Js.t -> unit))
+    ;;
+
+    let on_mount _ () _ = ()
+
+    let destroy input () (element : Dom_html.element Js.t) =
+      List.iter input ~f:(fun (k, _) ->
+        element##.style##removeProperty (Js.string k)
+        |> (ignore : Js.js_string Js.t -> unit))
+    ;;
+
+    let update ~old_input ~new_input () (element : Dom_html.element Js.t) =
+      if phys_equal old_input new_input
+      || [%equal: (string * string) list] old_input new_input
+      then ()
+      else (
+        destroy old_input () element;
+        init new_input element)
+    ;;
+  end)
+
+let css_var ~name v =
+  create_hook "custom-css-vars" (Css_var_hook.create [ "--" ^ name, v ])
+;;
 
 module Expert = struct
   let rec filter_by_kind t ~f =

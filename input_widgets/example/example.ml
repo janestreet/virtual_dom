@@ -119,7 +119,7 @@ module App = struct
       ; ( "Radio_buttons.of_values_horizontal with button-like style"
         , Radio_buttons.of_values_horizontal
             (module Example)
-            ~style:Radio_buttons.Style.barebones_button_like
+            ~style:Selectable_style.barebones_button_like
             ~name:"radio_buttons_of_values_horizontal_button_like"
             ~on_click:(fun example -> inject (Set { model with example }))
             ~selected:(Some model.example)
@@ -128,12 +128,20 @@ module App = struct
         , Checkbox.simple
             ~is_checked:(Set.mem model.examples Foo)
             ~label:"Foo"
-            ~on_toggle:(fun () -> inject (Set (Model.toggle model Foo)))
+            ~on_toggle:(inject (Set (Model.toggle model Foo)))
             () )
       ; ( "Checklist.of_values"
         , Checklist.of_values
             (module Example)
             [ Foo; Bar ]
+            ~is_checked:(Set.mem model.examples)
+            ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
+      ; ( "Checklist.of_values with button-like style"
+        , Checklist.of_values
+            (module Example)
+            [ Foo; Bar ]
+            ~style:Selectable_style.barebones_button_like
+            ~extra_attrs:[ Vdom.Attr.style (Css_gen.flex_container ()) ]
             ~is_checked:(Set.mem model.examples)
             ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
       ; ( "Checklist.of_enum"

@@ -400,6 +400,14 @@ type background_image =
   | `Radial_gradient of radial_gradient
   ]
 
+type text_align =
+  [ `Left
+  | `Right
+  | `Center
+  | `Justify
+  | css_global_values
+  ]
+
 let stops_to_string stops =
   List.map stops ~f:(fun (pct, color) ->
     (* Note: Percent.to_string produced e.g. "0x", "1x", won't work here. *)

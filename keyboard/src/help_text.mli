@@ -69,7 +69,8 @@ val add_command : t -> Command.t -> t
 
 val commands : t -> Command.t list
 
-(** [view] displays a help text table with one row per command.
+(** [view] displays a help text table. Each row shows a list of keys and a description.
+    Multiple commands with the same description may be combined into one row.
 
     [view_rows] is similar to [view], but returns a list of row nodes instead of wrapping
     them in a table node.

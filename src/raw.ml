@@ -1,100 +1,144 @@
 open Base
 open Js_of_ocaml
-open Gen_js_api
 
-module Native_node : sig
-  type t = Dom_html.element Js.t
+module Js_object = struct
+  type t = Js.Unsafe.any
 
-  val t_of_js : Ojs.t -> t
-  val t_to_js : t -> Ojs.t
-end = struct
-  type t = Dom_html.element Js.t
-
-  let t_of_js x = Stdlib.Obj.magic x
-  let t_to_js x = Stdlib.Obj.magic x
+  let empty_obj () = Js.Unsafe.obj [||]
+  let set_prop_ascii t name value = Js.Unsafe.set t (Js.string name) value
+  let get_prop_ascii t name = Js.Unsafe.get t (Js.string name)
+  let has_property t name = Js.Optdef.test (Js.Unsafe.get t (Js.string name))
+  let is_undefined a = not (Js.Optdef.test a)
 end
 
-module Attrs : sig
-  type t = private Ojs.t
+module Attrs = struct
+  type t = Js_object.t
 
-  val t_of_js : Ojs.t -> t
-  val t_to_js : t -> Ojs.t
-  val create : unit -> t
-  val has_property : t -> string -> bool
-  val has_attribute : t -> string -> bool
-  val set_property : t -> string -> Ojs.t -> unit
-  val set_attribute : t -> string -> Ojs.t -> unit
-end = struct
-  type t = Ojs.t
-
-  let t_of_js x = x
-  let t_to_js x = x
-  let create () : t = Ojs.empty_obj ()
+  let create () : t = Js_object.empty_obj ()
 
   let set_property : t -> string -> t -> unit =
-    fun t name value -> Ojs.set_prop_ascii t name value
+    fun t name value -> Js_object.set_prop_ascii t name value
   ;;
 
-  let has_property : t -> string -> bool = Ojs.has_property
+  let has_property : t -> string -> bool = Js_object.has_property
 
   let has_attribute t name =
-    Ojs.has_property t "attributes"
-    && Ojs.has_property (Ojs.get_prop_ascii t "attributes") name
+    Js_object.has_property t "attributes"
+    && Js_object.has_property (Js_object.get_prop_ascii t "attributes") name
   ;;
 
   let set_attribute : t -> string -> t -> unit =
     fun t name value ->
-      if phys_equal (Ojs.get_prop_ascii t "attributes") (Ojs.variable "undefined")
-      then Ojs.set_prop_ascii t "attributes" (Ojs.empty_obj ());
-      Ojs.set_prop_ascii (Ojs.get_prop_ascii t "attributes") name value
+      if Js_object.is_undefined (Js_object.get_prop_ascii t "attributes")
+      then Js_object.set_prop_ascii t "attributes" (Js_object.empty_obj ());
+      Js_object.set_prop_ascii (Js_object.get_prop_ascii t "attributes") name value
   ;;
 end
 
-module Element_array = struct
-  (* This type must only be instantiated with Node.t as the
-     type parameter because it ignores the inner-most conversion
-     function.  This is safe because Node.t is defined as Ojs.t,
-     but we can't take advantage of that fact because the Node
-     module is generated via ppx. *)
+type virtual_dom_node
+type virtual_dom_patch
 
-  type 'a t = 'a Js_of_ocaml.Js.js_array Js.t
+module Virtual_dom = struct
+  class type virtual_dom =
+    object
+      method _VNode :
+        (Js.js_string Js.t
+         -> Attrs.t
+         -> virtual_dom_node Js.t Js.js_array Js.t
+         -> Js.js_string Js.t Js.optdef
+         -> virtual_dom_node Js.t)
+          Js.constr
+          Js.readonly_prop
 
-  let t_of_js : _ -> Ojs.t -> 'a t = fun _ -> Caml.Obj.magic
-  let t_to_js : _ -> 'a t -> Ojs.t = fun _ -> Caml.Obj.magic
+      method _VText :
+        (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
+
+      method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
+
+      method diff :
+        virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
+
+      method patch :
+        Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t Js.meth
+
+      method svg :
+        (Js.js_string Js.t
+         -> Attrs.t
+         -> virtual_dom_node Js.t Js.js_array Js.t
+         -> Js.js_string Js.t Js.optdef
+         -> virtual_dom_node Js.t)
+          Js.constr
+          Js.readonly_prop
+    end
+
+  let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
 end
 
-module Node =
-  [%js:
-    type t = private Ojs.t
+module Node = struct
+  open Virtual_dom
 
-    val t_of_js : Ojs.t -> t
-    val t_to_js : t -> Ojs.t
+  type t = virtual_dom_node Js.t
 
-    val node : string -> Attrs.t -> t Element_array.t -> string option -> t
-    [@@js.new "VirtualDom.VNode"]
+  let to_dom : virtual_dom_node Js.t -> Dom_html.element Js.t =
+    fun vnode -> virtual_dom##createElement vnode
+  ;;
 
-    val text : string -> t [@@js.new "VirtualDom.VText"]
+  let node
+    :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
+      -> virtual_dom_node Js.t
+    =
+    fun tag attrs children key ->
+      let tag = Js.string tag in
+      let key =
+        match key with
+        | None -> Js.Optdef.empty
+        | Some key -> Js.Optdef.return (Js_of_ocaml.Js.string key)
+      in
+      let vnode = virtual_dom##._VNode in
+      new%js vnode tag attrs children key
+  ;;
 
-    val svg : string -> Attrs.t -> t Element_array.t -> string option -> t
-    [@@js.new "VirtualDom.svg"]
+  let svg
+    :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
+      -> virtual_dom_node Js.t
+    =
+    fun tag attrs children key ->
+      let tag = Js.string tag in
+      let key =
+        match key with
+        | None -> Js.Optdef.empty
+        | Some key -> Js.Optdef.return (Js.string key)
+      in
+      let vsvg = virtual_dom##.svg in
+      new%js vsvg tag attrs children key
+  ;;
 
-    val to_dom : t -> Native_node.t [@@js.global "VirtualDom.createElement"]]
+  let text s =
+    let vtext = virtual_dom##._VText in
+    new%js vtext (Js.string s)
+  ;;
+end
 
-module Patch =
-  [%js:
-    type t = private Ojs.t
+module Patch = struct
+  open Virtual_dom
 
-    val t_of_js : Ojs.t -> t
-    val t_to_js : t -> Ojs.t
-    val create : previous:Node.t -> current:Node.t -> t [@@js.global "VirtualDom.diff"]
-    val apply : Native_node.t -> t -> Native_node.t [@@js.global "VirtualDom.patch"]
+  type t = virtual_dom_patch Js.t
 
-    val is_empty : t -> bool
-    [@@js.custom
-      let is_empty =
-        let f =
-          Js.Unsafe.pure_js_expr
-            {js|
+  let diff : virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t =
+    fun a b -> virtual_dom##diff a b
+  ;;
+
+  let patch : Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t =
+    fun element vnode -> virtual_dom##patch element vnode
+  ;;
+
+  let create ~previous ~current = diff previous current
+  let apply = patch
+
+  let is_empty : t -> bool =
+    let f =
+      Js.Unsafe.pure_js_expr
+        {js|
         (function (patch) {
           for (var key in patch) {
             if (key !== 'a') return false
@@ -102,9 +146,10 @@ module Patch =
           return true
         })
       |js}
-        in
-        fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
-      ;;]]
+    in
+    fun (t : t) -> Js.Unsafe.fun_call f [| Js.Unsafe.inject t |] |> Js.to_bool
+  ;;
+end
 
 module Widget = struct
   class type ['s, 'element] widget =
@@ -129,6 +174,7 @@ module Widget = struct
       method name : unit Js.writeonly_prop
       method id : ('s * 'element) Type_equal.Id.t Js.prop
       method state : 's Js.prop
+      method vdomForTesting : Node.t Lazy.t option Js.prop
       method info : Sexp.t Lazy.t option Js.prop
       method destroy : ('element -> unit) Js.callback Js.writeonly_prop
 
@@ -149,7 +195,7 @@ module Widget = struct
 
   (* here is how we throw away type information.  Our good old friend Obj.magic,
      but constrained a little bit *)
-  external ojs_of_js : (_, _) widget Js.t -> Ojs.t = "%identity"
+  let node_of_widget : (_, _) widget Js.t -> Node.t = Caml.Obj.magic
 
   module State_keeper = struct
     type box = T : ('a * _) Type_equal.Id.t * 'a -> box
@@ -174,7 +220,7 @@ module Widget = struct
 
   let create
         (type s)
-        ?info
+        ?(vdom_for_testing : Node.t Lazy.t option)
         ?(destroy : s -> 'element -> unit = fun _ _ -> ())
         ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
         ~(id : (s * 'element) Type_equal.Id.t)
@@ -185,7 +231,7 @@ module Widget = struct
     obj##.type_ := Js.string "Widget";
     obj##.name := ();
     obj##.id := id;
-    obj##.info := info;
+    obj##.vdomForTesting := vdom_for_testing;
     obj##.init
     := Js.wrap_callback (fun () ->
       let s0, dom_node = init () in
@@ -208,6 +254,6 @@ module Widget = struct
       let prev_state = State_keeper.get ~id dom_node in
       destroy prev_state dom_node;
       State_keeper.delete dom_node);
-    Node.t_of_js (ojs_of_js obj)
+    node_of_widget obj
   ;;
 end

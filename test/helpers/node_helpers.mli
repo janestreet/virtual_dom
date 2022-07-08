@@ -19,7 +19,7 @@ type element =
 and t =
   | Text of string
   | Element of element
-  | Widget of Sexp.t
+  | Widget
 [@@deriving sexp_of]
 
 val map : t -> f:(t -> [ `Continue | `Replace_with of t ]) -> t
@@ -48,8 +48,9 @@ val trigger
     resulting function. *)
 val trigger_hook
   :  t
-  -> type_id:('a -> unit Virtual_dom.Vdom.Effect.t) Type_equal.Id.t
+  -> type_id:'t Type_equal.Id.t
   -> name:string
+  -> f:('t -> 'a -> unit Virtual_dom.Vdom.Effect.t)
   -> arg:'a
   -> unit
 
@@ -61,32 +62,64 @@ module User_actions : sig
   (** Convenience functions for {!trigger}, closely modeling user interactions. *)
 
   val click_on
-    :  ?shift_key_down:bool
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
     -> t
     -> unit
 
-  val submit_form : t -> unit
-  val focus : t -> unit
-  val blur : t -> unit
-  val input_text : t -> text:string -> unit
+  val submit_form : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val focus : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+
+  val blur
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> ?related_target:t
+    -> t
+    -> unit
+
+  val input_text
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> t
+    -> text:string
+    -> unit
 
   val keydown
-    :  ?shift_key_down:bool
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
     -> t
     -> key:Dom_html.Keyboard_code.t
     -> unit
 
-  val set_checkbox : t -> checked:bool -> unit
-  val change : t -> value:string -> unit
-  val drag : t -> unit
-  val enter : t -> unit
-  val leave : t -> unit
-  val over : t -> unit
-  val drop : t -> unit
-  val end_ : t -> unit
-  val mousemove : t -> unit
+  val set_checkbox
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> ?shift_key_down:bool
+    -> ?ctrl_key_down:bool
+    -> ?alt_key_down:bool
+    -> t
+    -> checked:bool
+    -> unit
+
+  val change
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> t
+    -> value:string
+    -> unit
+
+  val drag : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val enter : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val leave : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val over : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val drop : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val end_ : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val mousemove : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+  val mouseenter : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
+
+  val wheel
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> t
+    -> delta_y:float
+    -> unit
 end

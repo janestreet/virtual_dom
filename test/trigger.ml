@@ -50,7 +50,7 @@ let%expect_test "empty input with on_change (success!)" =
            (Attr.on_change (fun _e s ->
               print_endline s;
               Effect.Ignore))
-         [])
+         ())
   in
   Node_helpers.trigger
     node
@@ -71,7 +71,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
            (Attr.on_change (fun _e s ->
               print_endline s;
               Effect.Ignore))
-         [])
+         ())
   in
   Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
     Node_helpers.trigger
@@ -149,11 +149,15 @@ module String_h = Attr.Hooks.Make (struct
 
 let%expect_test "fake event handler for hook" =
   let node =
-    Node.input ~attr:(Attr.create_hook "unique-name" (H.create Print_int_event.inject)) []
+    Node.input ~attr:(Attr.create_hook "unique-name" (H.create Print_int_event.inject)) ()
   in
   node
   |> Node_helpers.unsafe_convert_exn
-  |> Node_helpers.trigger_hook ~type_id:H.For_testing.type_id ~name:"unique-name" ~arg:5;
+  |> Node_helpers.trigger_hook
+       ~type_id:H.For_testing.type_id
+       ~f:Fn.id
+       ~name:"unique-name"
+       ~arg:5;
   [%expect {| 5 |}]
 ;;
 
@@ -166,12 +170,13 @@ let%expect_test "not merged " =
             [ create_hook "not-so-unique-name" (H.create Print_int_event.inject)
             ; create_hook "not-so-unique-name" (H.create Print_int_event.inject)
             ])
-      []
+      ()
   in
   node
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.trigger_hook
        ~type_id:H.For_testing.type_id
+       ~f:Fn.id
        ~name:"not-so-unique-name"
        ~arg:5;
   [%expect {|
@@ -187,12 +192,13 @@ let%expect_test "bad merge" =
            [ Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
            ; Attr.create_hook "not-so-unique-name" (H.create Print_int_event.inject)
            ])
-      []
+      ()
   in
   node
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.trigger_hook
        ~type_id:H.For_testing.type_id
+       ~f:Fn.id
        ~name:"not-so-unique-name"
        ~arg:5;
   [%expect {| 15 15 |}]
@@ -208,7 +214,7 @@ let%expect_test "not merged " =
                "not-so-unique-name"
                (String_h.create Print_string_event.inject)
            ])
-      []
+      ()
   in
   Expect_test_helpers_base.require_does_raise [%here] (fun () ->
     node
@@ -216,6 +222,7 @@ let%expect_test "not merged " =
     |> Node_helpers.trigger_hook
          ~type_id:H.For_testing.type_id
          ~name:"not-so-unique-name"
+         ~f:Fn.id
          ~arg:5);
   [%expect
     {|
@@ -236,6 +243,46 @@ let%expect_test "fake event handler for on_click" =
   |> Node_helpers.select_first_exn ~selector:"#x"
   |> Node_helpers.User_actions.click_on;
   [%expect {| 5 |}]
+;;
+
+let%expect_test "set checkbox " =
+  let node =
+    Node.input
+      ~attr:
+        (Attr.many
+           [ Attr.id "x"
+           ; Attr.type_ "checkbox"
+           ; Attr.on_click (fun e ->
+               let checked =
+                 let open Option.Let_syntax in
+                 let open Js_of_ocaml in
+                 let%bind target = e##.target |> Js.Opt.to_option in
+                 let%bind coerced =
+                   Dom_html.CoerceTo.input target |> Js.Opt.to_option
+                 in
+                 return (Js.to_bool coerced##.checked)
+               in
+               let shift = Js_of_ocaml.Js.to_bool e##.shiftKey in
+               Effect.print_s [%message (checked : bool option) (shift : bool)])
+           ])
+      ()
+  in
+  let run ~checked ~shift_key_down =
+    node
+    |> Node_helpers.unsafe_convert_exn
+    |> Node_helpers.select_first_exn ~selector:"#x"
+    |> Node_helpers.User_actions.set_checkbox ~checked ~shift_key_down
+  in
+  run ~checked:false ~shift_key_down:false;
+  run ~checked:false ~shift_key_down:true;
+  run ~checked:true ~shift_key_down:false;
+  run ~checked:true ~shift_key_down:true;
+  [%expect
+    {|
+    ((checked (false)) (shift false))
+    ((checked (false)) (shift true))
+    ((checked (true)) (shift false))
+    ((checked (true)) (shift true)) |}]
 ;;
 
 let%expect_test "not merged" =
@@ -307,9 +354,7 @@ let%expect_test "add class in the middle of a [many]" =
     1 3 4 |}]
 ;;
 
-let%expect_test "bug with attributes and properties with the same name" =
-  (* There is currently a bug with selecting elements that have attributes and properties
-     with the same name. This is fixed in a subfeature. *)
+let%expect_test "Regression: attributes and properties with the same name" =
   let node =
     Node.input
       ~attr:
@@ -320,11 +365,32 @@ let%expect_test "bug with attributes and properties with the same name" =
             ; on_click (fun _ev -> Print_int_event.inject 1)
             ; id "x"
             ])
-      []
+      ()
   in
   node
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.select_first_exn ~selector:"#x"
   |> Node_helpers.User_actions.click_on;
   [%expect {| 1 |}]
+;;
+
+let%expect_test "trigger on widget vdom_for_testing" =
+  let vdom_for_testing =
+    let attr =
+      Attr.on_click (fun _ ->
+        print_endline "inside handler";
+        Effect.Ignore)
+    in
+    lazy (Node.div ~attr [])
+  in
+  let widget =
+    Node.widget
+      ~id:(Type_equal.Id.create ~name:"name_goes_here" [%sexp_of: opaque])
+      ~vdom_for_testing
+      ~init:(fun _ -> failwith "unreachable")
+      ()
+  in
+  let node = Node_helpers.unsafe_convert_exn widget in
+  Node_helpers.trigger node ~event_name:"onclick";
+  [%expect {| inside handler |}]
 ;;

@@ -3,8 +3,6 @@ open Virtual_dom
 open Core
 open Vdom
 
-let colors = [| "red"; "green"; "blue" |]
-
 class type terminal =
   object
     method get_command_ : Js.js_string Js.t Js.meth
@@ -70,8 +68,8 @@ let () =
          let current = view !count in
          let patch = Node.Patch.create ~previous:!vdom ~current in
          vdom := current;
-         Node.Patch.apply patch elt |> ignore))
+         Node.Patch.apply patch elt |> (ignore : Dom_html.element Js.t -> unit)))
       30.
-    |> ignore;
+    |> (ignore : Dom_html.interval_id -> unit);
     Js._false)
 ;;

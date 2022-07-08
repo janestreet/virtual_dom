@@ -39,6 +39,15 @@ module Validated : sig
     -> (module Stringable with type t = 'a t)
 end
 
+module Selectable_style : sig
+  type t =
+    | Native
+    | Button_like of { extra_attrs : checked:bool -> Attr.t list }
+
+  (** applies background-color and color alteration to current selection *)
+  val barebones_button_like : t
+end
+
 module Dropdown : sig
   (** Creates a dropdown that automatically updates when the current value changes and
       emits typed actions when the user selects a different item. *)
@@ -88,7 +97,7 @@ module Checkbox : sig
     -> ?disabled:bool (** default false *)
     -> is_checked:bool
     -> label:string
-    -> on_toggle:(unit -> unit Effect.t)
+    -> on_toggle:unit Effect.t
     -> unit
     -> Node.t
 end
@@ -97,7 +106,8 @@ module Checklist : sig
 
   (** Creates a list of checkboxes with labels. *)
   val of_values
-    :  ?extra_attrs:Attr.t list (** default empty *)
+    :  ?style:Selectable_style.t (** default [Native] *)
+    -> ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> (module Display with type t = 'a)
     -> 'a list
@@ -108,7 +118,8 @@ module Checklist : sig
   (** Instead of passing individual [values], uses [all] from the module to determine the
       items and order. *)
   val of_enum
-    :  ?extra_attrs:Attr.t list (** default empty *)
+    :  ?style:Selectable_style.t (** default [Native] *)
+    -> ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> (module Enum with type t = 'a)
     -> is_checked:('a -> bool)
@@ -358,15 +369,6 @@ module Button : sig
 end
 
 module Radio_buttons : sig
-  module Style : sig
-    type t =
-      | Native
-      | Button_like of { extra_attrs : checked:bool -> Attr.t list }
-
-    (** applies background-color and color alteration to current selection *)
-    val barebones_button_like : t
-  end
-
   (** Creates a radio button input with a button for each of the corresponding [values]
       passed in. Extra attrs for individual buttons can be passed through
       [extra_element_attrs], which gets access to whether the current element is selected
@@ -374,7 +376,7 @@ module Radio_buttons : sig
   val of_values
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
-    -> ?style:Style.t (** default [Native] *)
+    -> ?style:Selectable_style.t (** default [Native] *)
     -> (module Equal with type t = 'a)
     -> name:string
     -> on_click:('a -> unit Effect.t)
@@ -387,7 +389,7 @@ module Radio_buttons : sig
   val of_values_horizontal
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
-    -> ?style:Style.t (** default [Native] *)
+    -> ?style:Selectable_style.t (** default [Native] *)
     -> (module Equal with type t = 'a)
     -> name:string
     -> on_click:('a -> unit Effect.t)
