@@ -109,6 +109,7 @@ module Checklist : sig
     :  ?style:Selectable_style.t (** default [Native] *)
     -> ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?layout:[ `Vertical | `Horizontal ] (** default `Vertical *)
     -> (module Display with type t = 'a)
     -> 'a list
     -> is_checked:('a -> bool)

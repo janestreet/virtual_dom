@@ -79,7 +79,9 @@ let as_box
            else Css_gen.(style @> create ~field:"flex-shrink" ~value:"0")))
   in
   let node = node_creator ?key ?attr nodes in
-  let direction = (direction :> [ `Row | `Column | `Row_reverse | `Column_reverse ]) in
+  let direction =
+    (direction :> [ `Row | `Column | `Row_reverse | `Column_reverse | `Default ])
+  in
   add_style node ~style:Css_gen.(flex_container ~direction ?align_items ())
 ;;
 

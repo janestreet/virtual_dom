@@ -98,7 +98,7 @@ module T = struct
       Bin_prot.Shape.eval_to_digest_string [%bin_shape: Payload.t]
     in
     let popstate_bus =
-      Bus.create
+      Bus.create_exn
         [%here]
         Arity1
         ~on_subscription_after_first_write:Allow
@@ -271,7 +271,7 @@ module Opinionated = struct
       ; arg_modules = (module Arg_modules)
       ; current_state
       ; changes_bus =
-          Bus.create
+          Bus.create_exn
             [%here]
             Arity1
             ~on_subscription_after_first_write:Allow

@@ -253,6 +253,8 @@ val padding_bottom : Length.t -> t
 val padding_left : Length.t -> t
 val padding_right : Length.t -> t
 val uniform_padding : Length.t -> t
+val row_gap : Length.t -> t
+val column_gap : Length.t -> t
 
 val padding
   :  ?top:Length.t
@@ -352,6 +354,17 @@ type item_alignment =
   | `Stretch
   ]
 
+type content_alignment =
+  [ `Normal
+  | `Flex_start
+  | `Flex_end
+  | `Center
+  | `Space_between
+  | `Space_around
+  | `Space_evenly
+  | `Stretch
+  ]
+
 type justify_content =
   [ `Flex_start
   | `Flex_end
@@ -363,10 +376,13 @@ type justify_content =
 
 val flex_container
   :  ?inline:bool
-  -> ?direction:[ `Row | `Row_reverse | `Column | `Column_reverse ]
-  -> ?wrap:[ `Nowrap | `Wrap | `Wrap_reverse ]
+  -> ?direction:[ `Row | `Row_reverse | `Column | `Column_reverse | `Default ]
+  -> ?wrap:[ `Nowrap | `Wrap | `Wrap_reverse | `Default ]
   -> ?align_items:item_alignment
+  -> ?align_content:content_alignment
   -> ?justify_content:justify_content
+  -> ?row_gap:Length.t
+  -> ?column_gap:Length.t
   -> unit
   -> t
 

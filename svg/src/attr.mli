@@ -211,6 +211,7 @@ val stroke : [< Css_gen.Color.t ] -> t
 val stroke_width : float -> t
 val stroke_linecap : [ `Butt | `Round | `Square ] -> t
 val stroke_dasharray : float list -> t
+val stroke_dashoffset : float -> t
 
 (** {1 <polyline>} *)
 

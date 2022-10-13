@@ -192,41 +192,65 @@ let widget_of_module m =
 let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
 
-let inner_html
-      create
-      ~tag
-      ~attr
-      ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
-  =
-  let element = create tag ~attr [] in
-  let build_sexp ~extra ~content =
-    Sexp.List [ Sexp.Atom "inner-html"; extra; Sexp.Atom content ]
-  in
-  let id =
-    Type_equal.Id.create ~name:"inner-html-node" (fun ((element, content), _) ->
-      build_sexp ~extra:element ~content)
-  in
-  let debug =
-    match element with
-    | Element element -> Sexp.Atom (Element.tag element)
-    | Widget _ -> failwith "Vdom.Node.inner_html was given a 'widget'"
-    | None -> failwith "Vdom.Node.inner_html was given a 'none'"
-    | Text _ -> failwith "Vdom.Node.inner_html was given a 'text'"
-    | Lazy _ -> failwith "Vdom.Node.inner_html was given a 'lazy'"
-  in
-  widget
-    ~id
-    ~vdom_for_testing:(lazy (create tag ~attr [ text content ]))
-    ~init:(fun () ->
-      let element = to_dom element in
-      element##.innerHTML := Js.string content;
-      (debug, content), element)
-    ()
+module Inner_html = struct
+  let widget ~name create =
+    let id =
+      (* stage the id generation *)
+      Type_equal.Id.create ~name (fun ((content, _, _), _) -> Sexp.Atom content)
+    in
+    Staged.stage
+      (fun ~tag ~attr ~this_html_is_sanitized_and_is_totally_safe_trust_me:content ->
+         let element = create tag ~attr [] in
+         let init () =
+           let element = to_dom element in
+           element##.innerHTML := Js.string content;
+           (content, tag, attr), element
+         in
+         let update (prev_content, prev_tag, prev_attr) element =
+           let element =
+             (* if the tag or the attributes are different, do a diff/patch cycle to
+                get it up to date *)
+             if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attr)
+             then
+               Raw.Patch.create
+                 ~previous:(create prev_tag ~attr:prev_attr [] |> to_raw)
+                 ~current:(create tag ~attr [] |> to_raw)
+               |> Raw.Patch.apply element
+             else element
+           in
+           (* if the tag changed, then [element] will be empty, so we need to update the
+              innerHTML.  If the content changed, then we need to set the innerHTML for
+              obvious reasons. *)
+           if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
+           then element##.innerHTML := Js.string content;
+           (content, tag, attr), element
+         in
+         (* We use the [widget] function directly, rather than through the
+            easier-to-use [widget_of_module] function because we want to
+            explicitly create the id such that it is distinct between
+            [inner_html] and [inner_html_svg]. *)
+         widget
+           ~id
+           ~vdom_for_testing:(lazy (create tag ~attr [ text content ]))
+           ~init
+           ~update
+           ())
+  ;;
+end
+
+let inner_html_svg =
+  Inner_html.widget ~name:"inner-html-svg-node" (fun tag ~attr ->
+    create_svg_monoid tag ?key:None ~attr)
+  |> Staged.unstage
 ;;
 
-let inner_html_svg = inner_html (fun tag ~attr -> create_svg_monoid tag ?key:None ~attr)
-let inner_html = inner_html (fun tag ~attr -> create tag ?key:None ~attr)
+let inner_html =
+  Inner_html.widget ~name:"inner-html-node" (fun tag ~attr -> create tag ?key:None ~attr)
+  |> Staged.unstage
+;;
+
 let a = create "a"
+let abbr = create "abbr"
 let body = create "body"
 let button = create "button"
 let code = create "code"

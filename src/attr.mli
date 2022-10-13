@@ -161,7 +161,7 @@ val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
-val on_wheel : (Dom_html.wheelEvent Js.t -> unit Effect.t) -> t
+val on_wheel : (Js_of_ocaml_patches.Dom_html.wheelEvent Js.t -> unit Effect.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
 val on_cut : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
 val on_paste : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
@@ -226,6 +226,15 @@ module Single_focus_hook () : sig
      Incremental graph, or you will not get the desired effect. *)
 
   val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:unit Ui_effect.t -> t
+end
+
+module No_op_hook (M : sig
+    module Input : Hooks.Input
+
+    val name : string
+  end) : sig
+  val attr : M.Input.t -> t
+  val type_id : M.Input.t Type_equal.Id.t
 end
 
 module Expert : sig

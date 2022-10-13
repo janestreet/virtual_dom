@@ -395,7 +395,9 @@ let%expect_test "empty div with [many] different attributes" =
             ])
       []
   in
-  show ~filter_printed_attributes:(String.is_prefix ~prefix:"on") view;
+  show
+    ~filter_printed_attributes:(fun key _data -> String.is_prefix ~prefix:"on" key)
+    view;
   [%expect
     {|
     (Element
@@ -405,8 +407,7 @@ let%expect_test "empty div with [many] different attributes" =
     ----------------------
     <div onblur onclick> </div> |}];
   show
-    ~filter_printed_attributes:(fun attribute ->
-      not (String.is_prefix ~prefix:"on" attribute))
+    ~filter_printed_attributes:(fun key _data -> not (String.is_prefix ~prefix:"on" key))
     view;
   [%expect
     {|

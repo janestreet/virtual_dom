@@ -432,7 +432,11 @@ module Type_id = struct
   let (keyboard : Dom_html.keyboardEvent Type_equal.Id.t) = create "keyboardEvent"
   let (submit : Dom_html.submitEvent Type_equal.Id.t) = create "submitEvent"
   let (mousewheel : Dom_html.mousewheelEvent Type_equal.Id.t) = create "mousewheelEvent"
-  let (wheel : Dom_html.wheelEvent Type_equal.Id.t) = create "wheelwheelEvent"
+
+  let (wheel : Js_of_ocaml_patches.Dom_html.wheelEvent Type_equal.Id.t) =
+    create "wheelwheelEvent"
+  ;;
+
   let (clipboard : Dom_html.clipboardEvent Type_equal.Id.t) = create "clipboardEvent"
   let (drag : Dom_html.dragEvent Type_equal.Id.t) = create "dragEvent"
   let (pointer : Dom_html.pointerEvent Type_equal.Id.t) = create "pointerEvent"
@@ -580,6 +584,26 @@ module Single_focus_hook () = struct
        from all other focus hooks. *)
     create_hook "single-focus-hook" (Hook.create after)
   ;;
+end
+
+module No_op_hook (M : sig
+    module Input : Hooks_intf.Input
+
+    val name : string
+  end) =
+struct
+  module Hook = Hooks.Make (struct
+      module State = Unit
+      module Input = M.Input
+
+      let init _ _ = ()
+      let on_mount _ () _ = ()
+      let update ~old_input:_ ~new_input:_ () _ = ()
+      let destroy _ () _ = ()
+    end)
+
+  let attr input = create_hook M.name (Hook.create input)
+  let type_id = Hook.For_testing.type_id
 end
 
 module Multi = struct

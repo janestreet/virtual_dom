@@ -173,34 +173,39 @@ let bprint_element
       bprintf buffer " ")
   in
   let list_iter_filter l ~f =
-    List.filter l ~f:(fun (k, _) -> filter_printed_attributes k) |> List.iter ~f
+    List.filter_map l ~f:filter_printed_attributes |> List.iter ~f
   in
-  if filter_printed_attributes "@key"
-  then
-    Option.iter key ~f:(fun key ->
-      bprint_aligned_indent ();
-      bprintf buffer "@key=%s" key);
+  Option.bind key ~f:(fun key -> filter_printed_attributes ("@key", key))
+  |> Option.iter ~f:(fun (_, v) ->
+    bprint_aligned_indent ();
+    bprintf buffer "@key=%s" v);
   list_iter_filter attributes ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "%s=\"%s\"" k v);
   list_iter_filter string_properties ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "#%s=\"%s\"" k v);
-  list_iter_filter bool_properties ~f:(fun (k, v) ->
+  bool_properties
+  |> List.map ~f:(Tuple2.map_snd ~f:Bool.to_string)
+  |> list_iter_filter ~f:(fun (k, v) ->
     bprint_aligned_indent ();
-    bprintf buffer "#%s=\"%b\"" k v);
-  list_iter_filter hooks ~f:(fun (k, v) ->
+    bprintf buffer "#%s=\"%b\"" k (Bool.of_string v));
+  hooks
+  |> List.map ~f:(fun (k, v) ->
+    k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
+  |> list_iter_filter ~f:(fun (k, v) ->
     bprint_aligned_indent ();
-    bprintf
-      buffer
-      "%s=%s"
-      k
-      (v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach));
-  list_iter_filter handlers ~f:(fun (k, _) ->
+    bprintf buffer "%s=%s" k v);
+  handlers
+  |> List.map ~f:(fun (k, _) -> k, "handler")
+  |> list_iter_filter ~f:(fun (k, _) ->
     bprint_aligned_indent ();
     bprintf buffer "%s" k);
   let styles =
-    List.filter styles ~f:(fun (name, _) -> filter_printed_attributes ("style." ^ name))
+    List.filter_map styles ~f:(fun (name, v) ->
+      let open Option.Let_syntax in
+      let%map _, v = filter_printed_attributes ("style." ^ name, v) in
+      name, v)
   in
   if not (List.is_empty styles)
   then (
@@ -224,7 +229,27 @@ let bprint_element_multi_line buffer ~indent element =
   bprint_element buffer ~sep ~before_styles:"  " element
 ;;
 
-let to_string_html ?(filter_printed_attributes = Fn.const true) t =
+let to_string_html
+      ?(filter_printed_attributes = fun _key _data -> true)
+      ?(censor_paths = true)
+      ?(censor_hash = true)
+      t
+  =
+  let pre_censor to_censor apply_censor f kv =
+    f (if to_censor then Tuple2.map ~f:apply_censor kv else kv)
+  in
+  let path_regexp = Re.Str.regexp "bonsai_path\\(_[a-z]*\\)*" in
+  let hash_regexp = Re.Str.regexp "_hash_[a-f0-9]+" in
+  let filter_printed_attributes =
+    (fun (key, data) ->
+       match filter_printed_attributes key data with
+       | true -> Some (key, data)
+       | false -> None)
+    |> pre_censor
+         censor_paths
+         (Re.Str.global_replace path_regexp "bonsai_path_replaced_in_test")
+    |> pre_censor censor_hash (Re.Str.global_replace hash_regexp "_hash_replaced_in_test")
+  in
   (* Keep around the buffer so that it is not re-allocated for every element *)
   let single_line_buffer = Buffer.create 200 in
   let rec recurse buffer ~depth =
@@ -528,6 +553,7 @@ module User_actions = struct
         ?(shift_key_down = false)
         ?(ctrl_key_down = false)
         ?(alt_key_down = false)
+        ?(meta_key_down = false)
         ~extra_event_fields
         ~include_modifier_keys
         event_specific_fields
@@ -539,14 +565,21 @@ module User_actions = struct
         [ "shiftKey", Js.Unsafe.inject (Js.bool shift_key_down)
         ; "ctrlKey", Js.Unsafe.inject (Js.bool ctrl_key_down)
         ; "altKey", Js.Unsafe.inject (Js.bool alt_key_down)
-        ; "metaKey", Js.Unsafe.inject (Js.bool alt_key_down)
+        ; "metaKey", Js.Unsafe.inject (Js.bool meta_key_down)
         ]
       else []
     in
     modifiers @ both_event_handlers @ extra_event_fields @ event_specific_fields
   ;;
 
-  let click_on ?extra_event_fields ?shift_key_down ?ctrl_key_down ?alt_key_down node =
+  let click_on
+        ?extra_event_fields
+        ?shift_key_down
+        ?ctrl_key_down
+        ?alt_key_down
+        ?meta_key_down
+        node
+    =
     trigger
       ~event_name:"onclick"
       node
@@ -555,6 +588,7 @@ module User_actions = struct
            ?shift_key_down
            ?ctrl_key_down
            ?alt_key_down
+           ?meta_key_down
            ~extra_event_fields
            ~include_modifier_keys:true
            [])
@@ -626,6 +660,7 @@ module User_actions = struct
         ?shift_key_down
         ?ctrl_key_down
         ?alt_key_down
+        ?meta_key_down
         element
         ~checked
     =
@@ -648,6 +683,7 @@ module User_actions = struct
            ?shift_key_down
            ?ctrl_key_down
            ?alt_key_down
+           ?meta_key_down
            ~extra_event_fields
            ~include_modifier_keys:true
            [ "target", target ])
@@ -671,12 +707,20 @@ module User_actions = struct
         ?shift_key_down
         ?ctrl_key_down
         ?alt_key_down
+        ?meta_key_down
         element
         ~key
     =
     let open Vdom_keyboard in
     let key_code = Keystroke.Keyboard_code.to_key_code key in
     let location = Keystroke.Keyboard_code.to_location key in
+    (* The keydown event only requires a [tagName] field *)
+    let target =
+      Js.Unsafe.inject
+        (object%js
+          val tagName = Js.string (tag_name_exn element)
+        end)
+    in
     let int_to_any x = Js.Unsafe.coerce (Js.number_of_float (Int.to_float x)) in
     let event_names = [ "onkeydown" ] in
     let default_prevented _ =
@@ -690,6 +734,7 @@ module User_actions = struct
            ?shift_key_down
            ?ctrl_key_down
            ?alt_key_down
+           ?meta_key_down
            ~extra_event_fields
            ~include_modifier_keys:true
            [ "location", int_to_any location
@@ -697,6 +742,7 @@ module User_actions = struct
            ; "code", Js.Unsafe.coerce (Js.string "")
            ; "key", Js.Unsafe.coerce (Js.string "")
            ; "preventDefault", Js.Unsafe.inject (Js.wrap_callback default_prevented)
+           ; "target", target
            ])
   ;;
 

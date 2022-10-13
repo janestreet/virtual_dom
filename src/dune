@@ -2,4 +2,4 @@
  (preprocess (pps js_of_ocaml-ppx ppx_jane))
  (js_of_ocaml
   (javascript_files ../lib/virtualdom.compiled.js ./thunk.js ./hooks.js))
- (libraries ui_effect js_of_ocaml css_gen base))
+ (libraries ui_effect js_of_ocaml js_of_ocaml_patches css_gen base))

@@ -486,6 +486,8 @@ let margin ?top ?bottom ?left ?right () =
 ;;
 
 let uniform_margin l = margin ~top:l ~bottom:l ~left:l ~right:l ()
+let row_gap = create_length_field "row-gap"
+let column_gap = create_length_field "column-gap"
 
 type border_style =
   [ `None
@@ -631,6 +633,28 @@ let text_decoration ?style ?color ~line () =
   create_raw ~field:"text-decoration" ~value
 ;;
 
+type content_alignment =
+  [ `Normal
+  | `Flex_start
+  | `Flex_end
+  | `Center
+  | `Space_between
+  | `Space_around
+  | `Space_evenly
+  | `Stretch
+  ]
+
+let content_alignment_to_string_css = function
+  | `Normal -> "normal"
+  | `Flex_start -> "flex-start"
+  | `Flex_end -> "flex-end"
+  | `Center -> "center"
+  | `Space_between -> "space-between"
+  | `Space_around -> "space-around"
+  | `Space_evenly -> "space-evenly"
+  | `Stretch -> "stretch"
+;;
+
 type item_alignment =
   [ `Auto
   | `Flex_start
@@ -672,26 +696,39 @@ let flex_container
       ?(direction = `Row)
       ?(wrap = `Nowrap)
       ?align_items
+      ?align_content
       ?justify_content
+      ?row_gap:rg
+      ?column_gap:cg
       ()
   =
   let direction =
+    let make_dir v = create_raw ~field:"flex-direction" ~value:v in
     match direction with
-    | `Row -> "row"
-    | `Row_reverse -> "row-reverse"
-    | `Column -> "column"
-    | `Column_reverse -> "column-reverse"
+    | `Row -> make_dir "row"
+    | `Row_reverse -> make_dir "row-reverse"
+    | `Column -> make_dir "column"
+    | `Column_reverse -> make_dir "column-reverse"
+    | `Default -> empty
   in
   let wrap =
+    let make_wrap v = create_raw ~field:"flex-wrap" ~value:v in
     match wrap with
-    | `Nowrap -> "nowrap"
-    | `Wrap -> "wrap"
-    | `Wrap_reverse -> "wrap-reverse"
+    | `Nowrap -> make_wrap "nowrap"
+    | `Wrap -> make_wrap "wrap"
+    | `Wrap_reverse -> make_wrap "wrap-reverse"
+    | `Default -> empty
   in
   let align_items =
     match align_items with
     | None -> empty
     | Some a -> create_raw ~field:"align-items" ~value:(item_alignment_to_string_css a)
+  in
+  let align_content =
+    match align_content with
+    | None -> empty
+    | Some a ->
+      create_raw ~field:"align-content" ~value:(content_alignment_to_string_css a)
   in
   let justify_content =
     match justify_content with
@@ -699,12 +736,17 @@ let flex_container
     | Some a ->
       create_raw ~field:"justify-content" ~value:(justify_content_to_string_css a)
   in
+  let row_gap = Option.value_map ~default:empty ~f:row_gap rg in
+  let column_gap = Option.value_map ~default:empty ~f:column_gap cg in
   concat
     [ display (if inline then `Inline_flex else `Flex)
-    ; create_raw ~field:"flex-direction" ~value:direction
-    ; create_raw ~field:"flex-wrap" ~value:wrap
+    ; direction
+    ; wrap
     ; align_items
+    ; align_content
     ; justify_content
+    ; column_gap
+    ; row_gap
     ]
 ;;
 

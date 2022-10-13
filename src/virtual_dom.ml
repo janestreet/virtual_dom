@@ -1,5 +1,6 @@
 module Vdom = Vdom
 module Dom_float = Dom_float
+module Js_map = Js_map
 
 module Top_level_effects = struct
   let () =

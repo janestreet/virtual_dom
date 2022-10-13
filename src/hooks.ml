@@ -2,6 +2,7 @@ open! Core
 open! Js_of_ocaml
 
 module type S = Hooks_intf.S
+module type Input = Hooks_intf.Input
 
 let cancel_animation_frame id = Dom_html.window##cancelAnimationFrame id
 

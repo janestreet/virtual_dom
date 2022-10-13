@@ -33,7 +33,13 @@ val select_first_exn : t -> selector:string -> t
    JavaScript because of limitations in the tail-call optimizer.
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
-val to_string_html : ?filter_printed_attributes:(string -> bool) -> t -> string
+val to_string_html
+  :  ?filter_printed_attributes:(string -> string -> bool)
+  -> ?censor_paths:bool
+  -> ?censor_hash:bool
+  -> t
+  -> string
+
 val inner_text : t -> string
 val unsafe_convert_exn : Virtual_dom.Vdom.Node.t -> t
 
@@ -66,6 +72,7 @@ module User_actions : sig
     -> ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
     -> t
     -> unit
 
@@ -89,6 +96,7 @@ module User_actions : sig
     -> ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
     -> t
     -> key:Dom_html.Keyboard_code.t
     -> unit
@@ -98,6 +106,7 @@ module User_actions : sig
     -> ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
     -> t
     -> checked:bool
     -> unit

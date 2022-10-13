@@ -223,7 +223,11 @@ module Value_normalizing_hook = struct
     ;;
 
     let on_mount _input _state _element = ()
+
     let destroy _input { State.event_id } _element = removeEventListener event_id
+    [@@ocaml.warning
+       "-68"]
+    ;;
 
     let update ~old_input ~new_input state element =
       destroy old_input state element;
@@ -409,6 +413,7 @@ module Checklist = struct
         ?(style = Selectable_style.Native)
         ?(extra_attrs = [])
         ?(disabled = false)
+        ?layout
         values
         ~is_checked
         ~on_toggle
@@ -421,6 +426,7 @@ module Checklist = struct
         [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
     in
     structural_list
+      ?orientation:layout
       ([ Attr.classes [ "widget-checklist"; "checkbox-container" ] ]
        |> add_attrs extra_attrs)
       (List.map values ~f:(fun item ->
@@ -447,6 +453,7 @@ module Checklist = struct
         ?style
         ?extra_attrs
         ?disabled
+        ?layout
         (module M : Display with type t = t)
         values
         ~is_checked
@@ -456,6 +463,7 @@ module Checklist = struct
       ?style
       ?extra_attrs
       ?disabled
+      ?layout
       values
       ~is_checked
       ~on_toggle

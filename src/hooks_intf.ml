@@ -1,26 +1,28 @@
 open! Core
 open! Js_of_ocaml
 
+module type Input = sig
+  type t [@@deriving sexp_of]
+
+  (* [combine first second] describes how more than one of the same hook should
+     be merged. This function will only be used if the hooks are combined
+     using [Attr.many]'s merge semantics. It is common for [t] to by
+     a function type like ['a -> unit Ui_effect.t]; in this case, the proper
+     implementation is probably the following:
+
+     {[
+       let combine f g event =
+         Vdom.Effect.sequence_as_sibling
+           (f event)
+           ~unless_stopped:(fun () -> g event)
+     ]} *)
+
+  val combine : t -> t -> t
+end
+
 module type S = sig
   module State : T
-
-  module Input : sig
-    type t [@@deriving sexp_of]
-
-    (* [combine first second] describes how more than one of the same hook should
-       be merged. This function will only be used if the hooks are combined
-       using [Attr.many]'s merge semantics. It is common for [t] to by
-       a function type like ['a -> unit Ui_effect.t]; in this case, the proper
-       implementation is probably the following:
-
-       {[
-         let combine f g event =
-           Vdom.Effect.sequence_as_sibling
-             (f event)
-             ~unless_stopped:(fun () -> g event)
-       ]} *)
-    val combine : t -> t -> t
-  end
+  module Input : Input
 
   (** [init] is called the first time that this attribute is attached to
       a particular node.  It is particularly responsible for producing a value
@@ -53,6 +55,7 @@ end
 
 module type Hooks = sig
   module type S = S
+  module type Input = Input
 
   type t
 

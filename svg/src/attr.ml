@@ -350,6 +350,7 @@ let stroke style =
    val stroke_dasharray: float list -> t
 *)
 let stroke_width = create_float "stroke-width"
+let stroke_dashoffset = create_float "stroke-dashoffset"
 
 let stroke_linecap linecap =
   create
