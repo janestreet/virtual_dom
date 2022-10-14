@@ -9,15 +9,6 @@ type hidden = T : ('a t * ('a -> unit)) -> hidden
 
 let handlers : (hidden -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:8
 
-module Obj = struct
-  module Extension_constructor = struct
-    [@@@ocaml.warning "-3"]
-
-    let id = Caml.Obj.extension_id
-    let of_val = Caml.Obj.extension_constructor
-  end
-end
-
 module Define (Handler : Handler) :
   S with type action := Handler.Action.t and type 'a t := 'a t = struct
   type _ t += C : Handler.Action.t -> unit t

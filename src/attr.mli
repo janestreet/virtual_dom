@@ -1,5 +1,4 @@
 open! Js_of_ocaml
-open Base
 
 (** This type covers both properties and attributes, despite the name. *)
 type t
@@ -64,7 +63,7 @@ val autofocus : bool -> t
 val checked : t
 val class_ : string -> t
 val classes : string list -> t
-val classes' : Set.M(String).t -> t
+val classes' : Base.Set.M(Base.String).t -> t
 val disabled : t
 val for_ : string -> t
 val href : string -> t
