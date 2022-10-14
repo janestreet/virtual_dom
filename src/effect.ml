@@ -13,15 +13,6 @@ module Define_visibility (VH : Visibility_handler) = struct
   let () = visibility_handlers := VH.handle :: !visibility_handlers
 end
 
-module Obj = struct
-  module Extension_constructor = struct
-    [@@@ocaml.warning "-3"]
-
-    let id = Caml.Obj.extension_id
-    let of_val = Caml.Obj.extension_constructor
-  end
-end
-
 type _ t +=
   | Viewport_changed
   | Stop_propagation
@@ -46,21 +37,21 @@ let current_dom_event = ref None
 let () =
   Hashtbl.add_exn
     Expert.handlers
-    ~key:Obj.Extension_constructor.(id (of_val Viewport_changed))
+    ~key:Caml.Obj.Extension_constructor.(id (of_val Viewport_changed))
     ~data:(fun _ -> List.iter !visibility_handlers ~f:(fun f -> f ()))
 ;;
 
 let () =
   Hashtbl.add_exn
     Expert.handlers
-    ~key:Obj.Extension_constructor.(id (of_val Stop_propagation))
+    ~key:Caml.Obj.Extension_constructor.(id (of_val Stop_propagation))
     ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom_html.stopPropagation)
 ;;
 
 let () =
   Hashtbl.add_exn
     Expert.handlers
-    ~key:Obj.Extension_constructor.(id (of_val Prevent_default))
+    ~key:Caml.Obj.Extension_constructor.(id (of_val Prevent_default))
     ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom.preventDefault)
 ;;
 
