@@ -1,5 +1,5 @@
 open! Js_of_ocaml
-open Base
+open Core
 
 (** This type covers both properties and attributes, despite the name. *)
 type t
@@ -47,6 +47,8 @@ val create_hook : string -> Hooks.t -> t
 *)
 val many : t list -> t
 
+(** Like [many], except instead of merging attributes of the same type, it
+    takes the last one. Don't use this function - use [many] instead. *)
 val many_without_merge : t list -> t
 
 (** Equivalent to [many []]. It adds no attributes to the DOM. *)
@@ -78,6 +80,18 @@ val readonly : t
 val style : Css_gen.t -> t
 val min : float -> t
 val max : float -> t
+val min_date : Date.t -> t
+val max_date : Date.t -> t
+
+(** Sets the min time of a datetime-local picker to any time in the specified date.
+    This function receives a [Date.t] instead of a [Time_ns.t] because the
+    browser doesn't actually limit the time part of a datetime-local picker,
+    even if a time is specified. *)
+val min_date_time : Date.t -> t
+
+(** Similar to [min_date_time], but sets the maximum instead. *)
+val max_date_time : Date.t -> t
+
 val colspan : int -> t
 val rowspan : int -> t
 val draggable : bool -> t
@@ -89,6 +103,7 @@ val value : string -> t
 val value_prop : string -> t
 val title : string -> t
 val src : string -> t
+val open_ : t
 val on_focus : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 val on_blur : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 
@@ -171,6 +186,9 @@ val on_animationend : (Dom_html.animationEvent Js.t -> unit Effect.t) -> t
 (** Sets a css named variable on the element. The "--" prefix is added by this function:
     [css_var ~name:"foo" "red"] is equivalent to the css [--foo: red]. *)
 val css_var : name:string -> string -> t
+
+(** For ppx use only *)
+val __css_vars_no_kebabs : (string * string) list -> t
 
 module Multi : sig
   (** A collection of CSS attributes. *)

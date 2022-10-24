@@ -77,6 +77,7 @@ val abbr : node_creator
 val body : node_creator
 val button : node_creator
 val code : node_creator
+val details : node_creator
 val div : node_creator
 val main : node_creator
 val footer : node_creator
@@ -100,6 +101,7 @@ val pre : node_creator
 val section : node_creator
 val span : node_creator
 val strong : node_creator
+val summary : node_creator
 val table : node_creator
 val tbody : node_creator
 val td : node_creator

@@ -416,8 +416,13 @@ let value_prop x = string_property "value" x
 let tabindex x = create "tabindex" (Int.to_string x)
 let title x = create "title" x
 let src x = create "src" x
+let open_ = create "open" ""
 let min x = create_float "min" x
 let max x = create_float "max" x
+let min_date x = create "min" (Date.to_string x)
+let max_date x = create "max" (Date.to_string x)
+let min_date_time x = create "min" (Date.to_string x ^ "T00:00")
+let max_date_time x = create "max" (Date.to_string x ^ "T23:59")
 let colspan x = create "colspan" (Int.to_string x)
 let rowspan x = create "rowspan" (Int.to_string x)
 let draggable b = create "draggable" (Bool.to_string b)
@@ -657,9 +662,8 @@ module Css_var_hook = Hooks.Make (struct
     ;;
   end)
 
-let css_var ~name v =
-  create_hook "custom-css-vars" (Css_var_hook.create [ "--" ^ name, v ])
-;;
+let __css_vars_no_kebabs alist = create_hook "custom-css-vars" (Css_var_hook.create alist)
+let css_var ~name v = __css_vars_no_kebabs [ "--" ^ name, v ]
 
 module Expert = struct
   let rec filter_by_kind t ~f =
