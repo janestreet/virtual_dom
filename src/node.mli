@@ -129,16 +129,20 @@ val lazy_ : ?key:string -> t Lazy.t -> t
     the value of [content] and you don't have a sanitizer, they can inject code into
     the page, so use with extreme caution! *)
 val inner_html
-  :  tag:string
+  :  ?override_vdom_for_testing:t Lazy.t
+  -> tag:string
   -> attr:Attr.t
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
+  -> unit
   -> t
 
 (** Same as [inner_html] but for svg elements *)
 val inner_html_svg
-  :  tag:string
+  :  ?override_vdom_for_testing:t Lazy.t
+  -> tag:string
   -> attr:Attr.t
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
+  -> unit
   -> t
 
 (** Use [input] instead of [input_deprecated]. The only difference is that

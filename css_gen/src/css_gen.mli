@@ -66,7 +66,7 @@ module Length : sig
   (** Convenience around `Percent (Percent.of_percentage 100.) *)
   val percent100 : t
 
-  val to_string_css : t -> string
+  val to_string_css : [< t ] -> string
 end
 
 module Auto_or_length : sig

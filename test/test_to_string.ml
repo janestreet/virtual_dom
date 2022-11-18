@@ -63,6 +63,7 @@ let%expect_test "empty div" =
 let%expect_test "inner_html" =
   show
     (Node.inner_html
+       ()
        ~tag:"div"
        ~attr:Attr.empty
        ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
@@ -71,6 +72,20 @@ let%expect_test "inner_html" =
     (Element ((tag_name div) (children ((Text <b>hi</b>)))))
     ----------------------
     <div> <b>hi</b> </div> |}]
+;;
+
+let%expect_test "inner_html with custom renderer" =
+  show
+    (Node.inner_html
+       ()
+       ~tag:"div"
+       ~attr:Attr.empty
+       ~override_vdom_for_testing:(lazy (Node.text "overridden!"))
+       ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
+  [%expect {|
+    (Text overridden!)
+    ----------------------
+    overridden! |}]
 ;;
 
 let%expect_test "div with some text" =
