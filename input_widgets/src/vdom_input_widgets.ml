@@ -2,6 +2,12 @@ open Core
 open Virtual_dom.Vdom
 include Vdom_input_widgets_intf
 
+module Merge_behavior = struct
+  type t =
+    | Merge
+    | Legacy_dont_merge
+end
+
 module Decimal = struct
   type t = float
 
@@ -153,7 +159,17 @@ end
 let maybe_disabled ~disabled attrs = if disabled then Attr.disabled :: attrs else attrs
 let add_attrs attrs' attrs = attrs @ attrs' |> Attrs.merge_classes_and_styles
 
-let structural_list ?(orientation = `Vertical) attrs children =
+let merge = function
+  | Merge_behavior.Merge -> Attr.many
+  | Legacy_dont_merge -> Attr.many_without_merge
+;;
+
+let structural_list
+      ?(orientation = `Vertical)
+      ?(merge_behavior = Merge_behavior.Merge)
+      attrs
+      children
+  =
   let layout_style =
     match orientation with
     | `Vertical -> Css_gen.(display `Block)
@@ -161,7 +177,7 @@ let structural_list ?(orientation = `Vertical) attrs children =
   in
   Node.ul
     ~attr:
-      (Attr.many_without_merge
+      ((merge merge_behavior)
          ([ Attr.style
               Css_gen.(create ~field:"list-style" ~value:"none" @> margin_left (`Px 0))
           ]
@@ -248,7 +264,9 @@ end
 module Dropdown = struct
   let impl
         ?(extra_attrs = [])
+        ?(extra_option_attrs = Fn.const [])
         ?(disabled = false)
+        ?(merge_behavior = Merge_behavior.Merge)
         values
         ~equal
         ~selected
@@ -257,7 +275,7 @@ module Dropdown = struct
     =
     Node.select
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            ([ Attr.class_ "widget-dropdown"
             ; Attr.on_change (fun _ value ->
                 on_change (Int.of_string value |> List.nth_exn values))
@@ -267,17 +285,20 @@ module Dropdown = struct
       (List.mapi values ~f:(fun index value ->
          Node.option
            ~attr:
-             (Attr.many_without_merge
-                [ Attr.value (Int.to_string index)
-                ; Attr.bool_property "selected" (equal value selected)
-                ])
+             (Attr.many
+                ([ Attr.value (Int.to_string index)
+                 ; Attr.bool_property "selected" (equal value selected)
+                 ]
+                 @ extra_option_attrs value))
            [ Node.text (to_string value) ]))
   ;;
 
   let of_values
         (type t)
         ?extra_attrs
+        ?extra_option_attrs
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Equal with type t = t)
         values
         ~selected
@@ -285,71 +306,98 @@ module Dropdown = struct
     =
     impl
       ?extra_attrs
+      ?extra_option_attrs
       ?disabled
       values
       ~equal:M.equal
       ~selected
       ~to_string:M.to_string
       ~on_change
+      ~merge_behavior
   ;;
+
 
   let of_values_opt
         (type t)
         ?extra_attrs
+        ?extra_option_attrs
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
+        ?(placeholder = "")
         (module M : Equal with type t = t)
         values
         ~selected
         ~on_change
     =
     let values = None :: List.map values ~f:Option.some in
-    let to_string = Option.value_map ~default:"" ~f:M.to_string in
+    let to_string = Option.value_map ~default:placeholder ~f:M.to_string in
+    let extra_option_attrs =
+      Option.map extra_option_attrs ~f:(fun f -> function
+        | None -> []
+        | Some value -> f value)
+    in
     impl
       ?extra_attrs
+      ?extra_option_attrs
       ?disabled
       values
       ~equal:[%equal: M.t option]
       ~selected
       ~to_string
       ~on_change
+      ~merge_behavior
   ;;
 
   let of_enum
         (type t)
         ?extra_attrs
+        ?extra_option_attrs
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Enum with type t = t)
         ~selected
         ~on_change
     =
     impl
       ?extra_attrs
+      ?extra_option_attrs
       ?disabled
       M.all
       ~equal:M.equal
       ~selected
       ~to_string:M.to_string
       ~on_change
+      ~merge_behavior
   ;;
 
   let of_enum_opt
         (type t)
         ?extra_attrs
+        ?extra_option_attrs
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
+        ?(placeholder = "")
         (module M : Enum with type t = t)
         ~selected
         ~on_change
     =
     let values = None :: List.map M.all ~f:Option.some in
-    let to_string = Option.value_map ~default:"" ~f:M.to_string in
+    let to_string = Option.value_map ~default:placeholder ~f:M.to_string in
+    let extra_option_attrs =
+      Option.map extra_option_attrs ~f:(fun f -> function
+        | None -> []
+        | Some value -> f value)
+    in
     impl
       ?extra_attrs
+      ?extra_option_attrs
       ?disabled
       values
       ~equal:[%equal: M.t option]
       ~selected
       ~to_string
       ~on_change
+      ~merge_behavior
   ;;
 end
 
@@ -385,12 +433,20 @@ module Selectable_style = struct
 end
 
 module Checkbox = struct
-  let impl ?(extra_attrs = []) ?(disabled = false) ~is_checked ~label ~on_toggle () =
+  let impl
+        ?(extra_attrs = [])
+        ?(disabled = false)
+        ~is_checked
+        ~label
+        ~on_toggle
+        ?(merge_behavior = Merge_behavior.Merge)
+        ()
+    =
     Node.label
-      ~attr:(Attr.many_without_merge extra_attrs)
+      ~attr:((merge merge_behavior) extra_attrs)
       [ Node.input
           ~attr:
-            (Attr.many_without_merge
+            (Attr.many
                ([ Attr.type_ "checkbox"
                 ; Attr.on_click (fun _ev -> on_toggle)
                 ; Attr.bool_property "checked" is_checked
@@ -401,10 +457,18 @@ module Checkbox = struct
       ]
   ;;
 
-  let simple ?extra_attrs ?disabled ~is_checked ~label ~on_toggle () =
+  let simple
+        ?extra_attrs
+        ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~is_checked
+        ~label
+        ~on_toggle
+        ()
+    =
     Node.div
       ~attr:(Attr.class_ "checkbox-container")
-      [ impl ?extra_attrs ?disabled ~is_checked ~label ~on_toggle () ]
+      [ impl ?extra_attrs ?disabled ~is_checked ~label ~on_toggle ~merge_behavior () ]
   ;;
 end
 
@@ -418,6 +482,7 @@ module Checklist = struct
         ~is_checked
         ~on_toggle
         ~to_string
+        ~merge_behavior
     =
     let input_attrs, label_attrs =
       match style with
@@ -426,17 +491,18 @@ module Checklist = struct
         [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
     in
     structural_list
+      ~merge_behavior
       ?orientation:layout
       ([ Attr.classes [ "widget-checklist"; "checkbox-container" ] ]
        |> add_attrs extra_attrs)
       (List.map values ~f:(fun item ->
          Node.label
            ~attr:
-             (Attr.many_without_merge
+             ((merge merge_behavior)
                 (extra_attrs @ label_attrs ~checked:(is_checked item)))
            [ Node.input
                ~attr:
-                 (Attr.many_without_merge
+                 (Attr.many
                     ([ Attr.type_ "checkbox"
                      ; Attr.on_click (fun _ev -> on_toggle item)
                      ; Attr.bool_property "checked" (is_checked item)
@@ -454,6 +520,7 @@ module Checklist = struct
         ?extra_attrs
         ?disabled
         ?layout
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Display with type t = t)
         values
         ~is_checked
@@ -468,6 +535,7 @@ module Checklist = struct
       ~is_checked
       ~on_toggle
       ~to_string:M.to_string
+      ~merge_behavior
   ;;
 
   let of_enum
@@ -475,11 +543,20 @@ module Checklist = struct
         ?style
         ?extra_attrs
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Enum with type t = t)
         ~is_checked
         ~on_toggle
     =
-    impl ?style ?extra_attrs ?disabled M.all ~is_checked ~on_toggle ~to_string:M.to_string
+    impl
+      ?style
+      ?extra_attrs
+      ?disabled
+      M.all
+      ~is_checked
+      ~on_toggle
+      ~to_string:M.to_string
+      ~merge_behavior
   ;;
 end
 
@@ -501,6 +578,7 @@ module Multi_select = struct
         values
         ~selected
         ~on_change
+        ~merge_behavior
     =
     let open Js_of_ocaml in
     let size = Option.value size ~default:(List.length values) in
@@ -541,7 +619,7 @@ module Multi_select = struct
              can be styled with CSS. [Attr.selected] alone does not update the state
              properly if the model changes, so both are needed. *)
           ~attr:
-            (Attr.many_without_merge
+            (Attr.many
                ([ Some (Attr.bool_property "selected" is_selected)
                 ; Some
                     (Attr.on_click (fun evt ->
@@ -557,7 +635,7 @@ module Multi_select = struct
                 |> List.filter_opt))
           [ Node.text (M.to_string value) ])
     in
-    Node.select ~attr:(Attr.many_without_merge attrs) options
+    Node.select ~attr:((merge merge_behavior) attrs) options
   ;;
 
   let of_values
@@ -566,6 +644,7 @@ module Multi_select = struct
         ?repeated_click_behavior
         ?disabled
         ?size
+        ?(merge_behavior = Merge_behavior.Legacy_dont_merge)
         (module M : Set with type t = t and type comparator_witness = cmp)
         values
         ~selected
@@ -580,6 +659,7 @@ module Multi_select = struct
       values
       ~selected
       ~on_change
+      ~merge_behavior
   ;;
 
   let of_enum
@@ -588,6 +668,7 @@ module Multi_select = struct
         ?repeated_click_behavior
         ?disabled
         ?size
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Enum_set with type t = t and type comparator_witness = cmp)
         ~selected
         ~on_change
@@ -601,6 +682,7 @@ module Multi_select = struct
       M.all
       ~selected
       ~on_change
+      ~merge_behavior
   ;;
 end
 
@@ -631,10 +713,16 @@ module Entry = struct
       :: attrs
   ;;
 
-  let input_node ?(extra_attrs = []) ?(disabled = false) ?(placeholder = "") attrs =
+  let input_node
+        ?(extra_attrs = [])
+        ?(disabled = false)
+        ?(placeholder = "")
+        ?(merge_behavior = Merge_behavior.Merge)
+        attrs
+    =
     Node.input
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            (attrs
             |> add_attrs [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
             |> maybe_disabled ~disabled
@@ -642,10 +730,19 @@ module Entry = struct
       ()
   ;;
 
-  let raw ?extra_attrs ?disabled ?placeholder ?on_return ~value ~on_input () =
+  let raw
+        ?extra_attrs
+        ?disabled
+        ?placeholder
+        ?on_return
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~value
+        ~on_input
+        ()
+    =
     [ Attr.string_property "value" value; Attr.on_input (fun _ev -> on_input) ]
     |> maybe_on_return on_return
-    |> input_node ?extra_attrs ?disabled ?placeholder
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
   ;;
 
   let stringable_input_opt
@@ -655,6 +752,7 @@ module Entry = struct
         ?disabled
         ?placeholder
         ?(should_normalize = true)
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Stringable.S with type t = t)
         ~type_attrs
         ~value
@@ -672,7 +770,7 @@ module Entry = struct
     ; value
     ]
     |> add_attrs type_attrs
-    |> input_node ?extra_attrs ?disabled ?placeholder
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
   ;;
 
   let of_stringable
@@ -681,6 +779,7 @@ module Entry = struct
         ?call_on_input_when
         ?disabled
         ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Stringable.S with type t = t)
         ~value
         ~on_input
@@ -694,6 +793,7 @@ module Entry = struct
       ~type_attrs:[ Attr.type_ "text" ]
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
   let validated
@@ -703,6 +803,7 @@ module Entry = struct
         ?disabled
         ?placeholder
         ?on_return
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Stringable.S with type t = t)
         ~value
         ~on_input
@@ -720,10 +821,19 @@ module Entry = struct
     ]
     |> maybe_on_return on_return
     |> maybe_invalid value
-    |> input_node ?extra_attrs ?disabled ?placeholder
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
   ;;
 
-  let text ?extra_attrs ?call_on_input_when ?disabled ?placeholder ~value ~on_input () =
+  let text
+        ?extra_attrs
+        ?call_on_input_when
+        ?disabled
+        ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~value
+        ~on_input
+        ()
+    =
     of_stringable
       ?extra_attrs
       ?call_on_input_when
@@ -732,6 +842,7 @@ module Entry = struct
       (module String)
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
   let number
@@ -740,6 +851,7 @@ module Entry = struct
         ?call_on_input_when
         ?disabled
         ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Stringable.S with type t = t)
         ~value
         ~step
@@ -754,6 +866,7 @@ module Entry = struct
       ~type_attrs:[ Attr.type_ "number"; Attr.create_float "step" step ]
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
   let range
@@ -762,6 +875,7 @@ module Entry = struct
         ?call_on_input_when
         ?disabled
         ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
         (module M : Stringable.S with type t = t)
         ~value
         ~step
@@ -776,9 +890,19 @@ module Entry = struct
       ~type_attrs:[ Attr.type_ "range"; Attr.create_float "step" step ]
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
-  let time ?extra_attrs ?call_on_input_when ?disabled ?placeholder ~value ~on_input () =
+  let time
+        ?extra_attrs
+        ?call_on_input_when
+        ?disabled
+        ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~value
+        ~on_input
+        ()
+    =
     stringable_input_opt
       ?extra_attrs
       ?call_on_input_when
@@ -789,9 +913,19 @@ module Entry = struct
       ~type_attrs:[ Attr.type_ "time" ]
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
-  let date ?extra_attrs ?call_on_input_when ?disabled ?placeholder ~value ~on_input () =
+  let date
+        ?extra_attrs
+        ?call_on_input_when
+        ?disabled
+        ?placeholder
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~value
+        ~on_input
+        ()
+    =
     stringable_input_opt
       ?extra_attrs
       ?call_on_input_when
@@ -802,6 +936,7 @@ module Entry = struct
       ~type_attrs:[ Attr.type_ "date" ]
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
   let datetime_local
@@ -810,21 +945,28 @@ module Entry = struct
         ?disabled
         ?placeholder
         ?utc_offset
+        ?(merge_behavior = Merge_behavior.Merge)
         ~value
         ~on_input
         ()
     =
     let hours =
-      Option.value_map
-        utc_offset
-        (* getTimezoneOffset returns the time zone difference, in minutes, from current
-           locale to UTC. Utc offset is the difference from UTC to current locale which
-           is where the minus comes from.
+      (* In tests, we use UTC as the local timezone (i.e. offset 0). This prevents changes
+         between test output around daylight savings time, and if [utc_offset] isn't
+         supplied, then callers should be indifferent to what offset gets used here. *)
+      match Core.am_running_test || Ppx_inline_test_lib.am_running with
+      | true -> 0
+      | false ->
+        Option.value_map
+          utc_offset
+          (* getTimezoneOffset returns the time zone difference, in minutes, from current
+             locale to UTC. Utc offset is the difference from UTC to current locale which
+             is where the minus comes from.
 
-           The minutes have to be converted to hours since that is the format
-           Time.Zone.of_utc_offset expects for the utc_offset. *)
-        ~default:((new%js Js_of_ocaml.Js.date_now)##getTimezoneOffset / -60)
-        ~f:(fun utc_offset -> Time_ns.Span.to_hr utc_offset |> Float.to_int)
+             The minutes have to be converted to hours since that is the format
+             Time.Zone.of_utc_offset expects for the utc_offset. *)
+          ~default:((new%js Js_of_ocaml.Js.date_now)##getTimezoneOffset / -60)
+          ~f:(fun utc_offset -> Time_ns.Span.to_hr utc_offset |> Float.to_int)
     in
     let (module Zoned_time) = Time_compat.zoned (Time_float.Zone.of_utc_offset ~hours) in
     stringable_input_opt
@@ -837,6 +979,7 @@ module Entry = struct
       ~should_normalize:false
       ~value
       ~on_input
+      ~merge_behavior
   ;;
 
   let text_area
@@ -844,13 +987,14 @@ module Entry = struct
         ?(call_on_input_when = Call_on_input_when.Text_changed)
         ?(disabled = false)
         ?(placeholder = "")
+        ?(merge_behavior = Merge_behavior.Merge)
         ~value
         ~on_input
         ()
     =
     Node.textarea
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            ([ Attr.placeholder placeholder
             ; Call_on_input_when.listener call_on_input_when (fun _ev value ->
                 on_input value)
@@ -868,6 +1012,7 @@ module Entry = struct
         ?(extra_attr = Attr.empty)
         ?(call_on_input_when = Call_on_input_when.Text_changed)
         ?disabled
+        ?(merge_behavior = Merge_behavior.Merge)
         ~value
         ~on_input
         ()
@@ -876,24 +1021,30 @@ module Entry = struct
     [ Attr.(type_ "color" @ value_prop value_ @ extra_attr)
     ; Call_on_input_when.listener call_on_input_when (fun _ev s -> on_input (`Hex s))
     ]
-    |> input_node ?disabled
+    |> input_node ?disabled ~merge_behavior
   ;;
 end
 
 module Button = struct
-  let with_validation ?(extra_attrs = []) text ~validation ~on_click =
+  let with_validation
+        ?(extra_attrs = [])
+        ?(merge_behavior = Merge_behavior.Merge)
+        text
+        ~validation
+        ~on_click
+    =
     match validation with
     | Ok result ->
       Node.button
         ~attr:
-          (Attr.many_without_merge
+          ((merge merge_behavior)
              ([ Attr.on_click (fun _ev -> on_click result); Attr.type_ "button" ]
               |> add_attrs extra_attrs))
         [ Node.text text ]
     | Error reason ->
       Node.button
         ~attr:
-          (Attr.many_without_merge
+          ((merge merge_behavior)
              ([ Attr.disabled
               ; Attr.type_ "button"
               ; Attr.create "tooltip" reason
@@ -903,10 +1054,16 @@ module Button = struct
         [ Node.text text ]
   ;;
 
-  let simple ?(extra_attrs = []) ?(disabled = false) text ~on_click =
+  let simple
+        ?(extra_attrs = [])
+        ?(disabled = false)
+        ?(merge_behavior = Merge_behavior.Merge)
+        text
+        ~on_click
+    =
     Node.button
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            ([ Attr.type_ "button"; Attr.on_click (fun _ev -> on_click ()) ]
             |> maybe_disabled ~disabled
             |> add_attrs extra_attrs))
@@ -919,6 +1076,7 @@ module Radio_buttons = struct
         ?(extra_attrs = [])
         ?(disabled = false)
         ?(style : Selectable_style.t = Native)
+        ?(merge_behavior = Merge_behavior.Merge)
         ~orientation
         ~name
         ~on_click
@@ -934,16 +1092,17 @@ module Radio_buttons = struct
         [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
     in
     structural_list
+      ~merge_behavior
       ~orientation
       ([ Attr.classes [ "widget-radio-buttons"; "radio-button-container" ] ]
        |> add_attrs extra_attrs)
       (List.map values ~f:(fun item ->
          let checked = Option.value_map selected ~default:false ~f:(equal item) in
          Node.label
-           ~attr:(Attr.many_without_merge (label_attrs ~checked))
+           ~attr:((merge merge_behavior) (label_attrs ~checked))
            [ Node.input
                ~attr:
-                 (Attr.many_without_merge
+                 (Attr.many
                     ([ Attr.type_ "radio"
                      ; Attr.name name
                      ; Attr.classes [ "radio-button" ]
@@ -962,6 +1121,7 @@ module Radio_buttons = struct
         ?extra_attrs
         ?disabled
         ?style
+        ?(merge_behavior = Merge_behavior.Merge)
         (module E : Equal with type t = t)
         ~name
         ~on_click
@@ -978,6 +1138,7 @@ module Radio_buttons = struct
       ~selected
       ~to_string:E.to_string
       ~equal:E.equal
+      ~merge_behavior
       values
   ;;
 
@@ -986,6 +1147,7 @@ module Radio_buttons = struct
         ?extra_attrs
         ?disabled
         ?style
+        ?(merge_behavior = Merge_behavior.Merge)
         (module E : Equal with type t = t)
         ~name
         ~on_click
@@ -1002,6 +1164,7 @@ module Radio_buttons = struct
       ~selected
       ~to_string:E.to_string
       ~equal:E.equal
+      ~merge_behavior
       values
   ;;
 end
@@ -1020,10 +1183,16 @@ module File_select = struct
          |> String.concat ~sep:",")
   ;;
 
-  let list ?(extra_attrs = []) ?accept ~on_input () =
+  let list
+        ?(extra_attrs = [])
+        ?accept
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~on_input
+        ()
+    =
     Node.input
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            ([ Attr.type_ "file"
             ; accept_attrs accept
             ; Attr.create "multiple" ""
@@ -1041,10 +1210,16 @@ module File_select = struct
       ()
   ;;
 
-  let single ?(extra_attrs = []) ?accept ~on_input () =
+  let single
+        ?(extra_attrs = [])
+        ?accept
+        ?(merge_behavior = Merge_behavior.Merge)
+        ~on_input
+        ()
+    =
     Node.input
       ~attr:
-        (Attr.many_without_merge
+        ((merge merge_behavior)
            ([ Attr.type_ "file"
             ; accept_attrs accept
             ; Attr.on_file_input (fun _ev file_list ->

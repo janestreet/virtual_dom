@@ -7,10 +7,20 @@ type t = keyboardEvent Js.t
 module Keyboard_code = Keyboard_code
 
 let key e = Keyboard_code.of_event e
-let ctrl e = Js.to_bool e##.ctrlKey
-let alt e = Js.to_bool e##.altKey
-let shift e = Js.to_bool e##.shiftKey
-let meta e = Js.to_bool e##.metaKey
+
+let modifier e ~states ~fallback =
+  let from_state =
+    List.exists states ~f:(fun state_name ->
+      Js.to_bool (e##getModifierState (Js.string state_name)))
+  in
+  let from_fallback = Js.to_bool fallback in
+  from_state || from_fallback
+;;
+
+let ctrl e = modifier e ~states:[ "Control"; "AltGraph" ] ~fallback:e##.ctrlKey
+let alt e = modifier e ~states:[ "Alt"; "AltGraph" ] ~fallback:e##.altKey
+let shift e = modifier e ~states:[ "Shift" ] ~fallback:e##.shiftKey
+let meta e = modifier e ~states:[ "Meta" ] ~fallback:e##.metaKey
 
 let match_modifiers ?ctrl:ctrl' ?alt:alt' ?shift:shift' ?meta:meta' e =
   List.for_all

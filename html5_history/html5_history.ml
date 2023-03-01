@@ -330,6 +330,11 @@ module Opinionated = struct
       push_or_replace t.arg_modules t.html5_history action next_state
   ;;
 
+  let replace t next_state : unit =
+    t.current_state <- next_state;
+    push_or_replace t.arg_modules t.html5_history `Replace next_state
+  ;;
+
   let sync_to_bonsai t ~extra_bus ~get_state ~schedule_navigate_to =
     let (_ : _ Bus.Subscriber.t) =
       Bus.subscribe_exn (changes_bus t) [%here] ~f:schedule_navigate_to

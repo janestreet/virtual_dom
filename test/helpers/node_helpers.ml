@@ -229,26 +229,31 @@ let bprint_element_multi_line buffer ~indent element =
   bprint_element buffer ~sep ~before_styles:"  " element
 ;;
 
+let path_regexp = Js_of_ocaml.Regexp.regexp "bonsai_path(_[a-z]*)*"
+let hash_regexp = Js_of_ocaml.Regexp.regexp "_hash_[a-f0-9]+"
+
 let to_string_html
       ?(filter_printed_attributes = fun _key _data -> true)
       ?(censor_paths = true)
       ?(censor_hash = true)
       t
   =
-  let pre_censor to_censor apply_censor f kv =
-    f (if to_censor then Tuple2.map ~f:apply_censor kv else kv)
+  let pre_censor to_censor apply_censor kv =
+    if to_censor then Tuple2.map ~f:apply_censor kv else kv
   in
-  let path_regexp = Re.Str.regexp "bonsai_path\\(_[a-z]*\\)*" in
-  let hash_regexp = Re.Str.regexp "_hash_[a-f0-9]+" in
-  let filter_printed_attributes =
-    (fun (key, data) ->
-       match filter_printed_attributes key data with
-       | true -> Some (key, data)
-       | false -> None)
-    |> pre_censor
-         censor_paths
-         (Re.Str.global_replace path_regexp "bonsai_path_replaced_in_test")
-    |> pre_censor censor_hash (Re.Str.global_replace hash_regexp "_hash_replaced_in_test")
+  let filter_printed_attributes (key, data) =
+    match filter_printed_attributes key data with
+    | true ->
+      (key, data)
+      |> pre_censor censor_paths (fun s ->
+        Js_of_ocaml.Regexp.global_replace
+          path_regexp
+          s
+          "bonsai_path_replaced_in_test")
+      |> pre_censor censor_hash (fun s ->
+        Js_of_ocaml.Regexp.global_replace hash_regexp s "_hash_replaced_in_test")
+      |> Some
+    | false -> None
   in
   (* Keep around the buffer so that it is not re-allocated for every element *)
   let single_line_buffer = Buffer.create 200 in
@@ -337,7 +342,18 @@ let rec unsafe_of_js_exn =
       attributes
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
+      |> List.map ~f:(fun (k, v) ->
+        let k, v = Js.to_string k, Js.to_string v in
+        let v =
+          if [%equal: string] k "class"
+          then
+            v
+            |> String.split ~on:' '
+            |> List.dedup_and_sort ~compare:[%compare: string]
+            |> String.concat ~sep:" "
+          else v
+        in
+        k, v)
     in
     let hooks =
       hooks
@@ -545,8 +561,8 @@ let trigger_hook t ~type_id ~name ~f ~arg =
 ;;
 
 module User_actions = struct
-  let prevent_default = "preventDefault", Js.Unsafe.inject Fn.id
-  let stop_propagation = "stopPropagation", Js.Unsafe.inject Fn.id
+  let prevent_default = "preventDefault", Js.Unsafe.inject (Js.wrap_callback Fn.id)
+  let stop_propagation = "stopPropagation", Js.Unsafe.inject (Js.wrap_callback Fn.id)
   let both_event_handlers = [ prevent_default; stop_propagation ]
 
   let build_event_object
@@ -743,6 +759,7 @@ module User_actions = struct
            ; "key", Js.Unsafe.coerce (Js.string "")
            ; "preventDefault", Js.Unsafe.inject (Js.wrap_callback default_prevented)
            ; "target", target
+           ; "getModifierState", Js.Unsafe.inject (Js.wrap_callback (fun _ -> Js._false))
            ])
   ;;
 

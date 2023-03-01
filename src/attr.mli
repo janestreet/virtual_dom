@@ -171,6 +171,7 @@ val on_keyup : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_keypress : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_keydown : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
+val on_load : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
 val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
@@ -216,6 +217,8 @@ module Multi : sig
 end
 
 module Always_focus_hook : sig
+  (* CONSIDER USING [Bonsai_web.Focus.*] functions *)
+
   (* This hook always causes the element to which it is attached to become
      focused when the element is attached to the DOM. This may behave
      unpredictably, since elements which are moved from one part of a page
@@ -225,6 +228,8 @@ module Always_focus_hook : sig
 end
 
 module Single_focus_hook () : sig
+  (* CONSIDER USING [Bonsai_web.Focus.*] functions *)
+
   (* A hook that makes the element it is attached to become focused immediately
      after the attribute is applied. Afterward, the attribute has no effect on
      the element or any other element.

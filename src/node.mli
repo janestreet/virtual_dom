@@ -77,11 +77,13 @@ val abbr : node_creator
 val body : node_creator
 val button : node_creator
 val code : node_creator
+val datalist : node_creator
 val details : node_creator
 val div : node_creator
 val main : node_creator
 val footer : node_creator
 val fieldset : node_creator
+val legend : node_creator
 val h1 : node_creator
 val h2 : node_creator
 val h3 : node_creator
@@ -91,6 +93,7 @@ val h6 : node_creator
 val header : node_creator
 val html : node_creator
 val input : node_creator_childless
+val img : node_creator_childless
 val textarea : node_creator
 val select : node_creator
 val option : node_creator
@@ -102,6 +105,7 @@ val section : node_creator
 val span : node_creator
 val strong : node_creator
 val summary : node_creator
+val iframe : node_creator
 val table : node_creator
 val tbody : node_creator
 val td : node_creator

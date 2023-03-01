@@ -82,10 +82,10 @@ type t =
       ; hook : Hooks.t
       }
   | Style of Css_gen.t
-  | Class of (string, String.comparator_witness) Set.t
+  | Class of string list
   | Many of t list
   | Many_only_merge_classes_and_styles of
-      t list * (Css_gen.t -> Css_gen.t) * (String.Set.t -> String.Set.t)
+      t list * (Css_gen.t -> Css_gen.t) * (string list -> string list)
   | Many_without_merge of t list
 
 let create name value =
@@ -160,7 +160,7 @@ end
 
 type merge =
   { styles : Css_gen.t
-  ; classes : Set.M(String).t
+  ; classes : string list
   ; handlers : Event_handler.t Map.M(String).t
   ; hooks : Hooks.t Map.M(String).t
   }
@@ -173,7 +173,7 @@ let combining_map_add map key value ~combine =
 
 let empty_merge =
   { styles = Css_gen.empty
-  ; classes = Set.empty (module String)
+  ; classes = []
   ; handlers = Map.empty (module String)
   ; hooks = Map.empty (module String)
   }
@@ -204,11 +204,13 @@ let to_raw attr =
     second
   in
   let take_second_classes first second =
-    if not (Set.is_empty first)
-    then
+    if not (List.is_empty first)
+    then (
+      let first = List.sort ~compare:[%compare: string] first in
+      let second = List.sort ~compare:[%compare: string] second in
       Unmerged_warning_mode.warn_s
         [%message
-          "WARNING: not combining classes" (first : String.Set.t) (second : String.Set.t)];
+          "WARNING: not combining classes" (first : string list) (second : string list)]);
     second
   in
   let take_second_handler ~key:name _first second =
@@ -280,7 +282,7 @@ let to_raw attr =
             ~combine_hook:(fun ~key:_ -> Hooks.combine)
             ~combine_handler:(fun ~key:_ -> Event_handler.combine)
             ~combine_styles:Css_gen.combine
-            ~combine_classes:Set.union
+            ~combine_classes:Core.( @ )
             empty_merge
             attrs
         in
@@ -296,7 +298,7 @@ let to_raw attr =
             ~combine_hook:take_second_hook
             ~combine_handler:take_second_handler
             ~combine_styles:Css_gen.combine
-            ~combine_classes:Set.union
+            ~combine_classes:Core.( @ )
             empty_merge
             attrs
         in
@@ -350,14 +352,13 @@ let to_raw attr =
       Raw.Attrs.set_property attrs_obj "style" (obj :> Js.Unsafe.any))
   in
   let () =
-    if Set.is_empty merge.classes
+    if List.is_empty merge.classes
     then ()
     else
       Raw.Attrs.set_attribute
         attrs_obj
         "class"
-        (Js.Unsafe.inject
-           (Js.string (String.concat (Set.to_list merge.classes) ~sep:" ")))
+        (Js.Unsafe.inject (Js.string (String.concat merge.classes ~sep:" ")))
   in
   attrs_obj
 ;;
@@ -369,30 +370,9 @@ let to_raw attr =
 ;;
 
 let style css = Style css
-
-let valid_class_name s =
-  let invalid = String.is_empty s || String.exists s ~f:Char.is_whitespace in
-  not invalid
-;;
-
-let%test "valid" = valid_class_name "foo-bar"
-let%test "invalid-empty" = not (valid_class_name "")
-let%test "invalid-space" = not (valid_class_name "foo bar")
-
-let class_ classname =
-  if not (valid_class_name classname)
-  then raise_s [%message "invalid classname" (classname : string)];
-  Class (Set.singleton (module String) classname)
-;;
-
-let classes' classes = Class classes
-
-let classes classnames =
-  if not (List.for_all ~f:valid_class_name classnames)
-  then raise_s [%message "invalid classnames" (classnames : string list)];
-  classes' (Set.of_list (module String) classnames)
-;;
-
+let class_ classname = Class [ classname ]
+let classes' classes = Class (Set.to_list classes)
+let classes classnames = Class classnames
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
@@ -475,6 +455,7 @@ let on_keyup = on Type_id.keyboard "keyup"
 let on_keypress = on Type_id.keyboard "keypress"
 let on_keydown = on Type_id.keyboard "keydown"
 let on_scroll = on Type_id.event "scroll"
+let on_load = on Type_id.event "load"
 let on_submit = on Type_id.submit "submit"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
@@ -616,11 +597,7 @@ module Multi = struct
   type nonrec t = t list
 
   let map_style t ~f = [ Many_only_merge_classes_and_styles (t, f, Fn.id) ]
-
-  let add_class t c =
-    [ Many_only_merge_classes_and_styles (t, Fn.id, fun cs -> Set.add cs c) ]
-  ;;
-
+  let add_class t c = [ Many_only_merge_classes_and_styles (t, Fn.id, fun cs -> c :: cs) ]
   let add_style t s = map_style t ~f:(fun ss -> Css_gen.combine ss s)
 
   let merge_classes_and_styles t =

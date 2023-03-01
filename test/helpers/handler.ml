@@ -69,7 +69,7 @@ let throwing_proxy =
     let base = base |> List.to_array |> Js.Unsafe.obj |> Js.Unsafe.inject in
     let throwing_function = throwing_function |> Js.wrap_callback |> Js.Unsafe.inject in
     let path = Js.Unsafe.inject Js.null in
-    create_proxy base throwing_function path
+    Js.Unsafe.fun_call create_proxy [| base; throwing_function; path |]
 ;;
 
 let trigger ?(extra_fields = []) t =

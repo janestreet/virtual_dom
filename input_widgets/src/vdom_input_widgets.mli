@@ -9,6 +9,17 @@ include module type of Vdom_input_widgets_intf
     not valid decimals and cannot be used in number inputs. *)
 module Decimal : Stringable.S with type t = float
 
+module Merge_behavior : sig
+  type t =
+    | Merge
+    (** Specifies that a widget should use [Vdom.Attr.many] when combining
+        several attributes into one. *)
+    | Legacy_dont_merge
+    (** Specifies that a widget should use [Vdom.Attr.many_without_merge] when
+        combining several attributes into one. This is legacy behavior, so new
+        code should always prefer to use [Merge]. *)
+end
+
 module Validated : sig
   (* A type implementing storage for a text field that can be interpreted as ['a].
 
@@ -53,7 +64,9 @@ module Dropdown : sig
       emits typed actions when the user selects a different item. *)
   val of_values
     :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a
@@ -63,7 +76,10 @@ module Dropdown : sig
   (** Same as [of_values], but includes a blank first entry to represent [None]. *)
   val of_values_opt
     :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
+    -> ?placeholder:string (** default "" *)
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a option
@@ -74,7 +90,9 @@ module Dropdown : sig
       items and order. *)
   val of_enum
     :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Enum with type t = 'a)
     -> selected:'a
     -> on_change:('a -> unit Effect.t)
@@ -84,7 +102,10 @@ module Dropdown : sig
       items and order. Include a blank entry to represent [None] *)
   val of_enum_opt
     :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
+    -> ?placeholder:string (** default "" *)
     -> (module Enum with type t = 'a)
     -> selected:'a option
     -> on_change:('a option -> unit Effect.t)
@@ -95,6 +116,7 @@ module Checkbox : sig
   val simple
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> is_checked:bool
     -> label:string
     -> on_toggle:unit Effect.t
@@ -110,6 +132,7 @@ module Checklist : sig
     -> ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?layout:[ `Vertical | `Horizontal ] (** default `Vertical *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Display with type t = 'a)
     -> 'a list
     -> is_checked:('a -> bool)
@@ -122,6 +145,7 @@ module Checklist : sig
     :  ?style:Selectable_style.t (** default [Native] *)
     -> ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Enum with type t = 'a)
     -> is_checked:('a -> bool)
     -> on_toggle:('a -> unit Effect.t)
@@ -153,6 +177,7 @@ module Multi_select : sig
     -> ?repeated_click_behavior:Repeated_click_behavior.t (** default [No_action] *)
     -> ?disabled:bool (** default false *)
     -> ?size:int (** default: length of the values list *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Set with type t = 'a and type comparator_witness = 'cmp)
     -> 'a list
     -> selected:('a, 'cmp) Set.t
@@ -164,6 +189,7 @@ module Multi_select : sig
     -> ?repeated_click_behavior:Repeated_click_behavior.t (** default [No_action] *)
     -> ?disabled:bool (** default false *)
     -> ?size:int (** default: number of enum values *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Enum_set with type t = 'a and type comparator_witness = 'cmp)
     -> selected:('a, 'cmp) Set.t
     -> on_change:(('a, 'cmp) Set.t -> unit Effect.t)
@@ -189,6 +215,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:string
     -> on_input:(string -> unit Effect.t)
     -> unit
@@ -201,6 +228,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> on_input:('a option -> unit Effect.t)
@@ -226,6 +254,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Stringable with type t = 'a)
     -> value:'a Validated.t
     -> on_input:('a Validated.update -> unit Effect.t)
@@ -238,6 +267,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:string option
     -> on_input:(string option -> unit Effect.t)
     -> unit
@@ -258,6 +288,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> step:float
@@ -272,6 +303,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> step:float
@@ -285,6 +317,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:Time_ns.Ofday.t option
     -> on_input:(Time_ns.Ofday.t option -> unit Effect.t)
     -> unit
@@ -297,6 +330,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:Date.t option
     -> on_input:(Date.t option -> unit Effect.t)
     -> unit
@@ -315,6 +349,7 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?utc_offset:Time_ns.Span.t
+    -> ?merge_behavior:Merge_behavior.t
     (** If blank the browser local timezone is used. Max accuracy 1h. *)
     -> value:Time_ns.t option
     -> on_input:(Time_ns.t option -> unit Effect.t)
@@ -327,6 +362,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:string
     -> on_input:(string -> unit Effect.t)
     -> unit
@@ -340,6 +376,7 @@ module Entry : sig
     :  ?extra_attr:Attr.t (** default Attr.empty *)
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> value:[ `Hex of string ]
     -> on_input:([> `Hex of string ] -> unit Effect.t)
     -> unit
@@ -352,6 +389,7 @@ module Button : sig
   val simple
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
+    -> ?merge_behavior:Merge_behavior.t
     -> string
     -> on_click:(unit -> unit Effect.t)
     -> Node.t
@@ -363,6 +401,7 @@ module Button : sig
       with the [Result] applicative interface. *)
   val with_validation
     :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?merge_behavior:Merge_behavior.t
     -> string
     -> validation:('a, string) Result.t
     -> on_click:('a -> unit Effect.t)
@@ -378,6 +417,7 @@ module Radio_buttons : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?style:Selectable_style.t (** default [Native] *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Equal with type t = 'a)
     -> name:string
     -> on_click:('a -> unit Effect.t)
@@ -391,6 +431,7 @@ module Radio_buttons : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?style:Selectable_style.t (** default [Native] *)
+    -> ?merge_behavior:Merge_behavior.t
     -> (module Equal with type t = 'a)
     -> name:string
     -> on_click:('a -> unit Effect.t)
@@ -405,6 +446,7 @@ module File_select : sig
   val single
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?accept:[ `Extension of string | `Mimetype of string ] list
+    -> ?merge_behavior:Merge_behavior.t
     (** Restrict the user's choice to certain files, by extension or by mimetype. *)
     -> on_input:(Js_of_ocaml.File.file Js.t option -> unit Effect.t)
     -> unit
@@ -413,6 +455,7 @@ module File_select : sig
   val list
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?accept:[ `Extension of string | `Mimetype of string ] list
+    -> ?merge_behavior:Merge_behavior.t
     (** Restrict the user's choice to certain files, by extension or by mimetype. *)
     -> on_input:(Js_of_ocaml.File.file Js.t list -> unit Effect.t)
     -> unit

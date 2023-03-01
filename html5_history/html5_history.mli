@@ -160,6 +160,10 @@ module Opinionated : sig
       you're looking at within that view change). *)
   val update : 's t -> 's -> unit
 
+  (** Like [update], but does not "push" a state even if the [Uri_routing.t] changes as a
+      result of this update. *)
+  val replace : 's t -> 's -> unit
+
   (** [extra_bus] is [Bonsai_web.Start.Handle.extra]; [get_state] projects the history
       state out of your "extra" value, and [schedule_navigate_to] should use whatever
       combination of [Handle.inject_incoming] or kicking off async jobs is required to

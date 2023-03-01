@@ -82,6 +82,7 @@ module App = struct
     let widgets =
       [ ( "Dropdown.of_values"
         , Dropdown.of_values
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ]
             ~selected:model.example
@@ -91,31 +92,36 @@ module App = struct
             (module Example)
             [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ]
             ~selected:model.example_opt
-            ~on_change:(fun example_opt -> inject (Set { model with example_opt })) )
+            ~on_change:(fun example_opt -> inject (Set { model with example_opt }))
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Dropdown.of_enum"
         , Dropdown.of_enum
             (module Example)
             ~selected:model.example
-            ~on_change:(fun example -> inject (Set { model with example })) )
+            ~on_change:(fun example -> inject (Set { model with example }))
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Dropdown.of_enum_opt"
         , Dropdown.of_enum_opt
             (module Example)
             ~selected:model.example_opt
-            ~on_change:(fun example_opt -> inject (Set { model with example_opt })) )
+            ~on_change:(fun example_opt -> inject (Set { model with example_opt }))
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Radio_buttons.of_values"
         , Radio_buttons.of_values
             (module Example)
             ~name:"radio_buttons_of_values"
             ~on_click:(fun example -> inject (Set { model with example }))
             ~selected:(Some model.example)
-            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
+            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ]
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Radio_buttons.of_values_horizontal"
         , Radio_buttons.of_values_horizontal
             (module Example)
             ~name:"radio_buttons_of_values_horizontal"
             ~on_click:(fun example -> inject (Set { model with example }))
             ~selected:(Some model.example)
-            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
+            [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ]
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Radio_buttons.of_values_horizontal with button-like style"
         , Radio_buttons.of_values_horizontal
             (module Example)
@@ -123,21 +129,25 @@ module App = struct
             ~name:"radio_buttons_of_values_horizontal_button_like"
             ~on_click:(fun example -> inject (Set { model with example }))
             ~selected:(Some model.example)
+            ~merge_behavior:Legacy_dont_merge
             [ Foo; Baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz ] )
       ; ( "Checkbox.checkbox"
         , Checkbox.simple
             ~is_checked:(Set.mem model.examples Foo)
             ~label:"Foo"
             ~on_toggle:(inject (Set (Model.toggle model Foo)))
+            ~merge_behavior:Legacy_dont_merge
             () )
       ; ( "Checklist.of_values"
         , Checklist.of_values
             (module Example)
             [ Foo; Bar ]
             ~is_checked:(Set.mem model.examples)
-            ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
+            ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt)))
+            ~merge_behavior:Legacy_dont_merge )
       ; ( "Checklist.of_values with button-like style"
         , Checklist.of_values
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             [ Foo; Bar ]
             ~style:Selectable_style.barebones_button_like
@@ -146,28 +156,33 @@ module App = struct
             ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
       ; ( "Checklist.of_enum"
         , Checklist.of_enum
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             ~is_checked:(Set.mem model.examples)
             ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
       ; ( "Multi_select.of_values"
         , Multi_select.of_values
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             [ Foo; Bar ]
             ~selected:model.examples
             ~on_change:(fun examples -> inject (Set { model with examples })) )
       ; ( "Multi_select.of_enum ~repeated_click_behavior:Select_all"
         , Multi_select.of_enum
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             ~repeated_click_behavior:Select_all
             ~selected:model.examples
             ~on_change:(fun examples -> inject (Set { model with examples })) )
       ; ( "Entry.of_stringable"
         , Entry.of_stringable
+            ~merge_behavior:Legacy_dont_merge
             (module Example)
             ~value:model.example_opt
             ~on_input:(fun example_opt -> inject (Set { model with example_opt })) )
       ; ( "Entry.validated (Time_ns.Span.t, press Enter = clear)"
         , Entry.validated
+            ~merge_behavior:Legacy_dont_merge
             (module Time_ns.Span)
             ~value:model.time_span
             ~on_input:(fun time_span ->
@@ -177,51 +192,73 @@ module App = struct
               inject (Set { model with time_span = Validated.initial_empty })) )
       ; ( "Entry.raw (press Enter = clear)"
         , Entry.raw
+            ~merge_behavior:Legacy_dont_merge
             ~value:(Option.value model.string_opt ~default:"")
             ~on_input:(fun string -> inject (Set { model with string_opt = Some string }))
             ~on_return:(fun () -> inject (Set { model with string_opt = None }))
             () )
       ; ( "Entry.text"
-        , Entry.text () ~value:model.string_opt ~on_input:(fun string_opt ->
-            inject (Set { model with string_opt })) )
+        , Entry.text
+            ~merge_behavior:Legacy_dont_merge
+            ()
+            ~value:model.string_opt
+            ~on_input:(fun string_opt -> inject (Set { model with string_opt })) )
       ; ( "Entry.number (int)"
         , Entry.number
+            ~merge_behavior:Legacy_dont_merge
             (module Int)
             ~step:1.0
             ~value:model.int_opt
             ~on_input:(fun int_opt -> inject (Set { model with int_opt })) )
       ; ( "Entry.number (decimal)"
         , Entry.number
+            ~merge_behavior:Legacy_dont_merge
             (module Decimal)
             ~step:1.0
             ~value:model.float_opt
             ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
       ; ( "Entry.range (int)"
         , Entry.range
+            ~merge_behavior:Legacy_dont_merge
             (module Int)
             ~step:1.0
             ~value:model.int_opt
             ~on_input:(fun int_opt -> inject (Set { model with int_opt })) )
       ; ( "Entry.range (decimal)"
         , Entry.range
+            ~merge_behavior:Legacy_dont_merge
             (module Decimal)
             ~step:0.1
             ~value:model.float_opt
             ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
       ; ( "Entry.datetime_local"
-        , Entry.datetime_local () ~value:model.time_ns_opt ~on_input:(fun time_ns_opt ->
-            inject (Set { model with time_ns_opt })) )
+        , Entry.datetime_local
+            ~merge_behavior:Legacy_dont_merge
+            ()
+            ~value:model.time_ns_opt
+            ~on_input:(fun time_ns_opt -> inject (Set { model with time_ns_opt })) )
       ; ( "Entry.time (of_day)"
-        , Entry.time () ~value:model.time_of_day_opt ~on_input:(fun time_of_day_opt ->
-            inject (Set { model with time_of_day_opt })) )
+        , Entry.time
+            ~merge_behavior:Legacy_dont_merge
+            ()
+            ~value:model.time_of_day_opt
+            ~on_input:(fun time_of_day_opt -> inject (Set { model with time_of_day_opt }))
+        )
       ; ( "Entry.color_picker"
-        , Entry.color_picker () ~value:model.color ~on_input:(fun color ->
-            inject (Set { model with color })) )
+        , Entry.color_picker
+            ~merge_behavior:Legacy_dont_merge
+            ()
+            ~value:model.color
+            ~on_input:(fun color -> inject (Set { model with color })) )
       ; ( "Button.reset_date"
-        , Button.simple "Set date to now" ~on_click:(fun () ->
-            inject (Set { model with time_ns_opt = Some (Time_ns.now ()) })) )
+        , Button.simple
+            ~merge_behavior:Legacy_dont_merge
+            "Set date to now"
+            ~on_click:(fun () ->
+              inject (Set { model with time_ns_opt = Some (Time_ns.now ()) })) )
       ; ( "Button.submit"
         , Button.with_validation
+            ~merge_behavior:Legacy_dont_merge
             "Submit"
             ~validation:
               (Result.of_option
@@ -230,6 +267,7 @@ module App = struct
             ~on_click:(fun _input -> inject (Set { model with string_opt = None })) )
       ; ( "File_select.single"
         , File_select.single
+            ~merge_behavior:Legacy_dont_merge
             ~accept:[ `Extension ".png"; `Mimetype "image/jpeg" ]
             ~on_input:(fun file ->
               let selected_files =
@@ -240,6 +278,7 @@ module App = struct
             () )
       ; ( "File_select.list"
         , File_select.list
+            ~merge_behavior:Legacy_dont_merge
             ~on_input:(fun files ->
               let selected_files =
                 List.map files ~f:(fun file -> Js_of_ocaml.Js.to_string file##.name)

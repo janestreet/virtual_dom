@@ -298,3 +298,9 @@ let get_grouped_help_text_exn ?include_disabled_keys ?custom_group_order t =
     t
     ~get_group:(Option.value_exn ~here:[%here])
 ;;
+
+let get_action t keystroke =
+  match Map.find t keystroke with
+  | Some (_uid, action) -> Some action
+  | None -> None
+;;

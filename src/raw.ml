@@ -195,7 +195,7 @@ module Widget = struct
 
   (* here is how we throw away type information.  Our good old friend Obj.magic,
      but constrained a little bit *)
-  let node_of_widget : (_, _) widget Js.t -> Node.t = Caml.Obj.magic
+  let node_of_widget : (_, _) widget Js.t -> Node.t = Stdlib.Obj.magic
 
   module State_keeper = struct
     type box = T : ('a * _) Type_equal.Id.t * 'a -> box

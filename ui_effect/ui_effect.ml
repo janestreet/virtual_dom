@@ -1,4 +1,4 @@
-open! Core
+open! Base
 include Ui_effect_intf
 
 type 'a t = ..
@@ -13,8 +13,8 @@ module Obj = struct
   module Extension_constructor = struct
     [@@@ocaml.warning "-3"]
 
-    let id = Caml.Obj.extension_id
-    let of_val = Caml.Obj.extension_constructor
+    let id = Stdlib.Obj.extension_id
+    let of_val = Stdlib.Obj.extension_constructor
   end
 end
 
@@ -69,7 +69,7 @@ let handle_registered_event (T (t, cb)) =
 module Print_s = Define (struct
     module Action = Sexp
 
-    let handle s = print_s s
+    let handle s = Stdio.print_s s
   end)
 
 let print_s = Print_s.inject
@@ -98,7 +98,7 @@ let never = Never
 let of_fun ~f = Fun f
 let lazy_ a = Lazy a
 
-include Core.Monad.Make (struct
+include Base.Monad.Make (struct
     type nonrec 'a t = 'a t
 
     let return = return
@@ -171,16 +171,16 @@ module Advanced = struct
   module For_testing = struct
     module Svar = struct
       type 'a state =
-        | Empty of { handlers : ('a -> unit) Bag.t }
+        | Empty of { mutable handlers : ('a -> unit) list }
         | Full of 'a
 
       type 'a t = 'a state ref
 
-      let create () = ref (Empty { handlers = Bag.create () })
+      let create () = ref (Empty { handlers = [] })
 
       let upon t handler =
         match !t with
-        | Empty { handlers } -> ignore (Bag.add handlers handler : _ Bag.Elt.t)
+        | Empty t -> t.handlers <- handler :: t.handlers
         | Full x -> handler x
       ;;
 
@@ -188,7 +188,7 @@ module Advanced = struct
         match !t with
         | Full _ -> ()
         | Empty { handlers } ->
-          Bag.iter handlers ~f:(fun handler -> handler x);
+          List.iter handlers ~f:(fun handler -> handler x);
           t := Full x
       ;;
 
@@ -217,18 +217,18 @@ module Advanced = struct
         ; response : 'r Svar.t
         }
 
-      type ('q, 'r) t = ('q, 'r) rpc Bag.t
+      type ('q, 'r) t = ('q, 'r) rpc list ref
 
-      let create () = Bag.create ()
+      let create () = ref []
 
       let add_query t query =
         let response = Svar.create () in
-        ignore (Bag.add t { query; response } : _ Bag.Elt.t);
+        t := { query; response } :: !t;
         response
       ;;
 
       let queries_pending_response t =
-        Bag.to_list t |> List.map ~f:(fun { query; response = _ } -> query)
+        List.map !t ~f:(fun { query; response = _ } -> query)
       ;;
 
       type 'r maybe_respond =
@@ -236,7 +236,8 @@ module Advanced = struct
         | Respond of 'r
 
       let maybe_respond t ~f =
-        Bag.filter_inplace t ~f:(fun { query; response } ->
+        t
+        := List.filter !t ~f:(fun { query; response } ->
           match f query with
           | No_response_yet -> true
           | Respond resp ->

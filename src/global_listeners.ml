@@ -53,18 +53,71 @@ module Mousemove = Make (struct
     let event_kind = Dom_html.Event.mousemove
   end)
 
+module Click = Make (struct
+    type event = Dom_html.mouseEvent
+
+    let event_kind = Dom_html.Event.click
+  end)
+
+module Contextmenu = Make (struct
+    type event = Dom_html.mouseEvent
+
+    let event_kind = Dom_html.Event.make "contextmenu"
+  end)
+
 module Keydown = Make (struct
     type event = Dom_html.keyboardEvent
 
     let event_kind = Dom_html.Event.keydown
   end)
 
+module Visibilitychange = Make (struct
+    type event = Dom_html.event
+
+    let event_kind = Dom_html.Event.make "visibilitychange"
+  end)
+
+module Beforeunload = Make (struct
+    type event = Dom_html.event
+
+    let event_kind = Dom_html.Event.make "beforeunload"
+  end)
+
 let mouseup f = Mouseup.create f |> Attr.create_hook "global-mouseup-listener"
 let mousemove f = Mousemove.create f |> Attr.create_hook "global-mousemove-listener"
+let click f = Click.create f |> Attr.create_hook "global-click-listener"
+let contextmenu f = Contextmenu.create f |> Attr.create_hook "global-contextmenu-listener"
 let keydown f = Keydown.create f |> Attr.create_hook "global-keydown-listener"
+
+class type event_with_string_return_value =
+  object
+    (* Events with [returnValue] are impossible to properly type, so we make one that
+       is specialized for string, and cast our before_unload type to it. *)
+    method returnValue : Js.js_string Js.t Js.writeonly_prop
+  end
+
+let beforeunload f =
+  let f event =
+    match%bind.Effect f event with
+    | `Show_warning ->
+      let event : event_with_string_return_value Js.t = Obj.magic event in
+      event##.returnValue := Js.string "this string can be anything";
+      Effect.Ignore
+    | `Do_nothing -> Effect.Ignore
+  in
+  Beforeunload.create f |> Attr.create_hook "global-beforeunload-listener"
+;;
+
+let visibilitychange f =
+  Visibilitychange.create f |> Attr.create_hook "global-visibilitychange-listener"
+;;
 
 module For_testing = struct
   let mouseup_type_id = Mouseup.For_testing.type_id
   let mousemove_type_id = Mousemove.For_testing.type_id
   let keydown_type_id = Keydown.For_testing.type_id
+  let click_type_id = Click.For_testing.type_id
+  let contextmenu_type_id = Contextmenu.For_testing.type_id
+  let visibilitychange_type_id = Visibilitychange.For_testing.type_id
+  let beforeunload_type_id = Beforeunload.For_testing.type_id
 end

@@ -23,9 +23,8 @@ end
 
 (* Dedup keystrokes that map to the same string, e.g. Enter and NumpadEnter. *)
 let dedup_keys keys =
-  List.dedup_and_sort
-    keys
-    ~compare:(Comparable.lift String.compare ~f:Keystroke.to_string_hum)
+  List.dedup_and_sort keys ~compare:(fun a b ->
+    Comparable.lift String.compare ~f:Keystroke.to_string_hum a b)
 ;;
 
 (* If a command has "consecutive" keystrokes, we display only the first and the last in

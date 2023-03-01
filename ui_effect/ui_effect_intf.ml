@@ -1,4 +1,4 @@
-open! Core
+open! Base
 
 module type Handler = sig
   module Action : sig

@@ -16,16 +16,17 @@ depends: [
   "core_kernel"
   "js_of_ocaml_patches"
   "ppx_jane"
+  "stdio"
   "base64"              {>= "3.4.0"}
   "dune"                {>= "2.0.0"}
   "gen_js_api"          {>= "1.0.8"}
   "js_of_ocaml"         {>= "4.0"}
   "js_of_ocaml-ppx"     {>= "4.0"}
   "lambdasoup"          {>= "0.6.3"}
-  "re"                  {>= "1.8.0"}
   "tyxml"               {>= "4.3.0"}
   "uri"                 {>= "3.0.0"}
 ]
+available: arch != "arm32" & arch != "x86_32"
 synopsis: "OCaml bindings for the virtual-dom library"
 description: "
 The library itself may be found at
