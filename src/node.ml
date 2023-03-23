@@ -23,8 +23,8 @@ and t =
       }
 
 module Aliases = struct
-  type node_creator = ?key:string -> ?attr:Attr.t -> t list -> t
-  type node_creator_childless = ?key:string -> ?attr:Attr.t -> unit -> t
+  type node_creator = ?key:string -> ?attrs:Attr.t list -> t list -> t
+  type node_creator_childless = ?key:string -> ?attrs:Attr.t list -> unit -> t
 end
 
 module Element = struct
@@ -76,8 +76,8 @@ let element kind ~tag ~key attrs children =
   { kind; tag; key; attrs; raw_attrs; children = children_raw }
 ;;
 
-let create tag ?key ?(attr = Attr.empty) children =
-  Element (element `Vnode ~tag ~key attr children)
+let create tag ?key ?(attrs = []) children =
+  Element (element `Vnode ~tag ~key (Attr.many attrs) children)
 ;;
 
 module Widget = struct
@@ -171,14 +171,14 @@ let widget ?vdom_for_testing ?destroy ?update ~id ~init () =
   Widget (Widget.create ~vdom_for_testing ?destroy ?update ~id ~init ())
 ;;
 
-let create_childless tag ?key ?attr () = create tag ?key ?attr []
+let create_childless tag ?key ?attrs () = create tag ?key ?attrs []
 
-let create_svg tag ?key ?(attr = Attr.empty) children =
-  Element (element `Svg ~tag ~key attr children)
+let create_svg tag ?key ?(attrs = []) children =
+  Element (element `Svg ~tag ~key (Attr.many attrs) children)
 ;;
 
-let create_svg_monoid tag ?key ?(attr = Attr.empty) children =
-  Element (element `Svg ~tag ~key attr children)
+let create_svg_monoid tag ?key ?(attrs = []) children =
+  Element (element `Svg ~tag ~key (Attr.many attrs) children)
 ;;
 
 let none = None
@@ -202,25 +202,25 @@ module Inner_html = struct
       (fun
         ?override_vdom_for_testing
         ~tag
-        ~attr
+        ~attrs
         ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
         ()
         ->
-          let element = create tag ~attr [] in
+          let element = create tag ~attrs [] in
           let init () =
             let element = to_dom element in
             element##.innerHTML := Js.string content;
-            (content, tag, attr), element
+            (content, tag, attrs), element
           in
           let update (prev_content, prev_tag, prev_attr) element =
             let element =
               (* if the tag or the attributes are different, do a diff/patch cycle to
                  get it up to date *)
-              if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attr)
+              if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
               then
                 Raw.Patch.create
-                  ~previous:(create prev_tag ~attr:prev_attr [] |> to_raw)
-                  ~current:(create tag ~attr [] |> to_raw)
+                  ~previous:(create prev_tag ~attrs:prev_attr [] |> to_raw)
+                  ~current:(create tag ~attrs [] |> to_raw)
                 |> Raw.Patch.apply element
               else element
             in
@@ -229,7 +229,7 @@ module Inner_html = struct
                obvious reasons. *)
             if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
             then element##.innerHTML := Js.string content;
-            (content, tag, attr), element
+            (content, tag, attrs), element
           in
           (* We use the [widget] function directly, rather than through the
              easier-to-use [widget_of_module] function because we want to
@@ -237,7 +237,7 @@ module Inner_html = struct
              [inner_html] and [inner_html_svg]. *)
           let vdom_for_testing =
             match override_vdom_for_testing with
-            | None -> lazy (create tag ~attr [ text content ])
+            | None -> lazy (create tag ~attrs [ text content ])
             | Some v -> v
           in
           widget ~id ~vdom_for_testing ~init ~update ())
@@ -245,13 +245,14 @@ module Inner_html = struct
 end
 
 let inner_html_svg =
-  Inner_html.widget ~name:"inner-html-svg-node" (fun tag ~attr ->
-    create_svg_monoid tag ?key:None ~attr)
+  Inner_html.widget ~name:"inner-html-svg-node" (fun tag ~attrs ->
+    create_svg_monoid tag ?key:None ~attrs)
   |> Staged.unstage
 ;;
 
 let inner_html =
-  Inner_html.widget ~name:"inner-html-node" (fun tag ~attr -> create tag ?key:None ~attr)
+  Inner_html.widget ~name:"inner-html-node" (fun tag ~attrs ->
+    create tag ?key:None ~attrs)
   |> Staged.unstage
 ;;
 
@@ -280,6 +281,7 @@ let img = create_childless "img"
 let input_deprecated = create "input"
 let textarea = create "textarea"
 let select = create "select"
+let optgroup = create "optgroup"
 let option = create "option"
 let label = create "label"
 let li = create "li"
@@ -288,6 +290,8 @@ let pre = create "pre"
 let section = create "section"
 let span = create "span"
 let strong = create "strong"
+let em = create "em"
+let blockquote = create "blockquote"
 let summary = create "summary"
 let iframe = create "iframe"
 let table = create "table"
@@ -300,9 +304,12 @@ let ul = create "ul"
 let ol = create "ol"
 let br = create_childless "br"
 let hr = create_childless "hr"
+let dl = create "dl"
+let dt = create "dt"
+let dd = create "dd"
 
 let sexp_for_debugging ?indent sexp =
-  sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre ~attr:Attr.empty
+  sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre ~attrs:[]
 ;;
 
 module Patch = struct

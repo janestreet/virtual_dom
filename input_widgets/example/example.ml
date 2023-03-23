@@ -203,6 +203,12 @@ module App = struct
             ()
             ~value:model.string_opt
             ~on_input:(fun string_opt -> inject (Set { model with string_opt })) )
+      ; ( "Entry.password"
+        , Entry.password
+            ~merge_behavior:Legacy_dont_merge
+            ()
+            ~value:model.string_opt
+            ~on_input:(fun string_opt -> inject (Set { model with string_opt })) )
       ; ( "Entry.number (int)"
         , Entry.number
             ~merge_behavior:Legacy_dont_merge
@@ -288,7 +294,9 @@ module App = struct
       ]
     in
     let title text =
-      Node.h2 ~attr:(Attr.style (Css_gen.font_family [ "monospace" ])) [ Node.text text ]
+      Node.h2
+        ~attrs:[ Attr.style (Css_gen.font_family [ "monospace" ]) ]
+        [ Node.text text ]
     in
     Node.div
       (List.map widgets ~f:(fun (name, node) -> Node.section [ title name; node ])

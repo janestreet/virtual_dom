@@ -41,7 +41,7 @@ let spacer ?(attrs = []) ?min_width ?min_height () =
     let mh = Option.value_map min_height ~default:Css_gen.empty ~f:Css_gen.min_height in
     Css_gen.concat [ mw; mh ]
   in
-  Node.span ~attr:(Attr.many_without_merge (Attr.style style :: attrs)) []
+  Node.span ~attrs:[ Attr.many_without_merge (Attr.style style :: attrs) ] []
 ;;
 
 let as_box
@@ -50,7 +50,7 @@ let as_box
       ?align_items
       (node_creator : Node.Aliases.node_creator)
       ?key
-      ?attr
+      ?attrs
       nodes
   =
   let nodes =
@@ -78,7 +78,7 @@ let as_box
            then style
            else Css_gen.(style @> create ~field:"flex-shrink" ~value:"0")))
   in
-  let node = node_creator ?key ?attr nodes in
+  let node = node_creator ?key ?attrs nodes in
   let direction =
     (direction :> [ `Row | `Column | `Row_reverse | `Column_reverse | `Default ])
   in
@@ -88,17 +88,17 @@ let as_box
 let as_hbox = as_box `Row
 let as_vbox = as_box `Column
 
-let hbox ?gap ?align_items ?key ?attr children =
-  as_hbox ?gap ?align_items Node.div ?key ?attr children
+let hbox ?gap ?align_items ?key ?attrs children =
+  as_hbox ?gap ?align_items Node.div ?key ?attrs children
 ;;
 
-let vbox ?gap ?align_items ?key ?attr children =
-  as_vbox ?gap ?align_items Node.div ?key ?attr children
+let vbox ?gap ?align_items ?key ?attrs children =
+  as_vbox ?gap ?align_items Node.div ?key ?attrs children
 ;;
 
-let body ?(direction = `Column) ?gap ?align_items ?key ?attr nodes =
+let body ?(direction = `Column) ?gap ?align_items ?key ?attrs nodes =
   let p100 = Percent.of_percentage 100.0 in
-  as_box direction ?gap ?align_items Node.body ?key ?attr nodes
+  as_box direction ?gap ?align_items Node.body ?key ?attrs nodes
   |> add_style
        ~style:
          Css_gen.(
@@ -110,20 +110,21 @@ let body ?(direction = `Column) ?gap ?align_items ?key ?attr nodes =
 
 let on_grayed_out_background nodes =
   Node.div
-    ~attr:
-      (Attr.style
-         Css_gen.(
-           position ~left:(`Px 0) ~top:(`Px 0) `Fixed
-           @> width Length.percent100
-           @> height Length.percent100
-           @> overflow `Auto
-           @> background_color
-                (`RGBA
-                   (Color.RGBA.create ~r:0 ~g:0 ~b:0 ~a:(Percent.of_percentage 40.) ()))))
+    ~attrs:
+      [ Attr.style
+          Css_gen.(
+            position ~left:(`Px 0) ~top:(`Px 0) `Fixed
+            @> width Length.percent100
+            @> height Length.percent100
+            @> overflow `Auto
+            @> background_color
+                 (`RGBA
+                    (Color.RGBA.create ~r:0 ~g:0 ~b:0 ~a:(Percent.of_percentage 40.) ())))
+      ]
     nodes
 ;;
 
-let modal ?(direction = `Row) ?gap ?align_items ?key ?(attr = Attr.empty) nodes =
+let modal ?(direction = `Row) ?gap ?align_items ?key ?(attrs = []) nodes =
   on_grayed_out_background
     [ as_box
         direction
@@ -131,19 +132,20 @@ let modal ?(direction = `Row) ?gap ?align_items ?key ?(attr = Attr.empty) nodes 
         ?gap
         ?align_items
         ?key
-        ~attr:
-          (Attr.many_without_merge
-             [ Attr.style
-                 Css_gen.(
-                   margin_top (`Percent (Percent.of_percentage 15.0))
-                   @> margin_left `Auto
-                   @> margin_right `Auto
-                   @> width (`Percent (Percent.of_percentage 80.0))
-                   @> background_color (`Name "#fefefe")
-                   @> uniform_padding (`Px 20)
-                   @> border ~width:(`Px 2) ~style:`Solid ~color:(`Name "black") ())
-             ; attr
-             ])
+        ~attrs:
+          [ Attr.many_without_merge
+              ([ Attr.style
+                   Css_gen.(
+                     margin_top (`Percent (Percent.of_percentage 15.0))
+                     @> margin_left `Auto
+                     @> margin_right `Auto
+                     @> width (`Percent (Percent.of_percentage 80.0))
+                     @> background_color (`Name "#fefefe")
+                     @> uniform_padding (`Px 20)
+                     @> border ~width:(`Px 2) ~style:`Solid ~color:(`Name "black") ())
+               ]
+               @ attrs)
+          ]
         nodes
     ]
 ;;

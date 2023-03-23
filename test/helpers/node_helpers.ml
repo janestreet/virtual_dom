@@ -43,8 +43,7 @@ let is_tag ~tag = function
 let has_class ~cls = function
   | Element { attributes; _ } ->
     List.exists attributes ~f:(function
-      | "class", data ->
-        data |> String.split ~on:' ' |> List.exists ~f:(String.equal cls)
+      | "class", data -> data |> String.split ~on:' ' |> List.exists ~f:(String.equal cls)
       | _ -> false)
   | _ -> false
 ;;
@@ -236,6 +235,8 @@ let to_string_html
       ?(filter_printed_attributes = fun _key _data -> true)
       ?(censor_paths = true)
       ?(censor_hash = true)
+      ?(path_censoring_message = "bonsai_path_replaced_in_test")
+      ?(hash_censoring_message = "_hash_replaced_in_test")
       t
   =
   let pre_censor to_censor apply_censor kv =
@@ -246,12 +247,9 @@ let to_string_html
     | true ->
       (key, data)
       |> pre_censor censor_paths (fun s ->
-        Js_of_ocaml.Regexp.global_replace
-          path_regexp
-          s
-          "bonsai_path_replaced_in_test")
+        Js_of_ocaml.Regexp.global_replace path_regexp s path_censoring_message)
       |> pre_censor censor_hash (fun s ->
-        Js_of_ocaml.Regexp.global_replace hash_regexp s "_hash_replaced_in_test")
+        Js_of_ocaml.Regexp.global_replace hash_regexp s hash_censoring_message)
       |> Some
     | false -> None
   in
@@ -546,9 +544,9 @@ let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a 
         | Some T -> value
         | None ->
           failwithf
-            "get_hook_value: a hook for %s was found, but the type-ids were not the same; \
-             are you using the same type-id that you got from the For_testing module from \
-             your hook creator?"
+            "get_hook_value: a hook for %s was found, but the type-ids were not the \
+             same; are you using the same type-id that you got from the For_testing \
+             module from your hook creator?"
             name
             ())
      | None -> failwithf "get_hook_value: no hook found with name %s" name ())

@@ -89,12 +89,11 @@ let click f = Click.create f |> Attr.create_hook "global-click-listener"
 let contextmenu f = Contextmenu.create f |> Attr.create_hook "global-contextmenu-listener"
 let keydown f = Keydown.create f |> Attr.create_hook "global-keydown-listener"
 
-class type event_with_string_return_value =
-  object
-    (* Events with [returnValue] are impossible to properly type, so we make one that
-       is specialized for string, and cast our before_unload type to it. *)
-    method returnValue : Js.js_string Js.t Js.writeonly_prop
-  end
+class type event_with_string_return_value = object
+  (* Events with [returnValue] are impossible to properly type, so we make one that
+     is specialized for string, and cast our before_unload type to it. *)
+  method returnValue : Js.js_string Js.t Js.writeonly_prop
+end
 
 let beforeunload f =
   let f event =

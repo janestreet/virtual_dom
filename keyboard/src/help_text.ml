@@ -15,7 +15,7 @@ module View_spec = struct
   let with_classes ~key_class ~plain_text_class =
     let text_span class_ text =
       let open Vdom in
-      Node.span ~attr:(Attr.class_ class_) [ Node.text text ]
+      Node.span ~attrs:[ Attr.class_ class_ ] [ Node.text text ]
     in
     { key = text_span key_class; plain_text = text_span plain_text_class }
   ;;
@@ -125,9 +125,9 @@ let view_rows ?(sep = " or ") t (view_spec : View_spec.t) =
   List.map commands ~f:(fun command ->
     Node.tr
       [ Node.td
-          ~attr:(align `Right)
+          ~attrs:[ align `Right ]
           (Command.view_keys command view_spec ~sep @ [ view_spec.plain_text " : " ])
-      ; Node.td ~attr:(align `Left) [ Command.view_description command view_spec ]
+      ; Node.td ~attrs:[ align `Left ] [ Command.view_description command view_spec ]
       ])
 ;;
 

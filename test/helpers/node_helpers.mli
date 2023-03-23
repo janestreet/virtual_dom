@@ -37,6 +37,8 @@ val to_string_html
   :  ?filter_printed_attributes:(string -> string -> bool)
   -> ?censor_paths:bool
   -> ?censor_hash:bool
+  -> ?path_censoring_message:string
+  -> ?hash_censoring_message:string
   -> t
   -> string
 

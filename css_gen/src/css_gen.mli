@@ -242,6 +242,7 @@ val white_space
   -> t
 
 val float : [ `None | `Left | `Right | css_global_values ] -> t
+val line_height : Length.t -> t
 val width : Length.t -> t
 val min_width : Length.t -> t
 val max_width : Length.t -> t

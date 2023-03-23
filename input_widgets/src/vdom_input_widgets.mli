@@ -273,6 +273,19 @@ module Entry : sig
     -> unit
     -> Node.t
 
+  (** Creates a password input that equates an empty input with [None] and a non-empty
+      input as [Some string]. *)
+  val password
+    :  ?extra_attrs:Attr.t list (** default empty *)
+    -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
+    -> ?disabled:bool (** default false *)
+    -> ?placeholder:string (** default blank *)
+    -> ?merge_behavior:Merge_behavior.t
+    -> value:string option
+    -> on_input:(string option -> unit Effect.t)
+    -> unit
+    -> Node.t
+
   (** Creates a number input that equates an empty input with [None] and a non-empty input
       as [Some 'a]. Because number input values are represented as strings in HTML, you
       can use any module that deserializes integral values. If [of_string] raises an

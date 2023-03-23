@@ -61,8 +61,8 @@ module Widget : sig
   end
 end
 
-type node_creator := ?key:string -> ?attr:Attr.t -> t list -> t
-type node_creator_childless := ?key:string -> ?attr:Attr.t -> unit -> t
+type node_creator := ?key:string -> ?attrs:Attr.t list -> t list -> t
+type node_creator_childless := ?key:string -> ?attrs:Attr.t list -> unit -> t
 
 module Aliases : sig
   type nonrec node_creator = node_creator
@@ -96,6 +96,7 @@ val input : node_creator_childless
 val img : node_creator_childless
 val textarea : node_creator
 val select : node_creator
+val optgroup : node_creator
 val option : node_creator
 val label : node_creator
 val li : node_creator
@@ -104,6 +105,8 @@ val pre : node_creator
 val section : node_creator
 val span : node_creator
 val strong : node_creator
+val em : node_creator
+val blockquote : node_creator
 val summary : node_creator
 val iframe : node_creator
 val table : node_creator
@@ -116,6 +119,9 @@ val ul : node_creator
 val ol : node_creator
 val br : node_creator_childless
 val hr : node_creator_childless
+val dl : node_creator
+val dt : node_creator
+val dd : node_creator
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (* [lazy_] allows you to defer the computation of a virtual-dom node until
@@ -135,7 +141,7 @@ val lazy_ : ?key:string -> t Lazy.t -> t
 val inner_html
   :  ?override_vdom_for_testing:t Lazy.t
   -> tag:string
-  -> attr:Attr.t
+  -> attrs:Attr.t list
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> unit
   -> t
@@ -144,7 +150,7 @@ val inner_html
 val inner_html_svg
   :  ?override_vdom_for_testing:t Lazy.t
   -> tag:string
-  -> attr:Attr.t
+  -> attrs:Attr.t list
   -> this_html_is_sanitized_and_is_totally_safe_trust_me:string
   -> unit
   -> t

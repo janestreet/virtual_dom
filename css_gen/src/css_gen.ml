@@ -446,6 +446,7 @@ let float f =
   create_raw ~field:"float" ~value
 ;;
 
+let line_height = create_length_field "line-height"
 let width = create_length_field "width"
 let min_width = create_length_field "min-width"
 let max_width = create_length_field "max-width"

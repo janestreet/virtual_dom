@@ -1,6 +1,6 @@
 open Virtual_dom.Vdom
 
-type node_creator := ?key:string -> ?attr:Attr.t -> Node.t list -> Node.t
+type node_creator := ?key:string -> ?attrs:Attr.t list -> Node.t list -> Node.t
 
 val svg : node_creator
 val a : node_creator

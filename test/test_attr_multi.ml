@@ -11,15 +11,15 @@ let show node =
 let%expect_test "combining classes and styles" =
   show
     (Node.div
-       ~attr:
-         Attr.(
-           many_without_merge
-             (Multi.merge_classes_and_styles
+       ~attrs:
+         [ Attr.many_without_merge
+             (Attr.Multi.merge_classes_and_styles
                 [ Attr.class_ "abc"
                 ; Attr.class_ "123"
                 ; Attr.style (Css_gen.margin ~top:(`Px 10) ())
                 ; Attr.style (Css_gen.margin ~bottom:(`Px 20) ())
-                ]))
+                ])
+         ]
        []);
   [%expect
     {|
@@ -33,9 +33,10 @@ let%expect_test "combining classes and styles" =
 let%expect_test "add class" =
   show
     (Node.div
-       ~attr:
-         Attr.(
-           many_without_merge (Multi.add_class [ autofocus true; class_ "def" ] "abc"))
+       ~attrs:
+         [ Attr.many_without_merge
+             (Attr.Multi.add_class [ Attr.autofocus true; Attr.class_ "def" ] "abc")
+         ]
        []);
   [%expect
     {|

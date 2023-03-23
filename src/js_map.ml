@@ -1,12 +1,11 @@
 open! Js_of_ocaml
 open! Js
 
-class type ['a, 'b] map =
-  object ('self)
-    method set : 'a -> 'b -> unit meth
-    method get : 'a -> 'b Optdef.t meth
-    method delete : 'a -> unit meth
-  end
+class type ['a, 'b] map = object ('self)
+  method set : 'a -> 'b -> unit meth
+  method get : 'a -> 'b Optdef.t meth
+  method delete : 'a -> unit meth
+end
 
 type ('a, 'b) t = ('a, 'b) map Js.t
 

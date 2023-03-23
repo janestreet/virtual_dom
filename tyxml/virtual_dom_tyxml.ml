@@ -78,11 +78,11 @@ module Xml = struct
   ;;
 
   let leaf ?(a = []) name =
-    Vdom.Node.create name ~attr:(Vdom.Attr.many_without_merge (make_a a)) []
+    Vdom.Node.create name ~attrs:[ Vdom.Attr.many_without_merge (make_a a) ] []
   ;;
 
   let node ?(a = []) name children =
-    Vdom.Node.create name ~attr:(Vdom.Attr.many_without_merge (make_a a)) children
+    Vdom.Node.create name ~attrs:[ Vdom.Attr.many_without_merge (make_a a) ] children
   ;;
 
   let cdata s = pcdata s
@@ -94,11 +94,11 @@ module Xml_Svg = struct
   include Xml
 
   let leaf ?(a = []) name =
-    Vdom.Node.create_svg name ~attr:(Vdom.Attr.many_without_merge (make_a a)) []
+    Vdom.Node.create_svg name ~attrs:[ Vdom.Attr.many_without_merge (make_a a) ] []
   ;;
 
   let node ?(a = []) name children =
-    Vdom.Node.create_svg name ~attr:(Vdom.Attr.many_without_merge (make_a a)) children
+    Vdom.Node.create_svg name ~attrs:[ Vdom.Attr.many_without_merge (make_a a) ] children
   ;;
 end
 

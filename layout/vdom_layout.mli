@@ -3,7 +3,7 @@ open! Core
 module Attr := Virtual_dom.Vdom.Attr
 module Node := Virtual_dom.Vdom.Node
 
-type node_creator := ?key:string -> ?attr:Attr.t -> Node.t list -> Node.t
+type node_creator := ?key:string -> ?attrs:Attr.t list -> Node.t list -> Node.t
 
 (** If node is an Element, do nothing other than returning that Element.
     Otherwise put a div around the node and return the div's Element. *)

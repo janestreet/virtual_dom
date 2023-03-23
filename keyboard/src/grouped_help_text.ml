@@ -13,7 +13,7 @@ module View_spec = struct
   let with_classes ~group_name_class ~key_class ~plain_text_class =
     let text_div class_ text =
       let open Vdom in
-      Node.div ~attr:(Attr.class_ class_) [ Node.text text ]
+      Node.div ~attrs:[ Attr.class_ class_ ] [ Node.text text ]
     in
     { core_spec = Help_text.View_spec.with_classes ~key_class ~plain_text_class
     ; group_name = text_div group_name_class
@@ -106,11 +106,12 @@ let view t (view_spec : View_spec.t) =
       let group_name_row =
         Node.tr
           [ Node.td
-              ~attr:
-                (Attr.many_without_merge
-                   [ Attr.create "colspan" "2"
-                   ; Css_gen.text_align `Center |> Attr.style
-                   ])
+              ~attrs:
+                [ Attr.many_without_merge
+                    [ Attr.create "colspan" "2"
+                    ; Css_gen.text_align `Center |> Attr.style
+                    ]
+                ]
               [ view_spec.group_name group_name ]
           ]
       in

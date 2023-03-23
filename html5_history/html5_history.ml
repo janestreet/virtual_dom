@@ -226,9 +226,9 @@ module Opinionated = struct
         ~on_bad_uri
     =
     let module Arg_modules = struct
-      module History_state = (val history_state_module : History_state
-                              with type t = s
-                               and type uri_routing = u)
+      module History_state =
+        (val history_state_module
+          : History_state with type t = s and type uri_routing = u)
 
       module Uri_routing = (val uri_routing_module : Uri_routing with type t = u)
     end
@@ -253,8 +253,8 @@ module Opinionated = struct
            let message =
              [%message
                "Html5_history"
-                 "The server should not have served up the main HTML file on this uri, as \
-                  it does not route"
+                 "The server should not have served up the main HTML file on this uri, \
+                  as it does not route"
                  ~uri:(Uri.to_string uri)]
            in
            (match on_bad_uri with
@@ -282,8 +282,7 @@ module Opinionated = struct
       let bus = Html5_history.popstate_bus html5_history in
       Bus.subscribe_exn bus [%here] ~f:(fun state ->
         match state.payload with
-        | None ->
-          log_s t [%message "Html5_history" "ignored popstate due to no payload"]
+        | None -> log_s t [%message "Html5_history" "ignored popstate due to no payload"]
         | Some payload ->
           log_s t [%message "Html5_history" "popstate" ~_:(payload : History_state.t)];
           t.current_state <- payload;

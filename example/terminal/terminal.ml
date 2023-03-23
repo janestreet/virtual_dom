@@ -3,11 +3,10 @@ open Virtual_dom
 open Core
 open Vdom
 
-class type terminal =
-  object
-    method get_command_ : Js.js_string Js.t Js.meth
-    method echo : Js.js_string Js.t -> unit Js.meth
-  end
+class type terminal = object
+  method get_command_ : Js.js_string Js.t Js.meth
+  method echo : Js.js_string Js.t -> unit Js.meth
+end
 
 let terminal =
   let id = Type_equal.Id.create ~name:"terminal-id" Sexplib.Conv.sexp_of_opaque in

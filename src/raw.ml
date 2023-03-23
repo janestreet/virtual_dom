@@ -39,37 +39,36 @@ type virtual_dom_node
 type virtual_dom_patch
 
 module Virtual_dom = struct
-  class type virtual_dom =
-    object
-      method _VNode :
-        (Js.js_string Js.t
-         -> Attrs.t
-         -> virtual_dom_node Js.t Js.js_array Js.t
-         -> Js.js_string Js.t Js.optdef
-         -> virtual_dom_node Js.t)
-          Js.constr
-          Js.readonly_prop
+  class type virtual_dom = object
+    method _VNode :
+      (Js.js_string Js.t
+       -> Attrs.t
+       -> virtual_dom_node Js.t Js.js_array Js.t
+       -> Js.js_string Js.t Js.optdef
+       -> virtual_dom_node Js.t)
+        Js.constr
+        Js.readonly_prop
 
-      method _VText :
-        (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
+    method _VText :
+      (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
 
-      method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
+    method createElement : virtual_dom_node Js.t -> Dom_html.element Js.t Js.meth
 
-      method diff :
-        virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
+    method diff :
+      virtual_dom_node Js.t -> virtual_dom_node Js.t -> virtual_dom_patch Js.t Js.meth
 
-      method patch :
-        Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t Js.meth
+    method patch :
+      Dom_html.element Js.t -> virtual_dom_patch Js.t -> Dom_html.element Js.t Js.meth
 
-      method svg :
-        (Js.js_string Js.t
-         -> Attrs.t
-         -> virtual_dom_node Js.t Js.js_array Js.t
-         -> Js.js_string Js.t Js.optdef
-         -> virtual_dom_node Js.t)
-          Js.constr
-          Js.readonly_prop
-    end
+    method svg :
+      (Js.js_string Js.t
+       -> Attrs.t
+       -> virtual_dom_node Js.t Js.js_array Js.t
+       -> Js.js_string Js.t Js.optdef
+       -> virtual_dom_node Js.t)
+        Js.constr
+        Js.readonly_prop
+  end
 
   let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
 end
@@ -152,38 +151,37 @@ module Patch = struct
 end
 
 module Widget = struct
-  class type ['s, 'element] widget =
-    object
-      constraint 'element = #Dom_html.element Js.t
-      method type_ : Js.js_string Js.t Js.writeonly_prop
+  class type ['s, 'element] widget = object
+    constraint 'element = #Dom_html.element Js.t
+    method type_ : Js.js_string Js.t Js.writeonly_prop
 
-      (* virtual-dom considers two widgets of being of the same "kind" if either
-         of the following holds:
+    (* virtual-dom considers two widgets of being of the same "kind" if either
+       of the following holds:
 
-         1. They both have a "name" attribute and their "id" fields are equal.
-         (I think this is probably a bug in virtual-dom and have field an issue
-         on github: [https://github.com/Matt-Esch/virtual-dom/issues/380])
+       1. They both have a "name" attribute and their "id" fields are equal.
+       (I think this is probably a bug in virtual-dom and have field an issue
+       on github: [https://github.com/Matt-Esch/virtual-dom/issues/380])
 
-         2. Their [init] methods are "===" equal. This is true when using virtual-dom
-         widgets in the usual style in Javascript, since the [init] method will be defined
-         on a prototype, but is not true in this binding as it is redefined for each
-         call to [widget].
+       2. Their [init] methods are "===" equal. This is true when using virtual-dom
+       widgets in the usual style in Javascript, since the [init] method will be defined
+       on a prototype, but is not true in this binding as it is redefined for each
+       call to [widget].
 
-         So, we go with option 1 and must have a trivial field called [name].
-      *)
-      method name : unit Js.writeonly_prop
-      method id : ('s * 'element) Type_equal.Id.t Js.prop
-      method state : 's Js.prop
-      method vdomForTesting : Node.t Lazy.t option Js.prop
-      method info : Sexp.t Lazy.t option Js.prop
-      method destroy : ('element -> unit) Js.callback Js.writeonly_prop
+       So, we go with option 1 and must have a trivial field called [name].
+    *)
+    method name : unit Js.writeonly_prop
+    method id : ('s * 'element) Type_equal.Id.t Js.prop
+    method state : 's Js.prop
+    method vdomForTesting : Node.t Lazy.t option Js.prop
+    method info : Sexp.t Lazy.t option Js.prop
+    method destroy : ('element -> unit) Js.callback Js.writeonly_prop
 
-      method update :
-        (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
-          Js.writeonly_prop
+    method update :
+      (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
+        Js.writeonly_prop
 
-      method init : (unit -> 'element) Js.callback Js.writeonly_prop
-    end
+    method init : (unit -> 'element) Js.callback Js.writeonly_prop
+  end
 
   (* We model JS level objects here so there is a lot of throwing away of type
      information.  We could possibly try to rediscover more of it.  Or maybe we

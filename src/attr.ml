@@ -273,8 +273,7 @@ let to_raw attr =
         { acc with hooks = combining_map_add acc.hooks name hook ~combine:combine_hook }
       | Handler { name; handler } ->
         { acc with
-          handlers =
-            combining_map_add acc.handlers name handler ~combine:combine_handler
+          handlers = combining_map_add acc.handlers name handler ~combine:combine_handler
         }
       | Many attrs ->
         let sub_merge =
@@ -376,6 +375,7 @@ let classes classnames = Class classnames
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
+let label r = create "label" r
 let target s = create "target" s
 let checked = create "checked" ""
 let selected = create "selected" ""
@@ -395,8 +395,10 @@ let value x = create "value" x
 let value_prop x = string_property "value" x
 let tabindex x = create "tabindex" (Int.to_string x)
 let title x = create "title" x
+let alt x = create "alt" x
 let src x = create "src" x
 let open_ = create "open" ""
+let start x = create "start" (Int.to_string x)
 let min x = create_float "min" x
 let max x = create_float "max" x
 let min_date x = create "min" (Date.to_string x)
@@ -468,11 +470,10 @@ let on_reset = on Type_id.event "reset"
 let on_animationend = on Type_id.animation "animationend"
 let const_ignore _ = Effect.Ignore
 
-class type value_element =
-  object
-    inherit Dom_html.element
-    method value : Js.js_string Js.t Js.prop
-  end
+class type value_element = object
+  inherit Dom_html.element
+  method value : Js.js_string Js.t Js.prop
+end
 
 type value_coercion = Dom_html.element Js.t -> value_element Js.t Js.opt
 

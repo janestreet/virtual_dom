@@ -69,6 +69,7 @@ val classes : string list -> t
 val classes' : Set.M(String).t -> t
 val disabled : t
 val for_ : string -> t
+val label : string -> t
 val href : string -> t
 val target : string -> t
 val id : string -> t
@@ -102,8 +103,10 @@ val value : string -> t
 (* "value" can be both an attribute and a property. *)
 val value_prop : string -> t
 val title : string -> t
+val alt : string -> t
 val src : string -> t
 val open_ : t
+val start : int -> t
 val on_focus : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 val on_blur : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 
