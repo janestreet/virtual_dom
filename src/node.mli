@@ -132,7 +132,7 @@ val lazy_ : ?key:string -> t Lazy.t -> t
 
 (** This function can be used to build a node with the tag and html content of
     that node provided as a string.  If this function was called with
-    [~tag:"div" [] ~this_html...:"<b> hello world</b>"] then the resulting node would be
+    [~tag:"div" ~attrs:[] ~this_html...:"<b> hello world</b>"] then the resulting node would be
     [<div><b> hello world </b></div>]
 
     For totally sanitized content strings, this is fine; but if a user can influence

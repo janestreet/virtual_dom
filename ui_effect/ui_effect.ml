@@ -9,20 +9,11 @@ type hidden = T : ('a t * ('a -> unit)) -> hidden
 
 let handlers : (hidden -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:8
 
-module Obj = struct
-  module Extension_constructor = struct
-    [@@@ocaml.warning "-3"]
-
-    let id = Stdlib.Obj.extension_id
-    let of_val = Stdlib.Obj.extension_constructor
-  end
-end
-
 module Define (Handler : Handler) :
   S with type action := Handler.Action.t and type 'a t := 'a t = struct
   type _ t += C : Handler.Action.t -> unit t
 
-  let key = Obj.Extension_constructor.id [%extension_constructor C]
+  let key = Stdlib.Obj.Extension_constructor.id [%extension_constructor C]
 
   let () =
     Hashtbl.add_exn handlers ~key ~data:(fun inp ->
@@ -40,7 +31,7 @@ module Define1 (Handler : Handler1) :
   S1 with type 'a action := 'a Handler.Action.t and type 'a t := 'a t = struct
   type _ t += C : 'a Handler.Action.t -> 'a t
 
-  let key = Obj.Extension_constructor.id [%extension_constructor C]
+  let key = Stdlib.Obj.Extension_constructor.id [%extension_constructor C]
 
   let () =
     Hashtbl.add_exn handlers ~key ~data:(fun inp ->
@@ -60,7 +51,7 @@ module Define1 (Handler : Handler1) :
   let inject v = C v
 end
 
-let get_key t = Obj.Extension_constructor.id (Obj.Extension_constructor.of_val t)
+let get_key t = Stdlib.Obj.Extension_constructor.(id (of_val t))
 
 let handle_registered_event (T (t, cb)) =
   Hashtbl.find_exn handlers (get_key t) (T (t, cb))

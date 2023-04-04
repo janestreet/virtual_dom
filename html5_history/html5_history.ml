@@ -67,10 +67,12 @@ module T = struct
                     ~saved_shape
                     ~expected:t.payload_bin_shape]
             | true ->
-              (* we let this raise, since if the bin shapes are the same it would be a bug
-                 for this to not deserialise correctly. *)
-              let payload = Base64.decode_exn payload in
-              Ok (Binable.of_string (module Payload) payload)))
+              Or_error.try_with (fun () ->
+                (* Even though the bin-shapes are the same and we would expect this to
+                   always succeed, it's still possible that it fails due to serializers
+                   that involve other formats e.g. Binable.Of_sexpable *)
+                let payload = Base64.decode_exn payload in
+                Binable.of_string (module Payload) payload)))
     in
     match result with
     | Ok state -> Some state
