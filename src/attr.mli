@@ -100,6 +100,10 @@ val tabindex : int -> t
 val type_ : string -> t
 val value : string -> t
 
+(* The following 2 attributes apply only to TextAreas. *)
+val rows : int -> t
+val cols : int -> t
+
 (* "value" can be both an attribute and a property. *)
 val value_prop : string -> t
 val title : string -> t

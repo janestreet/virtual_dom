@@ -258,6 +258,7 @@ let inner_html =
 
 let a = create "a"
 let abbr = create "abbr"
+let b = create "b"
 let body = create "body"
 let button = create "button"
 let code = create "code"

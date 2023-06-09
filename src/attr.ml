@@ -407,6 +407,8 @@ let min_date_time x = create "min" (Date.to_string x ^ "T00:00")
 let max_date_time x = create "max" (Date.to_string x ^ "T23:59")
 let colspan x = create "colspan" (Int.to_string x)
 let rowspan x = create "rowspan" (Int.to_string x)
+let rows x = create "rows" (Int.to_string x)
+let cols x = create "cols" (Int.to_string x)
 let draggable b = create "draggable" (Bool.to_string b)
 
 module Type_id = struct

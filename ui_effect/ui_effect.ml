@@ -134,6 +134,7 @@ module Advanced = struct
   module Sync_fun = Define1 (Sync_fun_arg)
 
   let of_sync_fun f a = Sync_fun.inject (T (a, f))
+  let of_thunk f = of_sync_fun f ()
 
   module Private = struct
     module Callback = struct

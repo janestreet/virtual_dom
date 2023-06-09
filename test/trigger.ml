@@ -256,22 +256,53 @@ let%expect_test "fake event handler for on_click" =
   [%expect {| 5 |}]
 ;;
 
-let%expect_test "set checkbox " =
+let checkbox_event_handler e =
+  let open Js_of_ocaml in
+  let checked =
+    let open Option.Let_syntax in
+    let%bind target = e##.target |> Js.Opt.to_option in
+    let%bind coerced = Dom_html.CoerceTo.input target |> Js.Opt.to_option in
+    return (Js.to_bool coerced##.checked)
+  in
+  let shift =
+    Js.Unsafe.get e (Js.string "shiftKey")
+    |> Js.Optdef.to_option
+    |> Option.map ~f:(fun shift_key -> Js.to_bool shift_key)
+  in
+  Effect.print_s [%message (checked : bool option) (shift : bool option)]
+;;
+
+let%expect_test "set checkbox with on_click" =
+  let node =
+    Node.input
+      ~attrs:[ Attr.id "x"; Attr.type_ "checkbox"; Attr.on_click checkbox_event_handler ]
+      ()
+  in
+  let run ~checked ~shift_key_down =
+    node
+    |> Node_helpers.unsafe_convert_exn
+    |> Node_helpers.select_first_exn ~selector:"#x"
+    |> Node_helpers.User_actions.set_checkbox ~checked ~shift_key_down
+  in
+  run ~checked:false ~shift_key_down:false;
+  run ~checked:false ~shift_key_down:true;
+  run ~checked:true ~shift_key_down:false;
+  run ~checked:true ~shift_key_down:true;
+  [%expect
+    {|
+    ((checked (false)) (shift (false)))
+    ((checked (false)) (shift (true)))
+    ((checked (true)) (shift (false)))
+    ((checked (true)) (shift (true))) |}]
+;;
+
+let%expect_test "set checkbox with onchange" =
   let node =
     Node.input
       ~attrs:
         [ Attr.id "x"
         ; Attr.type_ "checkbox"
-        ; Attr.on_click (fun e ->
-            let checked =
-              let open Option.Let_syntax in
-              let open Js_of_ocaml in
-              let%bind target = e##.target |> Js.Opt.to_option in
-              let%bind coerced = Dom_html.CoerceTo.input target |> Js.Opt.to_option in
-              return (Js.to_bool coerced##.checked)
-            in
-            let shift = Js_of_ocaml.Js.to_bool e##.shiftKey in
-            Effect.print_s [%message (checked : bool option) (shift : bool)])
+        ; Attr.on_change (fun e _ -> checkbox_event_handler e)
         ]
       ()
   in
@@ -287,10 +318,10 @@ let%expect_test "set checkbox " =
   run ~checked:true ~shift_key_down:true;
   [%expect
     {|
-    ((checked (false)) (shift false))
-    ((checked (false)) (shift true))
-    ((checked (true)) (shift false))
-    ((checked (true)) (shift true)) |}]
+    ((checked (false)) (shift (false)))
+    ((checked (false)) (shift (true)))
+    ((checked (true)) (shift (false)))
+    ((checked (true)) (shift (true))) |}]
 ;;
 
 let%expect_test "not merged" =

@@ -29,9 +29,9 @@ module Attrs = struct
 
   let set_attribute : t -> string -> t -> unit =
     fun t name value ->
-      if Js_object.is_undefined (Js_object.get_prop_ascii t "attributes")
-      then Js_object.set_prop_ascii t "attributes" (Js_object.empty_obj ());
-      Js_object.set_prop_ascii (Js_object.get_prop_ascii t "attributes") name value
+    if Js_object.is_undefined (Js_object.get_prop_ascii t "attributes")
+    then Js_object.set_prop_ascii t "attributes" (Js_object.empty_obj ());
+    Js_object.set_prop_ascii (Js_object.get_prop_ascii t "attributes") name value
   ;;
 end
 
@@ -87,14 +87,14 @@ module Node = struct
       -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
-      let tag = Js.string tag in
-      let key =
-        match key with
-        | None -> Js.Optdef.empty
-        | Some key -> Js.Optdef.return (Js_of_ocaml.Js.string key)
-      in
-      let vnode = virtual_dom##._VNode in
-      new%js vnode tag attrs children key
+    let tag = Js.string tag in
+    let key =
+      match key with
+      | None -> Js.Optdef.empty
+      | Some key -> Js.Optdef.return (Js_of_ocaml.Js.string key)
+    in
+    let vnode = virtual_dom##._VNode in
+    new%js vnode tag attrs children key
   ;;
 
   let svg
@@ -102,14 +102,14 @@ module Node = struct
       -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
-      let tag = Js.string tag in
-      let key =
-        match key with
-        | None -> Js.Optdef.empty
-        | Some key -> Js.Optdef.return (Js.string key)
-      in
-      let vsvg = virtual_dom##.svg in
-      new%js vsvg tag attrs children key
+    let tag = Js.string tag in
+    let key =
+      match key with
+      | None -> Js.Optdef.empty
+      | Some key -> Js.Optdef.return (Js.string key)
+    in
+    let vsvg = virtual_dom##.svg in
+    new%js vsvg tag attrs children key
   ;;
 
   let text s =

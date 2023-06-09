@@ -687,20 +687,24 @@ module User_actions = struct
         (object%js
           val tagName = Js.string (tag_name_exn element)
           val checked = Js.bool checked
+          val value = Js.string "the 'value' property of a checkbox is not used"
         end)
     in
-    trigger
-      element
-      ~event_name:"onclick"
-      ~extra_fields:
-        (build_event_object
-           ?shift_key_down
-           ?ctrl_key_down
-           ?alt_key_down
-           ?meta_key_down
-           ~extra_event_fields
-           ~include_modifier_keys:true
-           [ "target", target ])
+    let event_object =
+      build_event_object
+        ?shift_key_down
+        ?ctrl_key_down
+        ?alt_key_down
+        ?meta_key_down
+        ~extra_event_fields
+        ~include_modifier_keys:true
+        [ "target", target ]
+    in
+    (* [Vdom_input_widgets] uses [on_click] and [Multi_select] uses
+       [on_change], so we trigger both.  This is safe, as both of these
+       events are actually triggered in the dom, so it's a realistic
+       simulation of what's actually going on in the browser. *)
+    trigger_many element ~event_names:[ "onclick"; "onchange" ] ~extra_fields:event_object
   ;;
 
   let input_text ?extra_event_fields element ~text =

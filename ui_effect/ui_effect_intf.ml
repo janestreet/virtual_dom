@@ -71,9 +71,12 @@ module type Effect = sig
       Note that, unlike [of_deferred_fun], the function must return immediately, so it's not
       possible to test the behaviour of tour app between calling the function and the effect
       becoming 'determined'. If you need to do this, see [of_svar] and
-      [of_query_response_tracker] below.
-  *)
+      [of_query_response_tracker] below. *)
   val of_sync_fun : ('query -> 'result) -> 'query -> 'result t
+
+  (** Like [of_sync_fun] but with a pre-applied unit query. Side-effects in the function
+      will be run every time that the resulting effect is scheduled *)
+  val of_thunk : (unit -> 'result) -> 'result t
 
   module Define (Handler : Handler) :
     S with type action := Handler.Action.t and type 'a t := 'a t
