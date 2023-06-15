@@ -32,10 +32,21 @@ module Color : sig
     val create : h:int -> s:Percent.t -> l:Percent.t -> ?a:Percent.t -> unit -> t
   end
 
+  module LCHA : sig
+    type t [@@deriving sexp, bin_io, compare]
+
+    (** [create ~l ~c ~h ~a] creates a color that corresponds to lch([l], [c], [h], [a]).
+
+        If [a] is omitted then it creates a color that corresponds to lch([l],[c],[h]).
+    *)
+    val create : l:Percent.t -> c:Percent.t -> h:float -> ?a:Percent.t -> unit -> t
+  end
+
 
   type t =
     [ `RGBA of RGBA.t
     | `HSLA of HSLA.t
+    | `LCHA of LCHA.t
     | `Name of string
     | `Hex of string
     | `Var of string

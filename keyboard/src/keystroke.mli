@@ -26,3 +26,11 @@ val shift : t -> bool
 val meta : t -> bool
 val of_event : Keyboard_event.t -> t
 val to_string_hum : t -> string
+
+(** The first string is either "Shift+" or "", depending on whether "Shift" needs to
+    be displayed to indicate the keystrokes. The second is the keyboard code itself.
+    For instance:
+
+    - For '(', returns ["" , "("] instead of ["Shift+", "9"]
+    - For 'A', returns ["Shift+" , "a"] *)
+val shift_string_and_keyboard_code_string : t -> string * string

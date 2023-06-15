@@ -49,9 +49,22 @@ module Color = struct
       let create ~h ~s ~l ?a () = { h; s; l; a }
     end
 
+    module LCHA = struct
+      type t =
+        { l : Percent.t
+        ; c : Percent.t
+        ; h : float
+        ; a : Percent.t option
+        }
+      [@@deriving sexp, bin_io, compare]
+
+      let create ~l ~c ~h ?a () = { l; c; h; a }
+    end
+
     type t =
       [ `RGBA of RGBA.t
       | `HSLA of HSLA.t
+      | `LCHA of LCHA.t
       | `Name of string
       | `Hex of string
       | `Var of string
@@ -63,24 +76,30 @@ module Color = struct
   include T
   include Sexpable.To_stringable (T)
 
+  let alpha_to_string a = f2s 2 (Percent.to_mult a)
+  let percent_to_string percent = f2s 0 (Percent.to_percentage percent)
+  let angle_to_string angle = f2s 2 angle
+
   let to_string_css : [< t ] -> string = function
     | `Inherit -> "inherit"
     | `Initial -> "initial"
     | `RGBA { RGBA.r; g; b; a } ->
       (match a with
        | None -> [%string "rgb(%{r#Int},%{g#Int},%{b#Int})"]
-       | Some p ->
-         [%string "rgba(%{r#Int},%{g#Int},%{b#Int},%{f2s 2 (Percent.to_mult p)})"])
+       | Some a -> [%string "rgba(%{r#Int},%{g#Int},%{b#Int},%{alpha_to_string a})"])
     | `HSLA { HSLA.h; s; l; a } ->
+      let s = percent_to_string s in
+      let l = percent_to_string l in
       (match a with
-       | None ->
-         [%string
-           "hsl(%{h#Int},%{f2s 0 (Percent.to_percentage s)}%,%{f2s 0 \
-            (Percent.to_percentage l)}%)"]
-       | Some p ->
-         [%string
-           "hsla(%{h#Int},%{f2s 0 (Percent.to_percentage s)}%,%{f2s 0 \
-            (Percent.to_percentage l)}%,%{f2s 2 (Percent.to_mult p)})"])
+       | None -> [%string "hsl(%{h#Int},%{s}%,%{l}%)"]
+       | Some a -> [%string "hsla(%{h#Int},%{s}%,%{l}%,%{alpha_to_string a})"])
+    | `LCHA { LCHA.l; c; h; a } ->
+      let l = percent_to_string l in
+      let c = percent_to_string c in
+      let h = angle_to_string h in
+      (match a with
+       | None -> [%string "lch(%{l}% %{c} %{h})"]
+       | Some a -> [%string "lch(%{l}% %{c} %{h} / %{alpha_to_string a})"])
     | `Name name -> name
     | `Hex hex -> hex
     | `Var var -> [%string "var(%{var})"]

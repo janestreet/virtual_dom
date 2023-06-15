@@ -103,6 +103,7 @@ let beforeunload f =
       event##.returnValue := Js.string "this string can be anything";
       Effect.Ignore
     | `Do_nothing -> Effect.Ignore
+    | `Custom_best_effort effect -> effect
   in
   Beforeunload.create f |> Attr.create_hook "global-beforeunload-listener"
 ;;

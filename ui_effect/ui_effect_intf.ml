@@ -85,10 +85,13 @@ module type Effect = sig
     S1 with type 'a action := 'a Handler.Action.t and type 'a t := 'a t
 
   module Expert : sig
-    (** [handle t] looks up the [Handler.handle] function in the table of [Define]d
-        functions, unwraps the [Event.t] back into its underlying [Action.t], and applies
-        the two.  This is only intended for internal use by this library, specifically by
-        the attribute code. *)
+    (** [eval t ~f] runs the given effect, and calls [f] when the effect
+        completes. This function should not be called while constructing
+        effects; it's intended for use by libraries that actually schedule
+        effects, such as Bonsai, or Virtual_dom. *)
+    val eval : 'a t -> f:('a -> unit) -> unit
+
+    (** [handle t] is the same as [eval t ~f:ignore] *)
     val handle : unit t -> unit
 
     (* We use this table for dispatching to the appropriate handler in an efficient way.  *)
@@ -108,7 +111,7 @@ module type Effect = sig
       val respond_to : ('a, 'b) t -> 'b -> unit effect
     end
 
-    val make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit t) -> 'b t
+    val make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit) -> 'b t
   end
 
   module For_testing : sig

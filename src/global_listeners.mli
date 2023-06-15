@@ -20,8 +20,12 @@ val keydown : (Dom_html.keyboardEvent Js.t -> unit Ui_effect.t) -> Attr.t
 (** Other event handlers *)
 val visibilitychange : (Dom_html.event Js.t -> unit Ui_effect.t) -> Attr.t
 
+(* Chrome may not allow Javascript to run after a user requests a tab close, so an
+   effect passed into `Custom_best_effort may or may not execute to completion *)
 val beforeunload
-  :  (Dom_html.event Js.t -> [ `Show_warning | `Do_nothing ] Ui_effect.t)
+  :  (Dom_html.event Js.t
+      -> [ `Show_warning | `Do_nothing | `Custom_best_effort of unit Ui_effect.t ]
+           Ui_effect.t)
   -> Attr.t
 
 module For_testing : sig

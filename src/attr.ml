@@ -438,6 +438,7 @@ let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
 
 let on_focus = on Type_id.focus "focus"
 let on_blur = on Type_id.focus "blur"
+let on_cancel = on Type_id.event "cancel"
 let on_click = on Type_id.mouse "click"
 let on_contextmenu = on Type_id.mouse "contextmenu"
 let on_double_click = on Type_id.mouse "dblclick"

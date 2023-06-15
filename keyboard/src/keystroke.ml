@@ -508,11 +508,7 @@ let keyboard_code_to_string (key : Keyboard_code.t) (key_with_prefix : With_pref
      | _ -> str)
 ;;
 
-let to_string_hum t =
-  let open Core in
-  let ctrl_str = if t.ctrl then "Ctrl+" else "" in
-  let alt_str = if t.alt then "Alt+" else "" in
-  let meta_str = if t.meta then "Meta+" else "" in
+let shift_string_and_keyboard_code_string (t : t) =
   let shift_str, shift_combo_str =
     match t.shift with
     | false -> "", None
@@ -530,6 +526,15 @@ let to_string_hum t =
       in
       keyboard_code_to_string t.key key_with_prefix
   in
+  shift_str, keyboard_code_str
+;;
+
+let to_string_hum t =
+  let open Core in
+  let ctrl_str = if t.ctrl then "Ctrl+" else "" in
+  let alt_str = if t.alt then "Alt+" else "" in
+  let meta_str = if t.meta then "Meta+" else "" in
+  let shift_str, keyboard_code_str = shift_string_and_keyboard_code_string t in
   String.concat [ ctrl_str; alt_str; shift_str; meta_str; keyboard_code_str ]
 ;;
 

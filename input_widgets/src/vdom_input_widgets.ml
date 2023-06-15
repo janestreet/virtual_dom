@@ -242,9 +242,9 @@ module Value_normalizing_hook = struct
 
     let on_mount _input _state _element = ()
 
-    let destroy _input { State.event_id } _element = removeEventListener event_id
-    [@@ocaml.warning
-       "-68"]
+    let destroy _input state =
+      let { State.event_id } = state in
+      fun _element -> removeEventListener event_id
     ;;
 
     let update ~old_input ~new_input state element =

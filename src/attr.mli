@@ -157,6 +157,9 @@ val on_change : (Dom_html.event Js.t -> string -> unit Effect.t) -> t
 *)
 val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> unit Effect.t) -> t
 
+(** Used by dialogs *)
+val on_cancel : (Dom_html.event Js.t -> unit Effect.t) -> t
+
 val on_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 val on_contextmenu : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 val on_double_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t

@@ -80,6 +80,7 @@ val button : node_creator
 val code : node_creator
 val datalist : node_creator
 val details : node_creator
+val dialog : node_creator
 val div : node_creator
 val main : node_creator
 val footer : node_creator

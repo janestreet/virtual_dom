@@ -40,6 +40,10 @@ module Condition : sig
 
   (** [has_target_class] returns true if the event target has the given class *)
   val has_target_class : class_:string -> t
+
+  (** [element_has_target_class] returns true if the element specified by [selector] has
+      the given class *)
+  val element_has_target_class : selector:string -> class_:string -> t
 end
 
 module Handler : sig

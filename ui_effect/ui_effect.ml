@@ -115,6 +115,7 @@ let rec eval : type a. a t -> callback:(a -> unit) -> unit =
 
 module Expert = struct
   let handle = eval ~callback:ignore
+  let eval t ~f = eval t ~callback:f
 
   type hide = hidden = T : ('a t * ('a -> unit)) -> hide
 
@@ -148,7 +149,7 @@ module Advanced = struct
       let respond_to { on_response; _ } response = on_response response
     end
 
-    let make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit t) -> 'b t =
+    let make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit) -> 'b t =
       fun ~request ~evaluator ->
       Expert.of_fun ~f:(fun ~callback ->
         let callback =
@@ -156,7 +157,7 @@ module Advanced = struct
             callback response;
             Ignore)
         in
-        Expert.handle (evaluator callback))
+        evaluator callback)
     ;;
   end
 
