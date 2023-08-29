@@ -389,6 +389,7 @@ let autofocus = function
   | false -> empty
 ;;
 
+let allow x = create "allow" x
 let for_ x = create "for" x
 let type_ x = create "type" x
 let value x = create "value" x

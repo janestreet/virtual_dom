@@ -3,12 +3,15 @@ module Attr = Virtual_dom.Vdom.Attr
 module Node = Virtual_dom.Vdom.Node
 
 let rec wrap_in_element_if_necessary node =
+  let wrap_with_div children =
+    let div = Node.div children in
+    match div with
+    | Node.Element e -> e
+    | _ -> assert false
+  in
   match node with
-  | Node.Text _ | Node.Widget _ | Node.None ->
-    let div = Node.div [ node ] in
-    (match div with
-     | Node.Element e -> e
-     | _ -> assert false)
+  | Node.Text _ | Node.Widget _ | Node.None -> wrap_with_div [ node ]
+  | Fragment children -> wrap_with_div children
   | Node.Lazy { t; _ } -> wrap_in_element_if_necessary (Lazy.force t)
   | Node.Element e -> e
 ;;

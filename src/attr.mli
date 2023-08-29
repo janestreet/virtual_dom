@@ -68,6 +68,7 @@ val class_ : string -> t
 val classes : string list -> t
 val classes' : Set.M(String).t -> t
 val disabled : t
+val allow : string -> t
 val for_ : string -> t
 val label : string -> t
 val href : string -> t

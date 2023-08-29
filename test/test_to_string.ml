@@ -65,6 +65,37 @@ let%expect_test "empty div" =
     <div> </div> |}]
 ;;
 
+let%expect_test "root level fragment converts into a div" =
+  show (Node.fragment []);
+  [%expect
+    {|
+    (Element ((tag_name div)))
+    ----------------------
+    <div> </div> |}]
+;;
+
+let%expect_test "non-root fragment flattens into parent" =
+  show (Node.div [ Node.text "Hello, "; Node.fragment [ Node.text "world" ] ]);
+  [%expect
+    {|
+    (Element ((tag_name div) (children ((Text "Hello, ") (Text world)))))
+    ----------------------
+    <div> Hello,  world </div> |}]
+;;
+
+let%expect_test "deeply nested fragments are completely flattened" =
+  show
+    (Node.div
+       [ Node.text "Hello, "
+       ; Node.fragment [ Node.fragment [ Node.fragment [ Node.text "world" ] ] ]
+       ]);
+  [%expect
+    {|
+    (Element ((tag_name div) (children ((Text "Hello, ") (Text world)))))
+    ----------------------
+    <div> Hello,  world </div> |}]
+;;
+
 let%expect_test "inner_html" =
   show
     (Node.inner_html
@@ -424,7 +455,7 @@ let%expect_test "empty div with [many] different attributes" =
       []
   in
   show
-    ~filter_printed_attributes:(fun key _data -> String.is_prefix ~prefix:"on" key)
+    ~filter_printed_attributes:(fun ~key ~data:_ -> String.is_prefix ~prefix:"on" key)
     view;
   [%expect
     {|
@@ -435,7 +466,8 @@ let%expect_test "empty div with [many] different attributes" =
     ----------------------
     <div onblur onclick> </div> |}];
   show
-    ~filter_printed_attributes:(fun key _data -> not (String.is_prefix ~prefix:"on" key))
+    ~filter_printed_attributes:(fun ~key ~data:_ ->
+      not (String.is_prefix ~prefix:"on" key))
     view;
   [%expect
     {|

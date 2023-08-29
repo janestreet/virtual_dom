@@ -34,7 +34,7 @@ val select_first_exn : t -> selector:string -> t
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
 val to_string_html
-  :  ?filter_printed_attributes:(string -> string -> bool)
+  :  ?filter_printed_attributes:(key:string -> data:string -> bool)
   -> ?censor_paths:bool
   -> ?censor_hash:bool
   -> ?path_censoring_message:string

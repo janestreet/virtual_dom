@@ -153,3 +153,5 @@ val get_grouped_help_text_exn
 
 (** Get the action associated with a keystroke in a keyboard event handler. *)
 val get_action : t -> Keystroke.t -> Action.t option
+
+val handled_keystrokes : t -> Keystroke.Set.t

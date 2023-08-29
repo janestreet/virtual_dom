@@ -232,7 +232,7 @@ let path_regexp = Js_of_ocaml.Regexp.regexp "bonsai_path(_[a-z]*)*"
 let hash_regexp = Js_of_ocaml.Regexp.regexp "_hash_[a-f0-9]+"
 
 let to_string_html
-      ?(filter_printed_attributes = fun _key _data -> true)
+      ?(filter_printed_attributes = fun ~key:_ ~data:_ -> true)
       ?(censor_paths = true)
       ?(censor_hash = true)
       ?(path_censoring_message = "bonsai_path_replaced_in_test")
@@ -243,7 +243,7 @@ let to_string_html
     if to_censor then Tuple2.map ~f:apply_censor kv else kv
   in
   let filter_printed_attributes (key, data) =
-    match filter_printed_attributes key data with
+    match filter_printed_attributes ~key ~data with
     | true ->
       (key, data)
       |> pre_censor censor_paths (fun s ->

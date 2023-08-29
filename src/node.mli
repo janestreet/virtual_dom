@@ -21,6 +21,7 @@ type widget
 
 type t =
   | None
+  | Fragment of t list
   | Text of string
   | Element of Element.t
   | Widget of widget
@@ -70,6 +71,7 @@ module Aliases : sig
 end
 
 val none : t
+val fragment : t list -> t
 val text : string -> t
 val textf : ('a, unit, string, t) format4 -> 'a
 val a : node_creator
@@ -98,6 +100,7 @@ val input : node_creator_childless
 val img : node_creator_childless
 val textarea : node_creator
 val select : node_creator
+val small : node_creator
 val optgroup : node_creator
 val option : node_creator
 val label : node_creator
@@ -124,6 +127,7 @@ val hr : node_creator_childless
 val dl : node_creator
 val dt : node_creator
 val dd : node_creator
+val kbd : node_creator
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (* [lazy_] allows you to defer the computation of a virtual-dom node until

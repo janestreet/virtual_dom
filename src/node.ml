@@ -14,6 +14,7 @@ and widget = Raw.Widget.t
 
 and t =
   | None
+  | Fragment of t list
   | Text of string
   | Element of element
   | Widget of widget
@@ -46,6 +47,24 @@ module Element = struct
   let add_style t s = map_attrs t ~f:(fun a -> Attr.(a @ style s))
 end
 
+let to_raw_children children ~t_to_js =
+  let children_raw = new%js Js.array_empty in
+  let rec append_children children =
+    List.iter children ~f:(function
+      | None -> ()
+      | Fragment children -> append_children children
+      | (Text _ | Element _ | Widget _ | Lazy _) as other ->
+        let (_ : int) = children_raw##push (t_to_js other) in
+        ())
+  in
+  append_children children;
+  children_raw
+;;
+
+(* We emit a warning when a fragment is located in an invalid vdom location. This ref is
+   to ensure we don't spam the console. *)
+let has_emitted_fragment_warning = ref false
+
 let rec t_to_js = function
   | None ->
     (* We normally filter these out, but if [to_js] is called directly on a [None] node,
@@ -53,6 +72,18 @@ let rec t_to_js = function
        Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
        can only happen when the root view Incremental is inhabited by a [None]. *)
     Raw.Node.text ""
+  | Fragment children ->
+    if not (Core.am_running_test || !has_emitted_fragment_warning)
+    then (
+      Firebug.console##error
+        [%string
+          {|Vdom.Node.to_dom was given a Vdom.Node.fragment, which contains multiple nodes.
+            In order to produce a single dom node, we are wrapping the fragment children in a <div>|}];
+      has_emitted_fragment_warning := true);
+    let attrs = Attr.to_raw Attr.empty in
+    let key : string option = None in
+    let children_raw = to_raw_children children ~t_to_js in
+    Raw.Node.node "div" attrs children_raw key
   | Text s -> Raw.Node.text s
   | Element { tag; key; attrs = _; raw_attrs = (lazy raw_attrs); children; kind = `Vnode }
     -> Raw.Node.node tag raw_attrs children key
@@ -66,12 +97,7 @@ and t_to_js_lazy (lazy t) = t_to_js t
 let text s = Text s
 
 let element kind ~tag ~key attrs children =
-  let children_raw = new%js Js.array_empty in
-  List.iter children ~f:(function
-    | None -> ()
-    | (Text _ | Element _ | Widget _ | Lazy _) as other ->
-      let (_ : int) = children_raw##push (t_to_js other) in
-      ());
+  let children_raw = to_raw_children children ~t_to_js in
   let raw_attrs = lazy (Attr.to_raw attrs) in
   { kind; tag; key; attrs; raw_attrs; children = children_raw }
 ;;
@@ -182,6 +208,7 @@ let create_svg_monoid tag ?key ?(attrs = []) children =
 ;;
 
 let none = None
+let fragment children = Fragment children
 let textf format = Printf.ksprintf text format
 
 let widget_of_module m =
@@ -283,6 +310,7 @@ let img = create_childless "img"
 let input_deprecated = create "input"
 let textarea = create "textarea"
 let select = create "select"
+let small = create "small"
 let optgroup = create "optgroup"
 let option = create "option"
 let label = create "label"
@@ -309,6 +337,7 @@ let hr = create_childless "hr"
 let dl = create "dl"
 let dt = create "dt"
 let dd = create "dd"
+let kbd = create "kbd"
 
 let sexp_for_debugging ?indent sexp =
   sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre ~attrs:[]

@@ -32,7 +32,7 @@ module Color = struct
         ; b : int
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, fields]
+      [@@deriving sexp, bin_io, compare]
 
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
@@ -44,7 +44,7 @@ module Color = struct
         ; l : Percent.t
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, fields]
+      [@@deriving sexp, bin_io, compare]
 
       let create ~h ~s ~l ?a () = { h; s; l; a }
     end

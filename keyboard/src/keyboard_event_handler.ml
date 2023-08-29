@@ -310,3 +310,5 @@ let get_action t keystroke =
   | Some (_uid, action) -> Some action
   | None -> None
 ;;
+
+let handled_keystrokes = Map.key_set

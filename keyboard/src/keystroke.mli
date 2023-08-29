@@ -1,7 +1,6 @@
 open Core
 open Js_of_ocaml
 
-(* Js-only: To convert from [Jane_curses_types.Key_for_keybindings] use [Jane_curses_to_vdom]. *)
 
 module Keyboard_code : sig
   type t = Dom_html.Keyboard_code.t
@@ -12,7 +11,7 @@ module Keyboard_code : sig
   val of_event : Dom_html.keyboardEvent Js.t -> t
 end
 
-type t [@@deriving sexp, compare, bin_io, hash]
+type t [@@deriving sexp, compare, bin_io, hash, sexp_grammar]
 
 include Comparable.S_binable with type t := t
 include Hashable.S_binable with type t := t
