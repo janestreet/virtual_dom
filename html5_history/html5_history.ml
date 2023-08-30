@@ -209,11 +209,11 @@ module Opinionated = struct
   let log_s t sexp : unit = Html5_history.log_s t.html5_history sexp
 
   let push_or_replace
-        (type s)
-        (module Arg_modules : Arg_modules with type History_state.t = s)
-        html5_history
-        action
-        state
+    (type s)
+    (module Arg_modules : Arg_modules with type History_state.t = s)
+    html5_history
+    action
+    state
     =
     let open Arg_modules in
     let uri = Uri_routing.to_path_and_query (History_state.to_uri_routing state) in
@@ -221,16 +221,16 @@ module Opinionated = struct
   ;;
 
   let init_exn
-        ?log_s:log_s_arg
-        (type u s)
-        history_state_module
-        uri_routing_module
-        ~on_bad_uri
+    ?log_s:log_s_arg
+    (type u s)
+    history_state_module
+    uri_routing_module
+    ~on_bad_uri
     =
     let module Arg_modules = struct
       module History_state =
         (val history_state_module
-          : History_state with type t = s and type uri_routing = u)
+            : History_state with type t = s and type uri_routing = u)
 
       module Uri_routing = (val uri_routing_module : Uri_routing with type t = u)
     end

@@ -165,10 +165,10 @@ let merge = function
 ;;
 
 let structural_list
-      ?(orientation = `Vertical)
-      ?(merge_behavior = Merge_behavior.Merge)
-      attrs
-      children
+  ?(orientation = `Vertical)
+  ?(merge_behavior = Merge_behavior.Merge)
+  attrs
+  children
   =
   let layout_style =
     match orientation with
@@ -265,15 +265,15 @@ end
 
 module Dropdown = struct
   let impl
-        ?(extra_attrs = [])
-        ?(extra_option_attrs = Fn.const [])
-        ?(disabled = false)
-        ?(merge_behavior = Merge_behavior.Merge)
-        values
-        ~equal
-        ~selected
-        ~to_string
-        ~on_change
+    ?(extra_attrs = [])
+    ?(extra_option_attrs = Fn.const [])
+    ?(disabled = false)
+    ?(merge_behavior = Merge_behavior.Merge)
+    values
+    ~equal
+    ~selected
+    ~to_string
+    ~on_change
     =
     Node.select
       ~attrs:
@@ -296,15 +296,15 @@ module Dropdown = struct
   ;;
 
   let of_values
-        (type t)
-        ?extra_attrs
-        ?extra_option_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Equal with type t = t)
-        values
-        ~selected
-        ~on_change
+    (type t)
+    ?extra_attrs
+    ?extra_option_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Equal with type t = t)
+    values
+    ~selected
+    ~on_change
     =
     impl
       ?extra_attrs
@@ -318,18 +318,17 @@ module Dropdown = struct
       ~merge_behavior
   ;;
 
-
   let of_values_opt
-        (type t)
-        ?extra_attrs
-        ?extra_option_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        ?(placeholder = "")
-        (module M : Equal with type t = t)
-        values
-        ~selected
-        ~on_change
+    (type t)
+    ?extra_attrs
+    ?extra_option_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    ?(placeholder = "")
+    (module M : Equal with type t = t)
+    values
+    ~selected
+    ~on_change
     =
     let values = None :: List.map values ~f:Option.some in
     let to_string = Option.value_map ~default:placeholder ~f:M.to_string in
@@ -351,14 +350,14 @@ module Dropdown = struct
   ;;
 
   let of_enum
-        (type t)
-        ?extra_attrs
-        ?extra_option_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Enum with type t = t)
-        ~selected
-        ~on_change
+    (type t)
+    ?extra_attrs
+    ?extra_option_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Enum with type t = t)
+    ~selected
+    ~on_change
     =
     impl
       ?extra_attrs
@@ -373,15 +372,15 @@ module Dropdown = struct
   ;;
 
   let of_enum_opt
-        (type t)
-        ?extra_attrs
-        ?extra_option_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        ?(placeholder = "")
-        (module M : Enum with type t = t)
-        ~selected
-        ~on_change
+    (type t)
+    ?extra_attrs
+    ?extra_option_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    ?(placeholder = "")
+    (module M : Enum with type t = t)
+    ~selected
+    ~on_change
     =
     let values = None :: List.map M.all ~f:Option.some in
     let to_string = Option.value_map ~default:placeholder ~f:M.to_string in
@@ -412,20 +411,20 @@ module Selectable_style = struct
     Button_like
       { extra_attrs =
           (fun ~checked ->
-             if checked
-             then
-               [ Attr.style
-                   Css_gen.(
-                     border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                     @> background_color (`Hex "#404040")
-                     @> color (`Hex "#F7F7F7"))
-               ]
-             else
-               [ Attr.style
-                   Css_gen.(
-                     border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                     @> background_color (`Hex "#EFEFEF"))
-               ])
+            if checked
+            then
+              [ Attr.style
+                  Css_gen.(
+                    border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                    @> background_color (`Hex "#404040")
+                    @> color (`Hex "#F7F7F7"))
+              ]
+            else
+              [ Attr.style
+                  Css_gen.(
+                    border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+                    @> background_color (`Hex "#EFEFEF"))
+              ])
       }
   ;;
 
@@ -436,13 +435,13 @@ end
 
 module Checkbox = struct
   let impl
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ~is_checked
-        ~label
-        ~on_toggle
-        ?(merge_behavior = Merge_behavior.Merge)
-        ()
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ~is_checked
+    ~label
+    ~on_toggle
+    ?(merge_behavior = Merge_behavior.Merge)
+    ()
     =
     Node.label
       ~attrs:[ (merge merge_behavior) extra_attrs ]
@@ -459,13 +458,13 @@ module Checkbox = struct
   ;;
 
   let simple
-        ?extra_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~is_checked
-        ~label
-        ~on_toggle
-        ()
+    ?extra_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~is_checked
+    ~label
+    ~on_toggle
+    ()
     =
     Node.div
       ~attrs:[ Attr.class_ "checkbox-container" ]
@@ -475,15 +474,15 @@ end
 
 module Checklist = struct
   let impl
-        ?(style = Selectable_style.Native)
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ?layout
-        values
-        ~is_checked
-        ~on_toggle
-        ~to_string
-        ~merge_behavior
+    ?(style = Selectable_style.Native)
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ?layout
+    values
+    ~is_checked
+    ~on_toggle
+    ~to_string
+    ~merge_behavior
     =
     let input_attrs, label_attrs =
       match style with
@@ -516,16 +515,16 @@ module Checklist = struct
   ;;
 
   let of_values
-        (type t)
-        ?style
-        ?extra_attrs
-        ?disabled
-        ?layout
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Display with type t = t)
-        values
-        ~is_checked
-        ~on_toggle
+    (type t)
+    ?style
+    ?extra_attrs
+    ?disabled
+    ?layout
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Display with type t = t)
+    values
+    ~is_checked
+    ~on_toggle
     =
     impl
       ?style
@@ -540,14 +539,14 @@ module Checklist = struct
   ;;
 
   let of_enum
-        (type t)
-        ?style
-        ?extra_attrs
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Enum with type t = t)
-        ~is_checked
-        ~on_toggle
+    (type t)
+    ?style
+    ?extra_attrs
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Enum with type t = t)
+    ~is_checked
+    ~on_toggle
     =
     impl
       ?style
@@ -570,16 +569,16 @@ module Multi_select = struct
   end
 
   let impl
-        (type t cmp)
-        ?(repeated_click_behavior = Repeated_click_behavior.No_action)
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ?size
-        (module M : Set with type t = t and type comparator_witness = cmp)
-        values
-        ~selected
-        ~on_change
-        ~merge_behavior
+    (type t cmp)
+    ?(repeated_click_behavior = Repeated_click_behavior.No_action)
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ?size
+    (module M : Set with type t = t and type comparator_witness = cmp)
+    values
+    ~selected
+    ~on_change
+    ~merge_behavior
     =
     let open Js_of_ocaml in
     let size = Option.value size ~default:(List.length values) in
@@ -615,7 +614,7 @@ module Multi_select = struct
       List.map values ~f:(fun value ->
         let is_selected = Set.mem selected value in
         Node.option
-          (* [Attr.bool_property] keeps the state of the option in sync by setting the JS
+        (* [Attr.bool_property] keeps the state of the option in sync by setting the JS
              property. [Attr.selected] modifies the DOM attribute so that selected options
              can be styled with CSS. [Attr.selected] alone does not update the state
              properly if the model changes, so both are needed. *)
@@ -639,16 +638,16 @@ module Multi_select = struct
   ;;
 
   let of_values
-        (type t cmp)
-        ?extra_attrs
-        ?repeated_click_behavior
-        ?disabled
-        ?size
-        ?(merge_behavior = Merge_behavior.Legacy_dont_merge)
-        (module M : Set with type t = t and type comparator_witness = cmp)
-        values
-        ~selected
-        ~on_change
+    (type t cmp)
+    ?extra_attrs
+    ?repeated_click_behavior
+    ?disabled
+    ?size
+    ?(merge_behavior = Merge_behavior.Legacy_dont_merge)
+    (module M : Set with type t = t and type comparator_witness = cmp)
+    values
+    ~selected
+    ~on_change
     =
     impl
       ?extra_attrs
@@ -663,15 +662,15 @@ module Multi_select = struct
   ;;
 
   let of_enum
-        (type t cmp)
-        ?extra_attrs
-        ?repeated_click_behavior
-        ?disabled
-        ?size
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Enum_set with type t = t and type comparator_witness = cmp)
-        ~selected
-        ~on_change
+    (type t cmp)
+    ?extra_attrs
+    ?repeated_click_behavior
+    ?disabled
+    ?size
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Enum_set with type t = t and type comparator_witness = cmp)
+    ~selected
+    ~on_change
     =
     impl
       ?extra_attrs
@@ -714,11 +713,11 @@ module Entry = struct
   ;;
 
   let input_node
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ?(placeholder = "")
-        ?(merge_behavior = Merge_behavior.Merge)
-        attrs
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ?(placeholder = "")
+    ?(merge_behavior = Merge_behavior.Merge)
+    attrs
     =
     Node.input
       ~attrs:
@@ -733,14 +732,14 @@ module Entry = struct
   ;;
 
   let raw
-        ?extra_attrs
-        ?disabled
-        ?placeholder
-        ?on_return
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?disabled
+    ?placeholder
+    ?on_return
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     [ Attr.string_property "value" value; Attr.on_input (fun _ev -> on_input) ]
     |> maybe_on_return on_return
@@ -748,17 +747,17 @@ module Entry = struct
   ;;
 
   let stringable_input_opt
-        (type t)
-        ?extra_attrs
-        ?(call_on_input_when = Call_on_input_when.Text_changed)
-        ?disabled
-        ?placeholder
-        ?(should_normalize = true)
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Stringable.S with type t = t)
-        ~type_attrs
-        ~value
-        ~on_input
+    (type t)
+    ?extra_attrs
+    ?(call_on_input_when = Call_on_input_when.Text_changed)
+    ?disabled
+    ?placeholder
+    ?(should_normalize = true)
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Stringable.S with type t = t)
+    ~type_attrs
+    ~value
+    ~on_input
     =
     let value =
       let value = Option.value_map ~f:M.to_string value ~default:"" in
@@ -776,15 +775,15 @@ module Entry = struct
   ;;
 
   let of_stringable
-        (type t)
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Stringable.S with type t = t)
-        ~value
-        ~on_input
+    (type t)
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Stringable.S with type t = t)
+    ~value
+    ~on_input
     =
     stringable_input_opt
       ?extra_attrs
@@ -799,16 +798,16 @@ module Entry = struct
   ;;
 
   let validated
-        (type t)
-        ?extra_attrs
-        ?(call_on_input_when = Call_on_input_when.Text_changed)
-        ?disabled
-        ?placeholder
-        ?on_return
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Stringable.S with type t = t)
-        ~value
-        ~on_input
+    (type t)
+    ?extra_attrs
+    ?(call_on_input_when = Call_on_input_when.Text_changed)
+    ?disabled
+    ?placeholder
+    ?on_return
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Stringable.S with type t = t)
+    ~value
+    ~on_input
     =
     let (module V) = Validated.lift (module M) in
     let value_attr =
@@ -827,14 +826,14 @@ module Entry = struct
   ;;
 
   let text
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     of_stringable
       ?extra_attrs
@@ -848,14 +847,14 @@ module Entry = struct
   ;;
 
   let password
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     stringable_input_opt
       ?extra_attrs
@@ -870,16 +869,16 @@ module Entry = struct
   ;;
 
   let number
-        (type t)
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Stringable.S with type t = t)
-        ~value
-        ~step
-        ~on_input
+    (type t)
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Stringable.S with type t = t)
+    ~value
+    ~step
+    ~on_input
     =
     stringable_input_opt
       ?extra_attrs
@@ -894,16 +893,16 @@ module Entry = struct
   ;;
 
   let range
-        (type t)
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module M : Stringable.S with type t = t)
-        ~value
-        ~step
-        ~on_input
+    (type t)
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module M : Stringable.S with type t = t)
+    ~value
+    ~step
+    ~on_input
     =
     stringable_input_opt
       ?extra_attrs
@@ -918,14 +917,14 @@ module Entry = struct
   ;;
 
   let time
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     stringable_input_opt
       ?extra_attrs
@@ -941,14 +940,14 @@ module Entry = struct
   ;;
 
   let date
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     stringable_input_opt
       ?extra_attrs
@@ -964,15 +963,15 @@ module Entry = struct
   ;;
 
   let datetime_local
-        ?extra_attrs
-        ?call_on_input_when
-        ?disabled
-        ?placeholder
-        ?utc_offset
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?extra_attrs
+    ?call_on_input_when
+    ?disabled
+    ?placeholder
+    ?utc_offset
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     let hours =
       (* In tests, we use UTC as the local timezone (i.e. offset 0). This prevents changes
@@ -1007,14 +1006,14 @@ module Entry = struct
   ;;
 
   let text_area
-        ?(extra_attrs = [])
-        ?(call_on_input_when = Call_on_input_when.Text_changed)
-        ?(disabled = false)
-        ?(placeholder = "")
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?(extra_attrs = [])
+    ?(call_on_input_when = Call_on_input_when.Text_changed)
+    ?(disabled = false)
+    ?(placeholder = "")
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     Node.textarea
       ~attrs:
@@ -1034,13 +1033,13 @@ module Entry = struct
      https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color#Value the
      value must be set in hex format and will always comes back in hex format. *)
   let color_picker
-        ?(extra_attr = Attr.empty)
-        ?(call_on_input_when = Call_on_input_when.Text_changed)
-        ?disabled
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~value
-        ~on_input
-        ()
+    ?(extra_attr = Attr.empty)
+    ?(call_on_input_when = Call_on_input_when.Text_changed)
+    ?disabled
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~value
+    ~on_input
+    ()
     =
     let (`Hex value_) = value in
     [ Attr.(type_ "color" @ value_prop value_ @ extra_attr)
@@ -1052,11 +1051,11 @@ end
 
 module Button = struct
   let with_validation
-        ?(extra_attrs = [])
-        ?(merge_behavior = Merge_behavior.Merge)
-        text
-        ~validation
-        ~on_click
+    ?(extra_attrs = [])
+    ?(merge_behavior = Merge_behavior.Merge)
+    text
+    ~validation
+    ~on_click
     =
     match validation with
     | Ok result ->
@@ -1082,11 +1081,11 @@ module Button = struct
   ;;
 
   let simple
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ?(merge_behavior = Merge_behavior.Merge)
-        text
-        ~on_click
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ?(merge_behavior = Merge_behavior.Merge)
+    text
+    ~on_click
     =
     Node.button
       ~attrs:
@@ -1101,17 +1100,17 @@ end
 
 module Radio_buttons = struct
   let impl
-        ?(extra_attrs = [])
-        ?(disabled = false)
-        ?(style : Selectable_style.t = Native)
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~orientation
-        ~name
-        ~on_click
-        ~selected
-        ~to_string
-        ~equal
-        values
+    ?(extra_attrs = [])
+    ?(disabled = false)
+    ?(style : Selectable_style.t = Native)
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~orientation
+    ~name
+    ~on_click
+    ~selected
+    ~to_string
+    ~equal
+    values
     =
     let input_attrs, label_attrs =
       match style with
@@ -1144,16 +1143,16 @@ module Radio_buttons = struct
   ;;
 
   let of_values
-        (type t)
-        ?extra_attrs
-        ?disabled
-        ?style
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module E : Equal with type t = t)
-        ~name
-        ~on_click
-        ~selected
-        values
+    (type t)
+    ?extra_attrs
+    ?disabled
+    ?style
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module E : Equal with type t = t)
+    ~name
+    ~on_click
+    ~selected
+    values
     =
     impl
       ?extra_attrs
@@ -1170,16 +1169,16 @@ module Radio_buttons = struct
   ;;
 
   let of_values_horizontal
-        (type t)
-        ?extra_attrs
-        ?disabled
-        ?style
-        ?(merge_behavior = Merge_behavior.Merge)
-        (module E : Equal with type t = t)
-        ~name
-        ~on_click
-        ~selected
-        values
+    (type t)
+    ?extra_attrs
+    ?disabled
+    ?style
+    ?(merge_behavior = Merge_behavior.Merge)
+    (module E : Equal with type t = t)
+    ~name
+    ~on_click
+    ~selected
+    values
     =
     impl
       ?extra_attrs
@@ -1211,11 +1210,11 @@ module File_select = struct
   ;;
 
   let list
-        ?(extra_attrs = [])
-        ?accept
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~on_input
-        ()
+    ?(extra_attrs = [])
+    ?accept
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~on_input
+    ()
     =
     Node.input
       ~attrs:
@@ -1238,11 +1237,11 @@ module File_select = struct
   ;;
 
   let single
-        ?(extra_attrs = [])
-        ?accept
-        ?(merge_behavior = Merge_behavior.Merge)
-        ~on_input
-        ()
+    ?(extra_attrs = [])
+    ?accept
+    ?(merge_behavior = Merge_behavior.Merge)
+    ~on_input
+    ()
     =
     Node.input
       ~attrs:

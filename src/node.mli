@@ -1,7 +1,6 @@
 open Js_of_ocaml
 open Base
 
-
 (** The values associated with an Element and element like nodes.
     (that is in practice all nodes that aren't just text). *)
 module Element : sig
@@ -165,8 +164,7 @@ val inner_html_svg
     [input] does not accept a list of child nodes, but [input_deprecated] does.
     HTML <input> tags are not meant to have any child elements. *)
 val input_deprecated : node_creator
-[@@deprecated "[since 2022-05] use [input] instead"]
-
+  [@@deprecated "[since 2022-05] use [input] instead"]
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create : string -> node_creator

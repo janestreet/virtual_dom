@@ -227,47 +227,47 @@ module Inner_html = struct
     in
     Staged.stage
       (fun
-        ?override_vdom_for_testing
-        ~tag
-        ~attrs
-        ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
-        ()
-        ->
-          let element = create tag ~attrs [] in
-          let init () =
-            let element = to_dom element in
-            element##.innerHTML := Js.string content;
-            (content, tag, attrs), element
-          in
-          let update (prev_content, prev_tag, prev_attr) element =
-            let element =
-              (* if the tag or the attributes are different, do a diff/patch cycle to
+          ?override_vdom_for_testing
+          ~tag
+          ~attrs
+          ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
+          ()
+          ->
+      let element = create tag ~attrs [] in
+      let init () =
+        let element = to_dom element in
+        element##.innerHTML := Js.string content;
+        (content, tag, attrs), element
+      in
+      let update (prev_content, prev_tag, prev_attr) element =
+        let element =
+          (* if the tag or the attributes are different, do a diff/patch cycle to
                  get it up to date *)
-              if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
-              then
-                Raw.Patch.create
-                  ~previous:(create prev_tag ~attrs:prev_attr [] |> to_raw)
-                  ~current:(create tag ~attrs [] |> to_raw)
-                |> Raw.Patch.apply element
-              else element
-            in
-            (* if the tag changed, then [element] will be empty, so we need to update the
+          if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
+          then
+            Raw.Patch.create
+              ~previous:(create prev_tag ~attrs:prev_attr [] |> to_raw)
+              ~current:(create tag ~attrs [] |> to_raw)
+            |> Raw.Patch.apply element
+          else element
+        in
+        (* if the tag changed, then [element] will be empty, so we need to update the
                innerHTML.  If the content changed, then we need to set the innerHTML for
                obvious reasons. *)
-            if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
-            then element##.innerHTML := Js.string content;
-            (content, tag, attrs), element
-          in
-          (* We use the [widget] function directly, rather than through the
+        if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
+        then element##.innerHTML := Js.string content;
+        (content, tag, attrs), element
+      in
+      (* We use the [widget] function directly, rather than through the
              easier-to-use [widget_of_module] function because we want to
              explicitly create the id such that it is distinct between
              [inner_html] and [inner_html_svg]. *)
-          let vdom_for_testing =
-            match override_vdom_for_testing with
-            | None -> lazy (create tag ~attrs [ text content ])
-            | Some v -> v
-          in
-          widget ~id ~vdom_for_testing ~init ~update ())
+      let vdom_for_testing =
+        match override_vdom_for_testing with
+        | None -> lazy (create tag ~attrs [ text content ])
+        | Some v -> v
+      in
+      widget ~id ~vdom_for_testing ~init ~update ())
   ;;
 end
 

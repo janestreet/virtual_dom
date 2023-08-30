@@ -40,7 +40,6 @@ open Core
     [History_state] below ("you may like to put more information in your [History_state.t]
     ..."). *)
 
-
 (** We let you store a "payload" in each of the history entries. This works by
     bin-protting your value, and storing it alongside the bin-shape hash. When a history
     state is popped, we deserialise it only if the shape matches; otherwise you get

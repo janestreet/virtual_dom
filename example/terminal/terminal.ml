@@ -56,19 +56,19 @@ let view count = Node.div [ Node.div [ Node.text (Int.to_string count) ]; termin
 
 let () =
   Dom_html.window##.onload
-  := Dom.handler (fun _ ->
-    let count = ref 0 in
-    let vdom = ref (view !count) in
-    let elt = Node.to_dom !vdom in
-    Dom.appendChild Dom_html.document##.body elt;
-    Dom_html.window##setInterval
-      (Js.wrap_callback (fun _ ->
-         incr count;
-         let current = view !count in
-         let patch = Node.Patch.create ~previous:!vdom ~current in
-         vdom := current;
-         Node.Patch.apply patch elt |> (ignore : Dom_html.element Js.t -> unit)))
-      30.
-    |> (ignore : Dom_html.interval_id -> unit);
-    Js._false)
+    := Dom.handler (fun _ ->
+         let count = ref 0 in
+         let vdom = ref (view !count) in
+         let elt = Node.to_dom !vdom in
+         Dom.appendChild Dom_html.document##.body elt;
+         Dom_html.window##setInterval
+           (Js.wrap_callback (fun _ ->
+              incr count;
+              let current = view !count in
+              let patch = Node.Patch.create ~previous:!vdom ~current in
+              vdom := current;
+              Node.Patch.apply patch elt |> (ignore : Dom_html.element Js.t -> unit)))
+           30.
+         |> (ignore : Dom_html.interval_id -> unit);
+         Js._false)
 ;;

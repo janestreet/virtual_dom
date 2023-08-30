@@ -82,14 +82,14 @@ module Person = struct
 end
 
 module H = Attr.Hooks.Make (struct
-    module State = Unit
-    module Input = Person
+  module State = Unit
+  module Input = Person
 
-    let init _input _element = ()
-    let on_mount _input _state _element = ()
-    let update ~old_input:_ ~new_input:_ _state _element = ()
-    let destroy _input _state _element = ()
-  end)
+  let init _input _element = ()
+  let on_mount _input _state _element = ()
+  let update ~old_input:_ ~new_input:_ _state _element = ()
+  let destroy _input _state _element = ()
+end)
 
 let%expect_test "print element with a hook" =
   show

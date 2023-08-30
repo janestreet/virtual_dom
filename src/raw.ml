@@ -46,8 +46,8 @@ module Virtual_dom = struct
        -> virtual_dom_node Js.t Js.js_array Js.t
        -> Js.js_string Js.t Js.optdef
        -> virtual_dom_node Js.t)
-        Js.constr
-        Js.readonly_prop
+      Js.constr
+      Js.readonly_prop
 
     method _VText :
       (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
@@ -66,8 +66,8 @@ module Virtual_dom = struct
        -> virtual_dom_node Js.t Js.js_array Js.t
        -> Js.js_string Js.t Js.optdef
        -> virtual_dom_node Js.t)
-        Js.constr
-        Js.readonly_prop
+      Js.constr
+      Js.readonly_prop
   end
 
   let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
@@ -84,7 +84,7 @@ module Node = struct
 
   let node
     :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
-      -> virtual_dom_node Js.t
+    -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
     let tag = Js.string tag in
@@ -99,7 +99,7 @@ module Node = struct
 
   let svg
     :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
-      -> virtual_dom_node Js.t
+    -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
     let tag = Js.string tag in
@@ -178,7 +178,7 @@ module Widget = struct
 
     method update :
       (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
-        Js.writeonly_prop
+      Js.writeonly_prop
 
     method init : (unit -> 'element) Js.callback Js.writeonly_prop
   end
@@ -217,13 +217,13 @@ module Widget = struct
   end
 
   let create
-        (type s)
-        ?(vdom_for_testing : Node.t Lazy.t option)
-        ?(destroy : s -> 'element -> unit = fun _ _ -> ())
-        ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
-        ~(id : (s * 'element) Type_equal.Id.t)
-        ~(init : unit -> s * 'element)
-        ()
+    (type s)
+    ?(vdom_for_testing : Node.t Lazy.t option)
+    ?(destroy : s -> 'element -> unit = fun _ _ -> ())
+    ?(update : s -> 'element -> s * 'element = fun s elt -> s, elt)
+    ~(id : (s * 'element) Type_equal.Id.t)
+    ~(init : unit -> s * 'element)
+    ()
     =
     let obj : (s, _) widget Js.t = Js.Unsafe.obj [||] in
     obj##.type_ := Js.string "Widget";
@@ -231,27 +231,27 @@ module Widget = struct
     obj##.id := id;
     obj##.vdomForTesting := vdom_for_testing;
     obj##.init
-    := Js.wrap_callback (fun () ->
-      let s0, dom_node = init () in
-      State_keeper.set ~id dom_node s0;
-      dom_node);
+      := Js.wrap_callback (fun () ->
+           let s0, dom_node = init () in
+           State_keeper.set ~id dom_node s0;
+           dom_node);
     obj##.update
-    := Js.wrap_callback (fun prev dom_node ->
-      (* The [update] method of [obj] is only called by virtual-dom after it has checked
+      := Js.wrap_callback (fun prev dom_node ->
+           (* The [update] method of [obj] is only called by virtual-dom after it has checked
          that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
          never raise. *)
-      match Type_equal.Id.same_witness_exn prev##.id id with
-      | Type_equal.T ->
-        let prev_state = State_keeper.get ~id dom_node in
-        let state', dom_node' = update prev_state dom_node in
-        State_keeper.delete dom_node;
-        State_keeper.set ~id dom_node' state';
-        dom_node');
+           match Type_equal.Id.same_witness_exn prev##.id id with
+           | Type_equal.T ->
+             let prev_state = State_keeper.get ~id dom_node in
+             let state', dom_node' = update prev_state dom_node in
+             State_keeper.delete dom_node;
+             State_keeper.set ~id dom_node' state';
+             dom_node');
     obj##.destroy
-    := Js.wrap_callback (fun dom_node ->
-      let prev_state = State_keeper.get ~id dom_node in
-      destroy prev_state dom_node;
-      State_keeper.delete dom_node);
+      := Js.wrap_callback (fun dom_node ->
+           let prev_state = State_keeper.get ~id dom_node in
+           destroy prev_state dom_node;
+           State_keeper.delete dom_node);
     node_of_widget obj
   ;;
 end

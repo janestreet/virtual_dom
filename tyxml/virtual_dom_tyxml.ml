@@ -5,12 +5,12 @@ open Vdom
 
 module type XML =
   Xml_sigs.T
-  with type uri = string
-   and type event_handler = Dom_html.event Js.t -> unit Effect.t
-   and type mouse_event_handler = Dom_html.mouseEvent Js.t -> unit Effect.t
-   and type touch_event_handler = Dom_html.touchEvent Js.t -> unit Effect.t
-   and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> unit Effect.t
-   and type elt = Vdom.Node.t
+    with type uri = string
+     and type event_handler = Dom_html.event Js.t -> unit Effect.t
+     and type mouse_event_handler = Dom_html.mouseEvent Js.t -> unit Effect.t
+     and type touch_event_handler = Dom_html.touchEvent Js.t -> unit Effect.t
+     and type keyboard_event_handler = Dom_html.keyboardEvent Js.t -> unit Effect.t
+     and type elt = Vdom.Node.t
 
 module Xml = struct
   module W = Xml_wrap.NoWrap
@@ -66,7 +66,6 @@ module Xml = struct
   type ename = string
 
   let make_a x = x
-
   let empty () = assert false
   let comment _c = assert false
   let pcdata s = Vdom.Node.text s

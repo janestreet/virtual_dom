@@ -42,7 +42,6 @@ module Color : sig
     val create : l:Percent.t -> c:Percent.t -> h:float -> ?a:Percent.t -> unit -> t
   end
 
-
   type t =
     [ `RGBA of RGBA.t
     | `HSLA of HSLA.t
@@ -91,7 +90,6 @@ module Auto_or_length : sig
 end
 
 type t [@@deriving sexp, compare, bin_io]
-
 
 (** Create a single property, value pair (a declaration in CSS parlance).
     The value must be a valid CSS literal.  We do run a simple CSS parser on the value

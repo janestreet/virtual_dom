@@ -1,7 +1,6 @@
 open Core
 open Js_of_ocaml
 
-
 module Keyboard_code : sig
   type t = Dom_html.Keyboard_code.t
   [@@deriving sexp, compare, bin_io, hash, enumerate, equal]

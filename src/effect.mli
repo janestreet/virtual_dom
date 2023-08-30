@@ -17,15 +17,15 @@ end
 
 type 'a t +=
   | Viewport_changed
-  (** [Viewport_changed] events are delivered to all visibility handlers  *)
+      (** [Viewport_changed] events are delivered to all visibility handlers  *)
   | Stop_propagation
-  (** [Stop_propagation] prevents the underlying DOM event from propagating up to the
+      (** [Stop_propagation] prevents the underlying DOM event from propagating up to the
       parent elements *)
   | Stop_immediate_propagation
-  (** [Stop_immediate_propagation] causes [sequence_as_sibling] to ignore next
+      (** [Stop_immediate_propagation] causes [sequence_as_sibling] to ignore next
       sequenced event. *)
   | Prevent_default
-  (** [Prevent_default] prevents the default browser action from occurring as a result
+      (** [Prevent_default] prevents the default browser action from occurring as a result
       of this event *)
 
 (** Sequences two events, but only if the first is neither

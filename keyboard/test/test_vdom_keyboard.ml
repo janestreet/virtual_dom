@@ -12,8 +12,8 @@ let%expect_test _ =
       Keyboard_code.of_event
         (Js.Unsafe.coerce
            (object%js
-             val keyCode = key_code
-             val location = location
+              val keyCode = key_code
+              val location = location
            end))
     in
     match keyboard_code with

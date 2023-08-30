@@ -35,8 +35,8 @@ module Event_handler = struct
         -> t
 
   let combine
-        (T { type_id = ltid; handler = lhandler })
-        (T { type_id = rtid; handler = rhandler } as right)
+    (T { type_id = ltid; handler = lhandler })
+    (T { type_id = rtid; handler = rhandler } as right)
     =
     (* If they are not the same witness, then it is a bug in virtual_dom, since
        we do not expose [on] anymore which means this library can determined the
@@ -49,8 +49,8 @@ module Event_handler = struct
         { type_id = ltid
         ; handler =
             (fun value ->
-               Effect.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
-                 rhandler value))
+              Effect.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
+                rhandler value))
         }
     | None ->
       eprint_s
@@ -502,8 +502,8 @@ let on_input_event type_id event handler =
         (coerce_value_element target)
         ~default:Effect.Ignore
         ~f:(fun target ->
-          let text = Js.to_string target##.value in
-          handler ev text)))
+        let text = Js.to_string target##.value in
+        handler ev text)))
 ;;
 
 let on_change = on_input_event Type_id.event "change"
@@ -578,27 +578,26 @@ module Single_focus_hook () = struct
 end
 
 module No_op_hook (M : sig
-    module Input : Hooks_intf.Input
+  module Input : Hooks_intf.Input
 
-    val name : string
-  end) =
+  val name : string
+end) =
 struct
   module Hook = Hooks.Make (struct
-      module State = Unit
-      module Input = M.Input
+    module State = Unit
+    module Input = M.Input
 
-      let init _ _ = ()
-      let on_mount _ () _ = ()
-      let update ~old_input:_ ~new_input:_ () _ = ()
-      let destroy _ () _ = ()
-    end)
+    let init _ _ = ()
+    let on_mount _ () _ = ()
+    let update ~old_input:_ ~new_input:_ () _ = ()
+    let destroy _ () _ = ()
+  end)
 
   let attr input = create_hook M.name (Hook.create input)
   let type_id = Hook.For_testing.type_id
 end
 
 module Multi = struct
-
   type nonrec t = t list
 
   let map_style t ~f = [ Many_only_merge_classes_and_styles (t, f, Fn.id) ]
@@ -611,38 +610,38 @@ module Multi = struct
 end
 
 module Css_var_hook = Hooks.Make (struct
-    open Js_of_ocaml
-    module State = Unit
+  open Js_of_ocaml
+  module State = Unit
 
-    module Input = struct
-      type t = (string * string) list [@@deriving sexp_of]
+  module Input = struct
+    type t = (string * string) list [@@deriving sexp_of]
 
-      let combine = List.append
-    end
+    let combine = List.append
+  end
 
-    let init input (element : Dom_html.element Js.t) =
-      List.iter input ~f:(fun (k, v) ->
-        element##.style##setProperty (Js.string k) (Js.string v) Js.undefined
-        |> (ignore : Js.js_string Js.t -> unit))
-    ;;
+  let init input (element : Dom_html.element Js.t) =
+    List.iter input ~f:(fun (k, v) ->
+      element##.style##setProperty (Js.string k) (Js.string v) Js.undefined
+      |> (ignore : Js.js_string Js.t -> unit))
+  ;;
 
-    let on_mount _ () _ = ()
+  let on_mount _ () _ = ()
 
-    let destroy input () (element : Dom_html.element Js.t) =
-      List.iter input ~f:(fun (k, _) ->
-        element##.style##removeProperty (Js.string k)
-        |> (ignore : Js.js_string Js.t -> unit))
-    ;;
+  let destroy input () (element : Dom_html.element Js.t) =
+    List.iter input ~f:(fun (k, _) ->
+      element##.style##removeProperty (Js.string k)
+      |> (ignore : Js.js_string Js.t -> unit))
+  ;;
 
-    let update ~old_input ~new_input () (element : Dom_html.element Js.t) =
-      if phys_equal old_input new_input
-      || [%equal: (string * string) list] old_input new_input
-      then ()
-      else (
-        destroy old_input () element;
-        init new_input element)
-    ;;
-  end)
+  let update ~old_input ~new_input () (element : Dom_html.element Js.t) =
+    if phys_equal old_input new_input
+       || [%equal: (string * string) list] old_input new_input
+    then ()
+    else (
+      destroy old_input () element;
+      init new_input element)
+  ;;
+end)
 
 let __css_vars_no_kebabs alist = create_hook "custom-css-vars" (Css_var_hook.create alist)
 let css_var ~name v = __css_vars_no_kebabs [ "--" ^ name, v ]

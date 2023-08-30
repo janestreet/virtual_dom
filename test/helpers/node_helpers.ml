@@ -59,8 +59,6 @@ let rec map t ~f =
        Element { element with children })
 ;;
 
-
-
 type hidden_soup = Hidden_soup : _ Soup.node -> hidden_soup
 
 type 'a breadcrumb_preference =
@@ -84,7 +82,7 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
     | Element
         { tag_name
         ; attributes
-        (* We ignore [string_properties] / [bool_properties] as their names can overlap
+          (* We ignore [string_properties] / [bool_properties] as their names can overlap
            with attributes. Ignoring them here currently just means that people cannot
            select on them when triggering events.
 
@@ -128,12 +126,12 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
   in
   ( convert t
   , match breadcrumb_preference with
-  | Don't_add_breadcrumbs -> ()
-  | Add_breadcrumbs ->
-    fun soup ->
-      (match Soup.attribute soup_id_key soup with
-       | None -> raise_s [%message "Soup.node has no soup-id attribute"]
-       | Some soup_id -> Hashtbl.find_exn t_by_soup_id soup_id) )
+    | Don't_add_breadcrumbs -> ()
+    | Add_breadcrumbs ->
+      fun soup ->
+        (match Soup.attribute soup_id_key soup with
+         | None -> raise_s [%message "Soup.node has no soup-id attribute"]
+         | Some soup_id -> Hashtbl.find_exn t_by_soup_id soup_id) )
 ;;
 
 let _to_string_html t =
@@ -147,20 +145,20 @@ let _to_string_html t =
    separated by a newline and some indentation.
 *)
 let bprint_element
-      buffer
-      ~sep
-      ~before_styles
-      ~filter_printed_attributes
-      { tag_name
-      ; attributes
-      ; string_properties
-      ; bool_properties
-      ; styles
-      ; handlers
-      ; key
-      ; hooks
-      ; children = _
-      }
+  buffer
+  ~sep
+  ~before_styles
+  ~filter_printed_attributes
+  { tag_name
+  ; attributes
+  ; string_properties
+  ; bool_properties
+  ; styles
+  ; handlers
+  ; key
+  ; hooks
+  ; children = _
+  }
   =
   bprintf buffer "<%s" tag_name;
   let has_printed_an_attribute = ref false in
@@ -176,8 +174,8 @@ let bprint_element
   in
   Option.bind key ~f:(fun key -> filter_printed_attributes ("@key", key))
   |> Option.iter ~f:(fun (_, v) ->
-    bprint_aligned_indent ();
-    bprintf buffer "@key=%s" v);
+       bprint_aligned_indent ();
+       bprintf buffer "@key=%s" v);
   list_iter_filter attributes ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "%s=\"%s\"" k v);
@@ -187,19 +185,19 @@ let bprint_element
   bool_properties
   |> List.map ~f:(Tuple2.map_snd ~f:Bool.to_string)
   |> list_iter_filter ~f:(fun (k, v) ->
-    bprint_aligned_indent ();
-    bprintf buffer "#%s=\"%b\"" k (Bool.of_string v));
+       bprint_aligned_indent ();
+       bprintf buffer "#%s=\"%b\"" k (Bool.of_string v));
   hooks
   |> List.map ~f:(fun (k, v) ->
-    k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
+       k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
   |> list_iter_filter ~f:(fun (k, v) ->
-    bprint_aligned_indent ();
-    bprintf buffer "%s=%s" k v);
+       bprint_aligned_indent ();
+       bprintf buffer "%s=%s" k v);
   handlers
   |> List.map ~f:(fun (k, _) -> k, "handler")
   |> list_iter_filter ~f:(fun (k, _) ->
-    bprint_aligned_indent ();
-    bprintf buffer "%s" k);
+       bprint_aligned_indent ();
+       bprintf buffer "%s" k);
   let styles =
     List.filter_map styles ~f:(fun (name, v) ->
       let open Option.Let_syntax in
@@ -232,12 +230,12 @@ let path_regexp = Js_of_ocaml.Regexp.regexp "bonsai_path(_[a-z]*)*"
 let hash_regexp = Js_of_ocaml.Regexp.regexp "_hash_[a-f0-9]+"
 
 let to_string_html
-      ?(filter_printed_attributes = fun ~key:_ ~data:_ -> true)
-      ?(censor_paths = true)
-      ?(censor_hash = true)
-      ?(path_censoring_message = "bonsai_path_replaced_in_test")
-      ?(hash_censoring_message = "_hash_replaced_in_test")
-      t
+  ?(filter_printed_attributes = fun ~key:_ ~data:_ -> true)
+  ?(censor_paths = true)
+  ?(censor_hash = true)
+  ?(path_censoring_message = "bonsai_path_replaced_in_test")
+  ?(hash_censoring_message = "_hash_replaced_in_test")
+  t
   =
   let pre_censor to_censor apply_censor kv =
     if to_censor then Tuple2.map ~f:apply_censor kv else kv
@@ -247,9 +245,9 @@ let to_string_html
     | true ->
       (key, data)
       |> pre_censor censor_paths (fun s ->
-        Js_of_ocaml.Regexp.global_replace path_regexp s path_censoring_message)
+           Js_of_ocaml.Regexp.global_replace path_regexp s path_censoring_message)
       |> pre_censor censor_hash (fun s ->
-        Js_of_ocaml.Regexp.global_replace hash_regexp s hash_censoring_message)
+           Js_of_ocaml.Regexp.global_replace hash_regexp s hash_censoring_message)
       |> Some
     | false -> None
   in
@@ -271,9 +269,9 @@ let to_string_html
           | Text _ -> true
           | _ -> false)
         && List.fold element.children ~init:0 ~f:(fun acc child ->
-          match child with
-          | Text s -> acc + String.length s
-          | _ -> acc)
+             match child with
+             | Text s -> acc + String.length s
+             | _ -> acc)
            < 80 - String.length indent
       in
       let depth = if children_should_collapse then 0 else depth + 1 in
@@ -316,15 +314,15 @@ let select_first_exn t ~selector =
 let rec unsafe_of_js_exn =
   let make_text_node (text : Js.js_string Js.t) = Text (Js.to_string text) in
   let make_element_node
-        (tag_name : Js.js_string Js.t)
-        (children : t Js.js_array Js.t)
-        (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
-        (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-        (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-        (bool_properties : (Js.js_string Js.t * bool Js.t) Js.js_array Js.t)
-        (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-        (hooks : (Js.js_string Js.t * Vdom.Attr.Hooks.For_testing.Extra.t) Js.js_array Js.t)
-        (key : Js.js_string Js.t Js.Opt.t)
+    (tag_name : Js.js_string Js.t)
+    (children : t Js.js_array Js.t)
+    (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
+    (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+    (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+    (bool_properties : (Js.js_string Js.t * bool Js.t) Js.js_array Js.t)
+    (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
+    (hooks : (Js.js_string Js.t * Vdom.Attr.Hooks.For_testing.Extra.t) Js.js_array Js.t)
+    (key : Js.js_string Js.t Js.Opt.t)
     =
     let tag_name = tag_name |> Js.to_string in
     let children = children |> Js.to_array |> Array.to_list in
@@ -333,25 +331,25 @@ let rec unsafe_of_js_exn =
       |> Js.to_array
       |> Array.to_list
       |> List.map ~f:(fun (s, h) ->
-        let name = Js.to_string s in
-        name, Handler.of_any_exn h ~name)
+           let name = Js.to_string s in
+           name, Handler.of_any_exn h ~name)
     in
     let attributes =
       attributes
       |> Js.to_array
       |> Array.to_list
       |> List.map ~f:(fun (k, v) ->
-        let k, v = Js.to_string k, Js.to_string v in
-        let v =
-          if [%equal: string] k "class"
-          then
-            v
-            |> String.split ~on:' '
-            |> List.dedup_and_sort ~compare:[%compare: string]
-            |> String.concat ~sep:" "
-          else v
-        in
-        k, v)
+           let k, v = Js.to_string k, Js.to_string v in
+           let v =
+             if [%equal: string] k "class"
+             then
+               v
+               |> String.split ~on:' '
+               |> List.dedup_and_sort ~compare:[%compare: string]
+               |> String.concat ~sep:" "
+             else v
+           in
+           k, v)
     in
     let hooks =
       hooks
@@ -391,8 +389,8 @@ let rec unsafe_of_js_exn =
       }
   in
   let make_widget_node
-        (_id : _ Type_equal.Id.t)
-        (vdom_for_testing : Js.Unsafe.any Lazy.t option)
+    (_id : _ Type_equal.Id.t)
+    (vdom_for_testing : Js.Unsafe.any Lazy.t option)
     =
     match vdom_for_testing with
     | Some vdom -> unsafe_of_js_exn (Lazy.force vdom)
@@ -564,13 +562,13 @@ module User_actions = struct
   let both_event_handlers = [ prevent_default; stop_propagation ]
 
   let build_event_object
-        ?(shift_key_down = false)
-        ?(ctrl_key_down = false)
-        ?(alt_key_down = false)
-        ?(meta_key_down = false)
-        ~extra_event_fields
-        ~include_modifier_keys
-        event_specific_fields
+    ?(shift_key_down = false)
+    ?(ctrl_key_down = false)
+    ?(alt_key_down = false)
+    ?(meta_key_down = false)
+    ~extra_event_fields
+    ~include_modifier_keys
+    event_specific_fields
     =
     let extra_event_fields = Option.value extra_event_fields ~default:[] in
     let modifiers =
@@ -587,12 +585,12 @@ module User_actions = struct
   ;;
 
   let click_on
-        ?extra_event_fields
-        ?shift_key_down
-        ?ctrl_key_down
-        ?alt_key_down
-        ?meta_key_down
-        node
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    node
     =
     trigger
       ~event_name:"onclick"
@@ -622,13 +620,13 @@ module User_actions = struct
       | Some related_target ->
         Js.Unsafe.inject
           (object%js
-            val id =
-              match related_target with
-              | Text _ | Widget -> Js.null
-              | Element { attributes; _ } ->
-                (match List.Assoc.find attributes ~equal:String.equal "id" with
-                 | Some id -> Js.Opt.return (Js.string id)
-                 | None -> Js.null)
+             val id =
+               match related_target with
+               | Text _ | Widget -> Js.null
+               | Element { attributes; _ } ->
+                 (match List.Assoc.find attributes ~equal:String.equal "id" with
+                  | Some id -> Js.Opt.return (Js.string id)
+                  | None -> Js.null)
           end)
       | None -> Js.Unsafe.inject Js.undefined
     in
@@ -664,19 +662,19 @@ module User_actions = struct
        as though there was a real DOM element! *)
     Js.Unsafe.inject
       (object%js
-        val tagName = Js.string (tag_name_exn element)
-        val value = Js.string value
+         val tagName = Js.string (tag_name_exn element)
+         val value = Js.string value
       end)
   ;;
 
   let set_checkbox
-        ?extra_event_fields
-        ?shift_key_down
-        ?ctrl_key_down
-        ?alt_key_down
-        ?meta_key_down
-        element
-        ~checked
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    element
+    ~checked
     =
     let target =
       (* Similarly to [build_target] we inject a target field with some additional
@@ -685,9 +683,9 @@ module User_actions = struct
          elements. *)
       Js.Unsafe.inject
         (object%js
-          val tagName = Js.string (tag_name_exn element)
-          val checked = Js.bool checked
-          val value = Js.string "the 'value' property of a checkbox is not used"
+           val tagName = Js.string (tag_name_exn element)
+           val checked = Js.bool checked
+           val value = Js.string "the 'value' property of a checkbox is not used"
         end)
     in
     let event_object =
@@ -721,13 +719,13 @@ module User_actions = struct
   ;;
 
   let keydown
-        ?extra_event_fields
-        ?shift_key_down
-        ?ctrl_key_down
-        ?alt_key_down
-        ?meta_key_down
-        element
-        ~key
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    element
+    ~key
     =
     let open Vdom_keyboard in
     let key_code = Keystroke.Keyboard_code.to_key_code key in
@@ -736,7 +734,7 @@ module User_actions = struct
     let target =
       Js.Unsafe.inject
         (object%js
-          val tagName = Js.string (tag_name_exn element)
+           val tagName = Js.string (tag_name_exn element)
         end)
     in
     let int_to_any x = Js.Unsafe.coerce (Js.number_of_float (Int.to_float x)) in

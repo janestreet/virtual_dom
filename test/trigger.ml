@@ -103,53 +103,53 @@ let%expect_test "fake event handler" =
 ;;
 
 module Print_int_event = Ui_effect.Define (struct
-    module Action = Int
+  module Action = Int
 
-    let handle = printf "%d "
-  end)
+  let handle = printf "%d "
+end)
 
 module Print_string_event = Ui_effect.Define (struct
-    module Action = String
+  module Action = String
 
-    let handle = printf "%s "
-  end)
+  let handle = printf "%s "
+end)
 
 module H = Attr.Hooks.Make (struct
-    module Input = struct
-      type t = int -> unit Ui_effect.t [@@deriving sexp]
+  module Input = struct
+    type t = int -> unit Ui_effect.t [@@deriving sexp]
 
-      let combine left right i =
-        (* adding 10 to [i] is silly, but it'll be obvious in the tests *)
-        let i = i + 10 in
-        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
-      ;;
-    end
+    let combine left right i =
+      (* adding 10 to [i] is silly, but it'll be obvious in the tests *)
+      let i = i + 10 in
+      Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+    ;;
+  end
 
-    module State = Unit
+  module State = Unit
 
-    let init _input _element = ()
-    let on_mount _input _state _element = ()
-    let update ~old_input:_ ~new_input:_ _state _element = ()
-    let destroy _input _state _element = ()
-  end)
+  let init _input _element = ()
+  let on_mount _input _state _element = ()
+  let update ~old_input:_ ~new_input:_ _state _element = ()
+  let destroy _input _state _element = ()
+end)
 
 module String_h = Attr.Hooks.Make (struct
-    module Input = struct
-      type t = string -> unit Ui_effect.t [@@deriving sexp]
+  module Input = struct
+    type t = string -> unit Ui_effect.t [@@deriving sexp]
 
-      let combine left right i =
-        let i = i ^ "_combine" in
-        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
-      ;;
-    end
+    let combine left right i =
+      let i = i ^ "_combine" in
+      Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+    ;;
+  end
 
-    module State = Unit
+  module State = Unit
 
-    let init _input _element = ()
-    let on_mount _input _state _element = ()
-    let update ~old_input:_ ~new_input:_ _state _element = ()
-    let destroy _input _state _element = ()
-  end)
+  let init _input _element = ()
+  let on_mount _input _state _element = ()
+  let update ~old_input:_ ~new_input:_ _state _element = ()
+  let destroy _input _state _element = ()
+end)
 
 let%expect_test "fake event handler for hook" =
   let node =

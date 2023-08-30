@@ -61,8 +61,6 @@ val ( @ ) : t -> t -> t
 val combine : t -> t -> t
 
 val autofocus : bool -> t
-
-
 val checked : t
 val class_ : string -> t
 val classes : string list -> t
@@ -186,7 +184,6 @@ val on_load : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
 val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
-
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
 val on_wheel : (Js_of_ocaml_patches.Dom_html.wheelEvent Js.t -> unit Effect.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
@@ -263,10 +260,10 @@ module Single_focus_hook () : sig
 end
 
 module No_op_hook (M : sig
-    module Input : Hooks.Input
+  module Input : Hooks.Input
 
-    val name : string
-  end) : sig
+  val name : string
+end) : sig
   val attr : M.Input.t -> t
   val type_id : M.Input.t Type_equal.Id.t
 end

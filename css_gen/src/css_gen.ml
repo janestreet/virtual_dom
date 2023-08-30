@@ -712,15 +712,15 @@ let justify_content_to_string_css = function
 ;;
 
 let flex_container
-      ?(inline = false)
-      ?(direction = `Row)
-      ?(wrap = `Nowrap)
-      ?align_items
-      ?align_content
-      ?justify_content
-      ?row_gap:rg
-      ?column_gap:cg
-      ()
+  ?(inline = false)
+  ?(direction = `Row)
+  ?(wrap = `Nowrap)
+  ?align_items
+  ?align_content
+  ?justify_content
+  ?row_gap:rg
+  ?column_gap:cg
+  ()
   =
   let direction =
     let make_dir v = create_raw ~field:"flex-direction" ~value:v in
@@ -864,7 +864,6 @@ let user_select s =
   create_raw ~field:"user-select" ~value
 ;;
 
-
 let%test_module "tests" =
   (module struct
     let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
@@ -880,11 +879,11 @@ let%test_module "tests" =
       t
         (color
            (`HSLA
-              (Color.HSLA.create
-                 ~h:100
-                 ~s:(Percent.of_mult 0.75)
-                 ~l:(Percent.of_mult 0.60)
-                 ())));
+             (Color.HSLA.create
+                ~h:100
+                ~s:(Percent.of_mult 0.75)
+                ~l:(Percent.of_mult 0.60)
+                ())));
       t (create ~field:"content" ~value:{|";"|});
       [%expect
         {|
@@ -907,17 +906,17 @@ let%test_module "tests" =
       t
         (background_image
            (`Linear_gradient
-              { direction = `Deg 90
-              ; stops =
-                  [ p 0., c "black"
-                  ; p 0.2, c "#ff0000"
-                  ; p 0.4, c "red"
-                  ; ( p 1.
-                    , `RGBA
-                        (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ())
-                    )
-                  ]
-              }));
+             { direction = `Deg 90
+             ; stops =
+                 [ p 0., c "black"
+                 ; p 0.2, c "#ff0000"
+                 ; p 0.4, c "red"
+                 ; ( p 1.
+                   , `RGBA
+                       (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ())
+                   )
+                 ]
+             }));
       [%expect
         {| background-image: linear-gradient(90deg, black 0.000000%, #ff0000 20.000000%, red 40.000000%, rgba(100,50,30,0.75) 100.000000%) |}];
       t

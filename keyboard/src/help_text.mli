@@ -40,10 +40,10 @@ module Command : sig
         (* This function can be used to modify the description before displaying it, e.g.
            capitalizing/uncapitalizing it. *)
         `Description of
-          (string -> string) option
+        (string -> string) option
       | `Text of string
       ]
-        list
+      list
 
     (** The [default] format is:
 

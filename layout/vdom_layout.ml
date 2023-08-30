@@ -48,13 +48,13 @@ let spacer ?(attrs = []) ?min_width ?min_height () =
 ;;
 
 let as_box
-      (direction : [ `Row | `Column ])
-      ?gap
-      ?align_items
-      (node_creator : Node.Aliases.node_creator)
-      ?key
-      ?attrs
-      nodes
+  (direction : [ `Row | `Column ])
+  ?gap
+  ?align_items
+  (node_creator : Node.Aliases.node_creator)
+  ?key
+  ?attrs
+  nodes
   =
   let nodes =
     match gap with
@@ -75,7 +75,7 @@ let as_box
            let has_flex_shrink_set =
              Css_gen.to_string_list style
              |> List.exists ~f:(fun (f, _) ->
-               String.( = ) f "flex-shrink" || String.( = ) f "flex")
+                  String.( = ) f "flex-shrink" || String.( = ) f "flex")
            in
            if has_flex_shrink_set
            then style
@@ -122,7 +122,7 @@ let on_grayed_out_background nodes =
             @> overflow `Auto
             @> background_color
                  (`RGBA
-                    (Color.RGBA.create ~r:0 ~g:0 ~b:0 ~a:(Percent.of_percentage 40.) ())))
+                   (Color.RGBA.create ~r:0 ~g:0 ~b:0 ~a:(Percent.of_percentage 40.) ())))
       ]
     nodes
 ;;

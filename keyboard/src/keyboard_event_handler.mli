@@ -72,7 +72,7 @@ end
 module Command : sig
   type t =
     { keys : Keystroke.t list
-    (** Descriptions can be displayed using [Vdom_keyboard.Help_text]. *)
+        (** Descriptions can be displayed using [Vdom_keyboard.Help_text]. *)
     ; description : string
     ; group : Grouped_help_text.Group_name.t option
     ; handler : Handler.t
@@ -84,7 +84,7 @@ end
 module Action : sig
   type t =
     | Command of Command.t
-    (** A disabled key is essentially a command that prevents the default handler of
+        (** A disabled key is essentially a command that prevents the default handler of
         that key (by returning [Effect.Prevent_default]), and does nothing else.
         Users can choose to omit disabled keys from the help menu. *)
     | Disabled_key of Keystroke.t

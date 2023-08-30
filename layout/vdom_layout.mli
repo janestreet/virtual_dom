@@ -1,4 +1,3 @@
-
 open! Core
 module Attr := Virtual_dom.Vdom.Attr
 module Node := Virtual_dom.Vdom.Node

@@ -25,7 +25,7 @@ val visibilitychange : (Dom_html.event Js.t -> unit Ui_effect.t) -> Attr.t
 val beforeunload
   :  (Dom_html.event Js.t
       -> [ `Show_warning | `Do_nothing | `Custom_best_effort of unit Ui_effect.t ]
-           Ui_effect.t)
+         Ui_effect.t)
   -> Attr.t
 
 module For_testing : sig
