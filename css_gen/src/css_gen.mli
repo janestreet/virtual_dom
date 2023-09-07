@@ -8,11 +8,11 @@ type css_global_values =
   [ `Inherit
   | `Initial
   ]
-[@@deriving sexp, compare]
+[@@deriving sexp, compare, sexp_grammar]
 
 module Color : sig
   module RGBA : sig
-    type t [@@deriving sexp, bin_io, compare]
+    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
     (** [create ~r ~g ~b ~a] creates a color that corresponds to rgba([r],[g],[b],[a])
 
@@ -22,7 +22,7 @@ module Color : sig
   end
 
   module HSLA : sig
-    type t [@@deriving sexp, bin_io, compare]
+    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
     (** [create ~h ~s ~l ~a] creates a color that corresponds to hsla([h],[s],[l],[a])
 
@@ -33,7 +33,7 @@ module Color : sig
   end
 
   module LCHA : sig
-    type t [@@deriving sexp, bin_io, compare]
+    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
     (** [create ~l ~c ~h ~a] creates a color that corresponds to lch([l], [c], [h], [a]).
 
@@ -51,7 +51,7 @@ module Color : sig
     | `Var of string
     | css_global_values
     ]
-  [@@deriving sexp, bin_io, compare]
+  [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
   val to_string_css : [< t ] -> string
 end

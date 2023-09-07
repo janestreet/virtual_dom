@@ -15,7 +15,7 @@ type css_global_values =
   [ `Inherit
   | `Initial
   ]
-[@@deriving sexp, bin_io, compare]
+[@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
 module Private = struct
   let float_to_string_with_fixed = ref (fun digits f -> sprintf "%.*f" digits f)
@@ -32,7 +32,7 @@ module Color = struct
         ; b : int
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
@@ -44,7 +44,7 @@ module Color = struct
         ; l : Percent.t
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
       let create ~h ~s ~l ?a () = { h; s; l; a }
     end
@@ -56,7 +56,7 @@ module Color = struct
         ; h : float
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
       let create ~l ~c ~h ?a () = { l; c; h; a }
     end
@@ -70,7 +70,7 @@ module Color = struct
       | `Var of string
       | css_global_values
       ]
-    [@@deriving sexp, bin_io, compare]
+    [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
   end
 
   include T
