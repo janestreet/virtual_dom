@@ -77,6 +77,23 @@ module App = struct
 
   let on_startup ~schedule_action:_ _model = Async_kernel.Deferred.unit
 
+  let barebones_button_like ~checked =
+    if checked
+    then
+      [ Vdom.Attr.style
+          Css_gen.(
+            border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+            @> background_color (`Hex "#404040")
+            @> color (`Hex "#F7F7F7"))
+      ]
+    else
+      [ Vdom.Attr.style
+          Css_gen.(
+            border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
+            @> background_color (`Hex "#EFEFEF"))
+      ]
+  ;;
+
   let view (model : Model.t Incr.t) ~(inject : Action.t -> unit Effect.t) =
     let%map model = model in
     let widgets =
@@ -125,7 +142,8 @@ module App = struct
       ; ( "Radio_buttons.of_values_horizontal with button-like style"
         , Radio_buttons.of_values_horizontal
             (module Example)
-            ~style:Selectable_style.barebones_button_like
+            ~style:Selectable_style.Button_like
+            ~extra_button_attrs:barebones_button_like
             ~name:"radio_buttons_of_values_horizontal_button_like"
             ~on_click:(fun example -> inject (Set { model with example }))
             ~selected:(Some model.example)
@@ -150,8 +168,9 @@ module App = struct
             ~merge_behavior:Legacy_dont_merge
             (module Example)
             [ Foo; Bar ]
-            ~style:Selectable_style.barebones_button_like
-            ~extra_attrs:[ Vdom.Attr.style (Css_gen.flex_container ()) ]
+            ~style:Selectable_style.Button_like
+            ~extra_checkbox_attrs:barebones_button_like
+            ~extra_container_attrs:[ Vdom.Attr.style (Css_gen.flex_container ()) ]
             ~is_checked:(Set.mem model.examples)
             ~on_toggle:(fun elt -> inject (Set (Model.toggle model elt))) )
       ; ( "Checklist.of_enum"

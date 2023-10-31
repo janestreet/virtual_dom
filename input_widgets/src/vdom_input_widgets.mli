@@ -50,13 +50,13 @@ module Validated : sig
     -> (module Stringable with type t = 'a t)
 end
 
+(** For checkboxes and radio buttons, you can choose between having their visual display
+    be the default native rendering, or if you want them to look like actual buttons, then
+    the input element is hidden, which gives you much better control over the styling. *)
 module Selectable_style : sig
   type t =
     | Native
-    | Button_like of { extra_attrs : checked:bool -> Attr.t list }
-
-  (** applies background-color and color alteration to current selection *)
-  val barebones_button_like : t
+    | Button_like
 end
 
 module Dropdown : sig
@@ -128,7 +128,8 @@ module Checklist : sig
   (** Creates a list of checkboxes with labels. *)
   val of_values
     :  ?style:Selectable_style.t (** default [Native] *)
-    -> ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_container_attrs:Attr.t list (** default empty *)
+    -> ?extra_checkbox_attrs:(checked:bool -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?layout:[ `Vertical | `Horizontal ] (** default `Vertical *)
     -> ?merge_behavior:Merge_behavior.t
@@ -142,7 +143,8 @@ module Checklist : sig
       items and order. *)
   val of_enum
     :  ?style:Selectable_style.t (** default [Native] *)
-    -> ?extra_attrs:Attr.t list (** default empty *)
+    -> ?extra_container_attrs:Attr.t list (** default empty *)
+    -> ?extra_checkbox_attrs:(checked:bool -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
     -> (module Enum with type t = 'a)
@@ -426,7 +428,8 @@ module Radio_buttons : sig
       [extra_element_attrs], which gets access to whether the current element is selected
       or not. *)
   val of_values
-    :  ?extra_attrs:Attr.t list (** default empty *)
+    :  ?extra_container_attrs:Attr.t list (** default empty *)
+    -> ?extra_button_attrs:(checked:bool -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?style:Selectable_style.t (** default [Native] *)
     -> ?merge_behavior:Merge_behavior.t
@@ -440,7 +443,8 @@ module Radio_buttons : sig
   (** Identical to [of_values], but adds some style tags so that the list is displayed
       horizontally instead of vertically. *)
   val of_values_horizontal
-    :  ?extra_attrs:Attr.t list (** default empty *)
+    :  ?extra_container_attrs:Attr.t list (** default empty *)
+    -> ?extra_button_attrs:(checked:bool -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?style:Selectable_style.t (** default [Native] *)
     -> ?merge_behavior:Merge_behavior.t

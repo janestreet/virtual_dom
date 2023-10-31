@@ -405,28 +405,7 @@ end
 module Selectable_style = struct
   type t =
     | Native
-    | Button_like of { extra_attrs : checked:bool -> Attr.t list }
-
-  let barebones_button_like =
-    Button_like
-      { extra_attrs =
-          (fun ~checked ->
-            if checked
-            then
-              [ Attr.style
-                  Css_gen.(
-                    border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                    @> background_color (`Hex "#404040")
-                    @> color (`Hex "#F7F7F7"))
-              ]
-            else
-              [ Attr.style
-                  Css_gen.(
-                    border ~width:(`Px 1) ~color:(`Hex "#D0D0D0") ~style:`Solid ()
-                    @> background_color (`Hex "#EFEFEF"))
-              ])
-      }
-  ;;
+    | Button_like
 
   let hide_native_inputs =
     Css_gen.(create ~field:"appearance" ~value:"none" @> uniform_margin (`Px 0))
@@ -475,7 +454,8 @@ end
 module Checklist = struct
   let impl
     ?(style = Selectable_style.Native)
-    ?(extra_attrs = [])
+    ?(extra_container_attrs = [])
+    ?(extra_checkbox_attrs = fun ~checked:_ -> [])
     ?(disabled = false)
     ?layout
     values
@@ -484,23 +464,20 @@ module Checklist = struct
     ~to_string
     ~merge_behavior
     =
-    let input_attrs, label_attrs =
+    let input_attrs =
       match style with
-      | Native -> [], fun ~checked:_ -> []
-      | Button_like { extra_attrs } ->
-        [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
+      | Native -> []
+      | Button_like -> [ Attr.style Selectable_style.hide_native_inputs ]
     in
     structural_list
       ~merge_behavior
       ?orientation:layout
       ([ Attr.classes [ "widget-checklist"; "checkbox-container" ] ]
-       |> add_attrs extra_attrs)
+       |> add_attrs extra_container_attrs)
       (List.map values ~f:(fun item ->
          Node.label
            ~attrs:
-             [ (merge merge_behavior)
-                 (extra_attrs @ label_attrs ~checked:(is_checked item))
-             ]
+             [ (merge merge_behavior) (extra_checkbox_attrs ~checked:(is_checked item)) ]
            [ Node.input
                ~attrs:
                  ([ Attr.type_ "checkbox"
@@ -517,7 +494,8 @@ module Checklist = struct
   let of_values
     (type t)
     ?style
-    ?extra_attrs
+    ?extra_container_attrs
+    ?extra_checkbox_attrs
     ?disabled
     ?layout
     ?(merge_behavior = Merge_behavior.Merge)
@@ -528,7 +506,8 @@ module Checklist = struct
     =
     impl
       ?style
-      ?extra_attrs
+      ?extra_container_attrs
+      ?extra_checkbox_attrs
       ?disabled
       ?layout
       values
@@ -541,7 +520,8 @@ module Checklist = struct
   let of_enum
     (type t)
     ?style
-    ?extra_attrs
+    ?extra_container_attrs
+    ?extra_checkbox_attrs
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
     (module M : Enum with type t = t)
@@ -550,7 +530,8 @@ module Checklist = struct
     =
     impl
       ?style
-      ?extra_attrs
+      ?extra_container_attrs
+      ?extra_checkbox_attrs
       ?disabled
       M.all
       ~is_checked
@@ -1100,7 +1081,8 @@ end
 
 module Radio_buttons = struct
   let impl
-    ?(extra_attrs = [])
+    ?(extra_container_attrs = [])
+    ?(extra_button_attrs = fun ~checked:_ -> [])
     ?(disabled = false)
     ?(style : Selectable_style.t = Native)
     ?(merge_behavior = Merge_behavior.Merge)
@@ -1112,21 +1094,20 @@ module Radio_buttons = struct
     ~equal
     values
     =
-    let input_attrs, label_attrs =
+    let input_attrs =
       match style with
-      | Native -> [], fun ~checked:_ -> []
-      | Button_like { extra_attrs } ->
-        [ Attr.style Selectable_style.hide_native_inputs ], extra_attrs
+      | Native -> []
+      | Button_like -> [ Attr.style Selectable_style.hide_native_inputs ]
     in
     structural_list
       ~merge_behavior
       ~orientation
       ([ Attr.classes [ "widget-radio-buttons"; "radio-button-container" ] ]
-       |> add_attrs extra_attrs)
+       |> add_attrs extra_container_attrs)
       (List.map values ~f:(fun item ->
          let checked = Option.value_map selected ~default:false ~f:(equal item) in
          Node.label
-           ~attrs:[ (merge merge_behavior) (label_attrs ~checked) ]
+           ~attrs:[ (merge merge_behavior) (extra_button_attrs ~checked) ]
            [ Node.input
                ~attrs:
                  ([ Attr.type_ "radio"
@@ -1144,7 +1125,8 @@ module Radio_buttons = struct
 
   let of_values
     (type t)
-    ?extra_attrs
+    ?extra_container_attrs
+    ?extra_button_attrs
     ?disabled
     ?style
     ?(merge_behavior = Merge_behavior.Merge)
@@ -1155,7 +1137,8 @@ module Radio_buttons = struct
     values
     =
     impl
-      ?extra_attrs
+      ?extra_container_attrs
+      ?extra_button_attrs
       ?disabled
       ?style
       ~orientation:`Vertical
@@ -1170,7 +1153,8 @@ module Radio_buttons = struct
 
   let of_values_horizontal
     (type t)
-    ?extra_attrs
+    ?extra_container_attrs
+    ?extra_button_attrs
     ?disabled
     ?style
     ?(merge_behavior = Merge_behavior.Merge)
@@ -1181,7 +1165,8 @@ module Radio_buttons = struct
     values
     =
     impl
-      ?extra_attrs
+      ?extra_container_attrs
+      ?extra_button_attrs
       ?disabled
       ?style
       ~orientation:`Horizontal
