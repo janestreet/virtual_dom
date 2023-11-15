@@ -127,6 +127,7 @@ val dl : node_creator
 val dt : node_creator
 val dd : node_creator
 val kbd : node_creator
+val form : node_creator
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
 (* [lazy_] allows you to defer the computation of a virtual-dom node until

@@ -7,6 +7,7 @@ open Core
 type css_global_values =
   [ `Inherit
   | `Initial
+  | `Var of string
   ]
 [@@deriving sexp, compare, sexp_grammar]
 
@@ -48,7 +49,6 @@ module Color : sig
     | `LCHA of LCHA.t
     | `Name of string
     | `Hex of string
-    | `Var of string
     | css_global_values
     ]
   [@@deriving sexp, bin_io, compare, equal, sexp_grammar]

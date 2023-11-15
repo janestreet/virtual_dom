@@ -14,8 +14,15 @@ include Stable.V1
 type css_global_values =
   [ `Inherit
   | `Initial
+  | `Var of string
   ]
 [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+
+let global_to_string_css : css_global_values -> string = function
+  | `Inherit -> "inherit"
+  | `Initial -> "initial"
+  | `Var var -> [%string "var(%{var})"]
+;;
 
 module Private = struct
   let float_to_string_with_fixed = ref (fun digits f -> sprintf "%.*f" digits f)
@@ -67,7 +74,6 @@ module Color = struct
       | `LCHA of LCHA.t
       | `Name of string
       | `Hex of string
-      | `Var of string
       | css_global_values
       ]
     [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
@@ -81,8 +87,6 @@ module Color = struct
   let angle_to_string angle = f2s 2 angle
 
   let to_string_css : [< t ] -> string = function
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
     | `RGBA { RGBA.r; g; b; a } ->
       (match a with
        | None -> [%string "rgb(%{r#Int},%{g#Int},%{b#Int})"]
@@ -102,7 +106,7 @@ module Color = struct
        | Some a -> [%string "lch(%{l}% %{c} %{h} / %{alpha_to_string a})"])
     | `Name name -> name
     | `Hex hex -> hex
-    | `Var var -> [%string "var(%{var})"]
+    | #css_global_values as global -> global_to_string_css global
   ;;
 end
 
@@ -127,12 +131,11 @@ module Alignment = struct
     | `Right -> "right"
     | `Left -> "left"
     | `Center -> "center"
-    | `Inherit -> "inherit"
     | `Middle -> "middle"
     | `Bottom -> "bottom"
     | `Super -> "super"
     | `Sub -> "sub"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   ;;
 end
 
@@ -165,8 +168,7 @@ module Length = struct
     | `Px_float f -> [%string "%{f2s 2 f}px"]
     | `Vh p -> [%string "%{f2s 2 (Percent.to_percentage p)}vh"]
     | `Vw p -> [%string "%{f2s 2 (Percent.to_percentage p)}vw"]
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   ;;
 
   let percent100 = `Percent (Percent.of_percentage 100.)
@@ -242,8 +244,7 @@ let box_sizing v =
     match v with
     | `Content_box -> "content-box"
     | `Border_box -> "border-box"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"box-sizing" ~value
 ;;
@@ -261,8 +262,7 @@ let display v =
     | `Flex -> "flex"
     | `Inline_flex -> "inline-flex"
     | `Inline_grid -> "inline-grid"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"display" ~value
 ;;
@@ -273,8 +273,7 @@ let visibility v =
     | `Visible -> "visible"
     | `Hidden -> "hidden"
     | `Collapse -> "collapse"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"visibility" ~value
 ;;
@@ -294,8 +293,7 @@ let make_overflow field v =
     | `Hidden -> "hidden"
     | `Scroll -> "scroll"
     | `Auto -> "auto"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field ~value
 ;;
@@ -318,8 +316,7 @@ let white_space v =
     | `Pre -> "pre"
     | `Pre_line -> "pre-line"
     | `Pre_wrap -> "pre-wrap"
-    | `Initial -> "initial"
-    | `Inherit -> "inherit"
+    | #css_global_values as global -> global_to_string_css global
   in
   create ~field:"white-space" ~value
 ;;
@@ -355,8 +352,7 @@ let font_style s =
     | `Normal -> "normal"
     | `Italic -> "italic"
     | `Oblique -> "oblique"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"font-style" ~value
 ;;
@@ -368,9 +364,8 @@ let font_weight s =
     | `Bold -> "bold"
     | `Normal -> "normal"
     | `Lighter -> "lighter"
-    | `Inherit -> "inherit"
     | `Bolder -> "bolder"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"font-weight" ~value
 ;;
@@ -382,8 +377,7 @@ let font_variant s =
     match s with
     | `Normal -> "normal"
     | `Small_caps -> "small-caps"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"font-variant" ~value
 ;;
@@ -459,8 +453,7 @@ let float f =
     | `None -> "none"
     | `Left -> "left"
     | `Right -> "right"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"float" ~value
 ;;
@@ -543,13 +536,12 @@ let border_value ?width ?color ~(style : border_style) () =
     | `None -> "none"
     | `Groove -> "groove"
     | `Dashed -> "dashed"
-    | `Inherit -> "inherit"
     | `Inset -> "inset"
     | `Hidden -> "hidden"
     | `Double -> "double"
     | `Dotted -> "dotted"
-    | `Initial -> "initial"
     | `Solid -> "solid"
+    | #css_global_values as global -> global_to_string_css global
   in
   let width = value_map width ~f:Length.to_string_css in
   let color = value_map color ~f:Color.to_string_css in
@@ -596,8 +588,7 @@ let border_collapse v =
     match v with
     | `Separate -> "separate"
     | `Collapse -> "collapse"
-    | `Inherit -> "inherit"
-    | `Initial -> "initial"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"border-collapse" ~value
 ;;
@@ -630,10 +621,9 @@ let text_decoration ?style ?color ~line () =
       List.map line ~f:(function
         | `Line_through -> "line-through"
         | `None -> "none"
-        | `Inherit -> "inherit"
         | `Overline -> "overline"
         | `Underline -> "underline"
-        | `Initial -> "initial")
+        | #css_global_values as global -> global_to_string_css global)
       |> String.concat ~sep:" "
     in
     let style =
@@ -644,8 +634,7 @@ let text_decoration ?style ?color ~line () =
       | Some `Dotted -> "dotted"
       | Some `Dashed -> "dashed"
       | Some `Wavy -> "wavy"
-      | Some `Inherit -> "inherit"
-      | Some `Initial -> "initial"
+      | Some (#css_global_values as global) -> global_to_string_css global
     in
     let color = value_map color ~f:Color.to_string_css in
     concat3v line style color
@@ -795,8 +784,7 @@ let resize (value : [ `None | `Both | `Horizontal | `Vertical | css_global_value
     | `Both -> "both"
     | `Horizontal -> "horizontal"
     | `Vertical -> "vertical"
-    | `Initial -> "initial"
-    | `Inherit -> "inherit"
+    | #css_global_values as global -> global_to_string_css global
   in
   create_raw ~field:"resize" ~value
 ;;
@@ -813,8 +801,7 @@ let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_f
         | `Reverse -> "reverse"
         | `Alternate -> "alternate"
         | `Alternate_reverse -> "alternate-reverse"
-        | `Inherit -> "inherit"
-        | `Initial -> "initial"
+        | #css_global_values as global -> global_to_string_css global
       in
       create_raw ~field:"animation-direction" ~value)
   in
@@ -826,8 +813,7 @@ let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_f
         | `Forwards -> "forwards"
         | `Backwards -> "backwards"
         | `Both -> "both"
-        | `Inherit -> "inherit"
-        | `Initial -> "initial"
+        | #css_global_values as global -> global_to_string_css global
       in
       create_raw ~field:"animation-fill-mode" ~value)
   in

@@ -338,6 +338,7 @@ let dl = create "dl"
 let dt = create "dt"
 let dd = create "dd"
 let kbd = create "kbd"
+let form = create "form"
 
 let sexp_for_debugging ?indent sexp =
   sexp |> Sexp.to_string_hum ?indent |> text |> List.return |> pre ~attrs:[]
