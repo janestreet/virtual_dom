@@ -67,6 +67,7 @@ module Dropdown : sig
     -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a
@@ -80,6 +81,7 @@ module Dropdown : sig
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
     -> ?placeholder:string (** default "" *)
+    -> ?key:string
     -> (module Equal with type t = 'a)
     -> 'a list
     -> selected:'a option
@@ -93,6 +95,7 @@ module Dropdown : sig
     -> ?extra_option_attrs:('a -> Attr.t list) (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Enum with type t = 'a)
     -> selected:'a
     -> on_change:('a -> unit Effect.t)
@@ -106,6 +109,7 @@ module Dropdown : sig
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
     -> ?placeholder:string (** default "" *)
+    -> ?key:string
     -> (module Enum with type t = 'a)
     -> selected:'a option
     -> on_change:('a option -> unit Effect.t)
@@ -117,6 +121,7 @@ module Checkbox : sig
     :  ?extra_attrs:Attr.t list (** default empty *)
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> is_checked:bool
     -> label:string
     -> on_toggle:unit Effect.t
@@ -217,6 +222,7 @@ module Entry : sig
     -> ?placeholder:string (** default blank *)
     -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:string
     -> on_input:(string -> unit Effect.t)
     -> unit
@@ -230,9 +236,11 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> on_input:('a option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> Node.t
 
   (** Creates a text input of a serializable type, wrapping it in a type that stores
@@ -256,9 +264,11 @@ module Entry : sig
     -> ?placeholder:string (** default blank *)
     -> ?on_return:(unit -> unit Effect.t) (** default no-op *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Stringable with type t = 'a)
     -> value:'a Validated.t
     -> on_input:('a Validated.update -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> Node.t
 
   (** Creates a text input that equates an empty input with [None] and a non-empty input
@@ -269,8 +279,10 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:string option
     -> on_input:(string option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> unit
     -> Node.t
 
@@ -282,6 +294,8 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> value:string option
     -> on_input:(string option -> unit Effect.t)
     -> unit
@@ -303,10 +317,12 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> step:float
     -> on_input:('a option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> Node.t
 
   (** A slider bar. Roughly equivalent to [number], but with a different appearance. We
@@ -318,10 +334,12 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> (module Stringable.S with type t = 'a)
     -> value:'a option
     -> step:float
     -> on_input:('a option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> Node.t
 
   (** Creates a time input that equates an empty input with [None] and a non-empty input
@@ -332,8 +350,10 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:Time_ns.Ofday.t option
     -> on_input:(Time_ns.Ofday.t option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> unit
     -> Node.t
 
@@ -345,8 +365,10 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:Date.t option
     -> on_input:(Date.t option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> unit
     -> Node.t
 
@@ -365,8 +387,10 @@ module Entry : sig
     -> ?utc_offset:Time_ns.Span.t
     -> ?merge_behavior:Merge_behavior.t
          (** If blank the browser local timezone is used. Max accuracy 1h. *)
+    -> ?key:string
     -> value:Time_ns.t option
     -> on_input:(Time_ns.t option -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> unit
     -> Node.t
 
@@ -377,8 +401,10 @@ module Entry : sig
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:string
     -> on_input:(string -> unit Effect.t)
+    -> allow_updates_when_focused:[ `Always | `Never ]
     -> unit
     -> Node.t
 
@@ -391,6 +417,7 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?merge_behavior:Merge_behavior.t
+    -> ?key:string
     -> value:[ `Hex of string ]
     -> on_input:([> `Hex of string ] -> unit Effect.t)
     -> unit

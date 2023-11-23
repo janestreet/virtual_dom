@@ -228,14 +228,20 @@ module Value_normalizing_hook = struct
       type t =
         { value : string
         ; f : string -> string option
+        ; allow_updates_when_focused : [ `Always | `Never ]
         }
 
       let sexp_of_t { value; _ } = Sexp.Atom value
       let combine _left right = right
     end
 
-    let init { Input.value; f } element =
-      if not (is_active element) then set_value element (Js.string value);
+    let init { Input.value; f; allow_updates_when_focused } element =
+      let should_set =
+        match allow_updates_when_focused with
+        | `Always -> true
+        | `Never -> not (is_active element)
+      in
+      if should_set then set_value element (Js.string value);
       let event_id = install_event_handler element ~f in
       { State.event_id }
     ;;
@@ -260,7 +266,9 @@ module Value_normalizing_hook = struct
      focused and on each change, run the current value through [f] to re-set it. Again,
      this only happens if the element is not focused. If [f] returns [None], no change
      takes place. *)
-  let create value ~f = Attr.create_hook "value:normalized" (create { value; f })
+  let create value ~f ~allow_updates_when_focused =
+    Attr.create_hook "value:normalized" (create { value; f; allow_updates_when_focused })
+  ;;
 end
 
 module Dropdown = struct
@@ -269,6 +277,7 @@ module Dropdown = struct
     ?(extra_option_attrs = Fn.const [])
     ?(disabled = false)
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     values
     ~equal
     ~selected
@@ -276,6 +285,7 @@ module Dropdown = struct
     ~on_change
     =
     Node.select
+      ?key
       ~attrs:
         [ (merge merge_behavior)
             ([ Attr.class_ "widget-dropdown"
@@ -301,6 +311,7 @@ module Dropdown = struct
     ?extra_option_attrs
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Equal with type t = t)
     values
     ~selected
@@ -310,6 +321,7 @@ module Dropdown = struct
       ?extra_attrs
       ?extra_option_attrs
       ?disabled
+      ?key
       values
       ~equal:M.equal
       ~selected
@@ -325,6 +337,7 @@ module Dropdown = struct
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
     ?(placeholder = "")
+    ?key
     (module M : Equal with type t = t)
     values
     ~selected
@@ -341,6 +354,7 @@ module Dropdown = struct
       ?extra_attrs
       ?extra_option_attrs
       ?disabled
+      ?key
       values
       ~equal:[%equal: M.t option]
       ~selected
@@ -355,6 +369,7 @@ module Dropdown = struct
     ?extra_option_attrs
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Enum with type t = t)
     ~selected
     ~on_change
@@ -363,6 +378,7 @@ module Dropdown = struct
       ?extra_attrs
       ?extra_option_attrs
       ?disabled
+      ?key
       M.all
       ~equal:M.equal
       ~selected
@@ -378,6 +394,7 @@ module Dropdown = struct
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
     ?(placeholder = "")
+    ?key
     (module M : Enum with type t = t)
     ~selected
     ~on_change
@@ -393,6 +410,7 @@ module Dropdown = struct
       ?extra_attrs
       ?extra_option_attrs
       ?disabled
+      ?key
       values
       ~equal:[%equal: M.t option]
       ~selected
@@ -416,6 +434,7 @@ module Checkbox = struct
   let impl
     ?(extra_attrs = [])
     ?(disabled = false)
+    ?key
     ~is_checked
     ~label
     ~on_toggle
@@ -423,6 +442,7 @@ module Checkbox = struct
     ()
     =
     Node.label
+      ?key
       ~attrs:[ (merge merge_behavior) extra_attrs ]
       [ Node.input
           ~attrs:
@@ -440,12 +460,14 @@ module Checkbox = struct
     ?extra_attrs
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~is_checked
     ~label
     ~on_toggle
     ()
     =
     Node.div
+      ?key
       ~attrs:[ Attr.class_ "checkbox-container" ]
       [ impl ?extra_attrs ?disabled ~is_checked ~label ~on_toggle ~merge_behavior () ]
   ;;
@@ -698,9 +720,11 @@ module Entry = struct
     ?(disabled = false)
     ?(placeholder = "")
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     attrs
     =
     Node.input
+      ?key
       ~attrs:
         [ (merge merge_behavior)
             (attrs
@@ -718,13 +742,14 @@ module Entry = struct
     ?placeholder
     ?on_return
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
     ()
     =
     [ Attr.string_property "value" value; Attr.on_input (fun _ev -> on_input) ]
     |> maybe_on_return on_return
-    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior ?key
   ;;
 
   let stringable_input_opt
@@ -735,16 +760,22 @@ module Entry = struct
     ?placeholder
     ?(should_normalize = true)
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Stringable.S with type t = t)
     ~type_attrs
     ~value
     ~on_input
+    ~allow_updates_when_focused
     =
     let value =
       let value = Option.value_map ~f:M.to_string value ~default:"" in
       if should_normalize
-      then Value_normalizing_hook.create value ~f:(normalize (module M))
-      else Value_normalizing_hook.create value ~f:(const None)
+      then
+        Value_normalizing_hook.create
+          value
+          ~f:(normalize (module M))
+          ~allow_updates_when_focused
+      else Value_normalizing_hook.create value ~f:(const None) ~allow_updates_when_focused
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev -> function
         | "" -> on_input None
@@ -752,7 +783,7 @@ module Entry = struct
     ; value
     ]
     |> add_attrs type_attrs
-    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior ?key
   ;;
 
   let of_stringable
@@ -762,20 +793,24 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Stringable.S with type t = t)
     ~value
     ~on_input
+    ~allow_updates_when_focused
     =
     stringable_input_opt
       ?extra_attrs
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module M)
       ~type_attrs:[ Attr.type_ "text" ]
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let validated
@@ -786,15 +821,21 @@ module Entry = struct
     ?placeholder
     ?on_return
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Stringable.S with type t = t)
     ~value
     ~on_input
+    ~allow_updates_when_focused
     =
     let (module V) = Validated.lift (module M) in
     let value_attr =
       match (value : V.t) with
       | Initial -> Attr.string_property "value" ""
-      | _ -> Value_normalizing_hook.create (V.to_string value) ~f:(normalize (module V))
+      | _ ->
+        Value_normalizing_hook.create
+          (V.to_string value)
+          ~f:(normalize (module V))
+          ~allow_updates_when_focused
     in
     [ Call_on_input_when.listener call_on_input_when (fun _ev s ->
         on_input (V.of_string s))
@@ -803,7 +844,7 @@ module Entry = struct
     ]
     |> maybe_on_return on_return
     |> maybe_invalid value
-    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior
+    |> input_node ?extra_attrs ?disabled ?placeholder ~merge_behavior ?key
   ;;
 
   let text
@@ -812,8 +853,10 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
+    ~allow_updates_when_focused
     ()
     =
     of_stringable
@@ -821,10 +864,12 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module String)
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let password
@@ -833,6 +878,8 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
+    ~allow_updates_when_focused
     ~value
     ~on_input
     ()
@@ -842,11 +889,13 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module String)
       ~type_attrs:[ Attr.type_ "password" ]
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let number
@@ -856,6 +905,7 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Stringable.S with type t = t)
     ~value
     ~step
@@ -866,6 +916,7 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module M)
       ~type_attrs:[ Attr.type_ "number"; Attr.create_float "step" step ]
       ~value
@@ -880,6 +931,7 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     (module M : Stringable.S with type t = t)
     ~value
     ~step
@@ -890,6 +942,7 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module M)
       ~type_attrs:[ Attr.type_ "range"; Attr.create_float "step" step ]
       ~value
@@ -903,8 +956,10 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
+    ~allow_updates_when_focused
     ()
     =
     stringable_input_opt
@@ -912,12 +967,14 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module Time_compat.Ofday)
       ~should_normalize:false
       ~type_attrs:[ Attr.type_ "time" ]
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let date
@@ -926,8 +983,10 @@ module Entry = struct
     ?disabled
     ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
+    ~allow_updates_when_focused
     ()
     =
     stringable_input_opt
@@ -935,12 +994,14 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module Date)
       ~should_normalize:false
       ~type_attrs:[ Attr.type_ "date" ]
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let datetime_local
@@ -950,8 +1011,10 @@ module Entry = struct
     ?placeholder
     ?utc_offset
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
+    ~allow_updates_when_focused
     ()
     =
     let hours =
@@ -978,12 +1041,14 @@ module Entry = struct
       ?call_on_input_when
       ?disabled
       ?placeholder
+      ?key
       (module Zoned_time)
       ~type_attrs:[ Attr.type_ "datetime-local" ]
       ~should_normalize:false
       ~value
       ~on_input
       ~merge_behavior
+      ~allow_updates_when_focused
   ;;
 
   let text_area
@@ -992,17 +1057,23 @@ module Entry = struct
     ?(disabled = false)
     ?(placeholder = "")
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
+    ~allow_updates_when_focused
     ()
     =
     Node.textarea
+      ?key
       ~attrs:
         [ (merge merge_behavior)
             ([ Attr.placeholder placeholder
              ; Call_on_input_when.listener call_on_input_when (fun _ev value ->
                  on_input value)
-             ; Value_normalizing_hook.create value ~f:Option.return
+             ; Value_normalizing_hook.create
+                 value
+                 ~f:Option.return
+                 ~allow_updates_when_focused
              ]
              |> maybe_disabled ~disabled
              |> add_attrs extra_attrs)
@@ -1018,6 +1089,7 @@ module Entry = struct
     ?(call_on_input_when = Call_on_input_when.Text_changed)
     ?disabled
     ?(merge_behavior = Merge_behavior.Merge)
+    ?key
     ~value
     ~on_input
     ()
@@ -1026,7 +1098,7 @@ module Entry = struct
     [ Attr.(type_ "color" @ value_prop value_ @ extra_attr)
     ; Call_on_input_when.listener call_on_input_when (fun _ev s -> on_input (`Hex s))
     ]
-    |> input_node ?disabled ~merge_behavior
+    |> input_node ?disabled ~merge_behavior ?key
   ;;
 end
 

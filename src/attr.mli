@@ -37,6 +37,9 @@ val suppress_merge_warnings : t -> t
 (** [create_hook name hook] creates a hook attribute with a name *)
 val create_hook : string -> Hooks.t -> t
 
+(** [of_opt attr] returns the underlying Attr.t for a Some, and Attr.empty for a None *)
+val of_opt : t option -> t
+
 (** [many] merges several attributes into one. It merges hooks, on_* event
     handlers, classes, and styles.
 
@@ -74,6 +77,7 @@ val target : string -> t
 val id : string -> t
 val name : string -> t
 val placeholder : string -> t
+val role : string -> t
 val selected : t
 val hidden : t
 val readonly : t

@@ -4,10 +4,11 @@
 
 open Core
 
-type css_global_values =
+type 'a css_global_values =
   [ `Inherit
   | `Initial
   | `Var of string
+  | `Var_with_default of string * 'a
   ]
 [@@deriving sexp, compare, sexp_grammar]
 
@@ -49,7 +50,7 @@ module Color : sig
     | `LCHA of LCHA.t
     | `Name of string
     | `Hex of string
-    | css_global_values
+    | t css_global_values
     ]
   [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
@@ -69,7 +70,7 @@ module Length : sig
     | `Px_float of float
     | `Vh of Percent.t
     | `Vw of Percent.t
-    | css_global_values
+    | t css_global_values
     ]
   [@@deriving sexp, compare]
 
@@ -142,29 +143,43 @@ val to_string_css : t -> string
     fails validation.  See create for comments on the validation we do. *)
 val of_string_css_exn : string -> t
 
-val box_sizing : [ `Content_box | `Border_box | css_global_values ] -> t
+type box_sizing =
+  [ `Content_box
+  | `Border_box
+  | box_sizing css_global_values
+  ]
 
-val display
-  :  [ `Inline
-     | `Block
-     | `Inline_block
-     | `List_item
-     | `Table
-     | `Inline_table
-     | `None
-     | `Inline_grid
-     | css_global_values
-     ]
-  -> t
+val box_sizing : box_sizing -> t
 
-val visibility : [ `Visible | `Hidden | `Collapse | css_global_values ] -> t
+type display =
+  [ `Inline
+  | `Block
+  | `Inline_block
+  | `List_item
+  | `Table
+  | `Inline_table
+  | `None
+  | `Inline_grid
+  | display css_global_values
+  ]
+
+val display : display -> t
+
+type visibility =
+  [ `Visible
+  | `Hidden
+  | `Collapse
+  | visibility css_global_values
+  ]
+
+val visibility : visibility -> t
 
 type overflow =
   [ `Visible
   | `Hidden
   | `Scroll
   | `Auto
-  | css_global_values
+  | overflow css_global_values
   ]
 
 val overflow : overflow -> t
@@ -177,7 +192,7 @@ type font_style =
   [ `Normal
   | `Italic
   | `Oblique
-  | css_global_values
+  | font_style css_global_values
   ]
 
 type font_weight =
@@ -186,13 +201,13 @@ type font_weight =
   | `Bolder
   | `Lighter
   | `Number of int
-  | css_global_values
+  | font_weight css_global_values
   ]
 
 type font_variant =
   [ `Normal
   | `Small_caps
-  | css_global_values
+  | font_variant css_global_values
   ]
 
 val font_size : Length.t -> t
@@ -234,7 +249,32 @@ type text_align =
   | `Right
   | `Center
   | `Justify
-  | css_global_values
+  | text_align css_global_values
+  ]
+
+type horizontal_align =
+  [ `Left
+  | `Right
+  | `Center
+  | horizontal_align css_global_values
+  ]
+
+type vertical_align =
+  [ `Top
+  | `Bottom
+  | `Middle
+  | `Super
+  | `Sub
+  | vertical_align css_global_values
+  ]
+
+type white_space =
+  [ `Normal
+  | `Nowrap
+  | `Pre
+  | `Pre_line
+  | `Pre_wrap
+  | white_space css_global_values
   ]
 
 val create_with_color : field:string -> color:[< Color.t ] -> t
@@ -243,14 +283,10 @@ val background_color : [< Color.t ] -> t
 val background_image : background_image -> t
 val fill : Color.t -> t
 val text_align : text_align -> t
-val horizontal_align : [ `Left | `Right | `Center | css_global_values ] -> t
-val vertical_align : [ `Top | `Bottom | `Middle | `Super | `Sub | css_global_values ] -> t
-
-val white_space
-  :  [ `Normal | `Nowrap | `Pre | `Pre_line | `Pre_wrap | css_global_values ]
-  -> t
-
-val float : [ `None | `Left | `Right | css_global_values ] -> t
+val horizontal_align : horizontal_align -> t
+val vertical_align : vertical_align -> t
+val white_space : white_space -> t
+val float : ([ `None | `Left | `Right | 'float css_global_values ] as 'float) -> t
 val line_height : Length.t -> t
 val width : Length.t -> t
 val min_width : Length.t -> t
@@ -299,7 +335,7 @@ type border_style =
   | `Ridge
   | `Inset
   | `Outset
-  | css_global_values
+  | border_style css_global_values
   ]
 
 val border_top : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
@@ -327,7 +363,14 @@ val border_right
 
 val border : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
 val border_radius : Length.t -> t
-val border_collapse : [ `Separate | `Collapse | css_global_values ] -> t
+
+type border_collapse =
+  [ `Separate
+  | `Collapse
+  | border_collapse css_global_values
+  ]
+
+val border_collapse : border_collapse -> t
 val border_spacing : Length.t -> t
 val outline : ?width:Length.t -> ?color:[< Color.t ] -> style:border_style -> unit -> t
 
@@ -336,7 +379,7 @@ type text_decoration_line =
   | `Underline
   | `Overline
   | `Line_through
-  | css_global_values
+  | text_decoration_line css_global_values
   ]
 
 type text_decoration_style =
@@ -345,7 +388,7 @@ type text_decoration_style =
   | `Dotted
   | `Dashed
   | `Wavy
-  | css_global_values
+  | text_decoration_style css_global_values
   ]
 
 val text_decoration
@@ -405,16 +448,40 @@ val flex_item
   -> t
 
 val align_self : item_alignment -> t
-val resize : [ `None | `Both | `Horizontal | `Vertical | css_global_values ] -> t
+
+type resize =
+  [ `None
+  | `Both
+  | `Horizontal
+  | `Vertical
+  | resize css_global_values
+  ]
+
+val resize : resize -> t
+
+type direction =
+  [ `Normal
+  | `Reverse
+  | `Alternate
+  | `Alternate_reverse
+  | direction css_global_values
+  ]
+
+type fill_mode =
+  [ `None
+  | `Forwards
+  | `Backwards
+  | `Both
+  | fill_mode css_global_values
+  ]
 
 (** Note: You must include the [name]s @keyframes in the stylesheet *)
 val animation
   :  name:string
   -> duration:Time_ns.Span.t
   -> ?delay:Time_ns.Span.t
-  -> ?direction:
-       [ `Normal | `Reverse | `Alternate | `Alternate_reverse | css_global_values ]
-  -> ?fill_mode:[ `None | `Forwards | `Backwards | `Both | css_global_values ]
+  -> ?direction:direction
+  -> ?fill_mode:fill_mode
   -> ?iter_count:int
   -> ?timing_function:string
   -> unit

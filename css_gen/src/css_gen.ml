@@ -11,17 +11,20 @@ end
 open Core
 include Stable.V1
 
-type css_global_values =
+type 'a css_global_values =
   [ `Inherit
   | `Initial
   | `Var of string
+  | `Var_with_default of string * 'a
   ]
 [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
 
-let global_to_string_css : css_global_values -> string = function
+let global_to_string_css (t : 'a css_global_values) ~(to_string_css : 'a -> string) =
+  match t with
   | `Inherit -> "inherit"
   | `Initial -> "initial"
   | `Var var -> [%string "var(%{var})"]
+  | `Var_with_default (var, default) -> [%string "var(%{var}, %{to_string_css default})"]
 ;;
 
 module Private = struct
@@ -74,7 +77,7 @@ module Color = struct
       | `LCHA of LCHA.t
       | `Name of string
       | `Hex of string
-      | css_global_values
+      | t css_global_values
       ]
     [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
   end
@@ -86,7 +89,7 @@ module Color = struct
   let percent_to_string percent = f2s 0 (Percent.to_percentage percent)
   let angle_to_string angle = f2s 2 angle
 
-  let to_string_css : [< t ] -> string = function
+  let rec to_string_css : t -> string = function
     | `RGBA { RGBA.r; g; b; a } ->
       (match a with
        | None -> [%string "rgb(%{r#Int},%{g#Int},%{b#Int})"]
@@ -106,37 +109,10 @@ module Color = struct
        | Some a -> [%string "lch(%{l}% %{c} %{h} / %{alpha_to_string a})"])
     | `Name name -> name
     | `Hex hex -> hex
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   ;;
-end
 
-module Alignment = struct
-  type t =
-    [ `Left
-    | `Right
-    | `Center (* horizontal *)
-    | `Top
-    | `Bottom
-    | `Middle (* vertical *)
-    | `Justify (* text-align (in addition to [horizontal]) *)
-    | `Super (* vertical *)
-    | `Sub (* vertical *)
-    | css_global_values
-    ]
-  [@@deriving bin_io, compare]
-
-  let to_string_css = function
-    | `Justify -> "justify"
-    | `Top -> "top"
-    | `Right -> "right"
-    | `Left -> "left"
-    | `Center -> "center"
-    | `Middle -> "middle"
-    | `Bottom -> "bottom"
-    | `Super -> "super"
-    | `Sub -> "sub"
-    | #css_global_values as global -> global_to_string_css global
-  ;;
+  let to_string_css t = to_string_css (t :> t)
 end
 
 module Length = struct
@@ -152,11 +128,11 @@ module Length = struct
     | `Px_float of float
     | `Vh of Percent.t
     | `Vw of Percent.t
-    | css_global_values
+    | t css_global_values
     ]
   [@@deriving sexp, bin_io, compare]
 
-  let to_string_css = function
+  let rec to_string_css = function
     | `Raw s -> s
     | `Ch c -> [%string "%{f2s 2 c}ch"]
     | `Rem f -> [%string "%{f2s 2 f}rem"]
@@ -168,9 +144,10 @@ module Length = struct
     | `Px_float f -> [%string "%{f2s 2 f}px"]
     | `Vh p -> [%string "%{f2s 2 (Percent.to_percentage p)}vh"]
     | `Vw p -> [%string "%{f2s 2 (Percent.to_percentage p)}vw"]
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   ;;
 
+  let to_string_css t = to_string_css (t :> t)
   let percent100 = `Percent (Percent.of_percentage 100.)
 end
 
@@ -239,19 +216,35 @@ let position ?top:tp ?bottom:bt ?left:lt ?right:rt pos =
   concat [ pos; convert tp top; convert lt left; convert rt right; convert bt bottom ]
 ;;
 
+type box_sizing =
+  [ `Content_box
+  | `Border_box
+  | box_sizing css_global_values
+  ]
+
 let box_sizing v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Content_box -> "content-box"
     | `Border_box -> "border-box"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"box-sizing" ~value
+  create_raw ~field:"box-sizing" ~value:(to_string_css v)
 ;;
 
+type display =
+  [ `Inline
+  | `Block
+  | `Inline_block
+  | `List_item
+  | `Table
+  | `Inline_table
+  | `None
+  | `Inline_grid
+  | display css_global_values
+  ]
+
 let display v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Inline -> "inline"
     | `Block -> "block"
     | `Inline_block -> "inline-block"
@@ -262,20 +255,26 @@ let display v =
     | `Flex -> "flex"
     | `Inline_flex -> "inline-flex"
     | `Inline_grid -> "inline-grid"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"display" ~value
+  create_raw ~field:"display" ~value:(to_string_css v)
 ;;
 
+type visibility =
+  [ `Visible
+  | `Hidden
+  | `Collapse
+  | visibility css_global_values
+  ]
+
 let visibility v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Visible -> "visible"
     | `Hidden -> "hidden"
     | `Collapse -> "collapse"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"visibility" ~value
+  create_raw ~field:"visibility" ~value:(to_string_css v)
 ;;
 
 type overflow =
@@ -283,19 +282,18 @@ type overflow =
   | `Hidden
   | `Scroll
   | `Auto
-  | css_global_values
+  | overflow css_global_values
   ]
 
 let make_overflow field v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Visible -> "visible"
     | `Hidden -> "hidden"
     | `Scroll -> "scroll"
     | `Auto -> "auto"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field ~value
+  create_raw ~field ~value:(to_string_css v)
 ;;
 
 let overflow = make_overflow "overflow"
@@ -309,23 +307,22 @@ let create_length_field field l =
 ;;
 
 let white_space v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Normal -> "normal"
     | `Nowrap -> "nowrap"
     | `Pre -> "pre"
     | `Pre_line -> "pre-line"
     | `Pre_wrap -> "pre-wrap"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create ~field:"white-space" ~value
+  create ~field:"white-space" ~value:(to_string_css v)
 ;;
 
 type font_style =
   [ `Normal
   | `Italic
   | `Oblique
-  | css_global_values
+  | font_style css_global_values
   ]
 
 type font_weight =
@@ -334,52 +331,49 @@ type font_weight =
   | `Bolder
   | `Lighter
   | `Number of int
-  | css_global_values
+  | font_weight css_global_values
   ]
 
 type font_variant =
   [ `Normal
   | `Small_caps
-  | css_global_values
+  | font_variant css_global_values
   ]
 
 let font_size = create_length_field "font-size"
 let font_family l = create_raw ~field:"font-family" ~value:(String.concat l ~sep:",")
 
 let font_style s =
-  let value =
-    match s with
+  let rec to_string_css = function
     | `Normal -> "normal"
     | `Italic -> "italic"
     | `Oblique -> "oblique"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"font-style" ~value
+  create_raw ~field:"font-style" ~value:(to_string_css s)
 ;;
 
 let font_weight s =
-  let value =
-    match s with
+  let rec to_string_css = function
     | `Number i -> Int.to_string i
     | `Bold -> "bold"
     | `Normal -> "normal"
     | `Lighter -> "lighter"
     | `Bolder -> "bolder"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"font-weight" ~value
+  create_raw ~field:"font-weight" ~value:(to_string_css s)
 ;;
 
 let bold = font_weight `Bold
 
 let font_variant s =
-  let value =
-    match s with
+  let rec to_string_css = function
     | `Normal -> "normal"
     | `Small_caps -> "small-caps"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"font-variant" ~value
+  create_raw ~field:"font-variant" ~value:(to_string_css s)
 ;;
 
 let font ~size ~family ?style ?weight ?variant () =
@@ -418,7 +412,32 @@ type text_align =
   | `Right
   | `Center
   | `Justify
-  | css_global_values
+  | text_align css_global_values
+  ]
+
+type horizontal_align =
+  [ `Left
+  | `Right
+  | `Center
+  | horizontal_align css_global_values
+  ]
+
+type vertical_align =
+  [ `Top
+  | `Bottom
+  | `Middle
+  | `Super
+  | `Sub
+  | vertical_align css_global_values
+  ]
+
+type white_space =
+  [ `Normal
+  | `Nowrap
+  | `Pre
+  | `Pre_line
+  | `Pre_wrap
+  | white_space css_global_values
   ]
 
 let stops_to_string stops =
@@ -439,23 +458,47 @@ let background_image spec =
   create_raw ~field:"background-image" ~value
 ;;
 
-let create_alignment field a =
-  create_raw ~field ~value:(Alignment.to_string_css (a :> Alignment.t))
+let text_align value =
+  let rec to_string_css = function
+    | `Justify -> "justify"
+    | `Right -> "right"
+    | `Left -> "left"
+    | `Center -> "center"
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
+  in
+  create_raw ~field:"text-align" ~value:(to_string_css value)
 ;;
 
-let text_align = create_alignment "text-align"
-let horizontal_align = create_alignment "horizontal-align"
-let vertical_align = create_alignment "vertical-align"
+let horizontal_align value =
+  let rec to_string_css = function
+    | `Right -> "right"
+    | `Left -> "left"
+    | `Center -> "center"
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
+  in
+  create_raw ~field:"horizontal-align" ~value:(to_string_css value)
+;;
+
+let vertical_align value =
+  let rec to_string_css = function
+    | `Top -> "top"
+    | `Middle -> "middle"
+    | `Bottom -> "bottom"
+    | `Super -> "super"
+    | `Sub -> "sub"
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
+  in
+  create_raw ~field:"vertical-align" ~value:(to_string_css value)
+;;
 
 let float f =
-  let value =
-    match f with
+  let rec to_string_css = function
     | `None -> "none"
     | `Left -> "left"
     | `Right -> "right"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"float" ~value
+  create_raw ~field:"float" ~value:(to_string_css f)
 ;;
 
 let line_height = create_length_field "line-height"
@@ -513,7 +556,7 @@ type border_style =
   | `Ridge
   | `Inset
   | `Outset
-  | css_global_values
+  | border_style css_global_values
   ]
 
 (** Concat 2 values with a space in between.  If either is the empty string
@@ -529,8 +572,7 @@ let concat2v v1 v2 =
 let concat3v v1 v2 v3 = concat2v (concat2v v1 v2) v3
 
 let border_value ?width ?color ~(style : border_style) () =
-  let style =
-    match style with
+  let rec style_to_string_css = function
     | `Ridge -> "ridge"
     | `Outset -> "outset"
     | `None -> "none"
@@ -541,11 +583,12 @@ let border_value ?width ?color ~(style : border_style) () =
     | `Double -> "double"
     | `Dotted -> "dotted"
     | `Solid -> "solid"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global ->
+      global_to_string_css global ~to_string_css:style_to_string_css
   in
   let width = value_map width ~f:Length.to_string_css in
   let color = value_map color ~f:Color.to_string_css in
-  concat3v width style color
+  concat3v width (style_to_string_css style) color
 ;;
 
 let create_border ?side () =
@@ -583,14 +626,19 @@ let outline ?width ?color ~style () =
   create_raw ~field:"outline" ~value:(border_value ?width ?color ~style ())
 ;;
 
+type border_collapse =
+  [ `Separate
+  | `Collapse
+  | border_collapse css_global_values
+  ]
+
 let border_collapse v =
-  let value =
-    match v with
+  let rec to_string_css = function
     | `Separate -> "separate"
     | `Collapse -> "collapse"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"border-collapse" ~value
+  create_raw ~field:"border-collapse" ~value:(to_string_css v)
 ;;
 
 let border_spacing = create_length_field "border-spacing"
@@ -601,7 +649,7 @@ type text_decoration_line =
   | `Underline
   | `Overline
   | `Line_through
-  | css_global_values
+  | text_decoration_line css_global_values
   ]
 [@@deriving sexp]
 
@@ -611,30 +659,32 @@ type text_decoration_style =
   | `Dotted
   | `Dashed
   | `Wavy
-  | css_global_values
+  | text_decoration_style css_global_values
   ]
 [@@deriving sexp]
 
 let text_decoration ?style ?color ~line () =
   let value =
     let line =
-      List.map line ~f:(function
+      let rec to_string_css = function
         | `Line_through -> "line-through"
         | `None -> "none"
         | `Overline -> "overline"
         | `Underline -> "underline"
-        | #css_global_values as global -> global_to_string_css global)
-      |> String.concat ~sep:" "
+        | #css_global_values as global -> global_to_string_css global ~to_string_css
+      in
+      List.map line ~f:to_string_css |> String.concat ~sep:" "
     in
     let style =
-      match style with
-      | None -> ""
-      | Some `Solid -> "solid"
-      | Some `Double -> "double"
-      | Some `Dotted -> "dotted"
-      | Some `Dashed -> "dashed"
-      | Some `Wavy -> "wavy"
-      | Some (#css_global_values as global) -> global_to_string_css global
+      let rec to_string_css = function
+        | `Solid -> "solid"
+        | `Double -> "double"
+        | `Dotted -> "dotted"
+        | `Dashed -> "dashed"
+        | `Wavy -> "wavy"
+        | #css_global_values as global -> global_to_string_css global ~to_string_css
+      in
+      Option.value_map style ~f:to_string_css ~default:""
     in
     let color = value_map color ~f:Color.to_string_css in
     concat3v line style color
@@ -777,17 +827,40 @@ let align_self a =
   create_raw ~field:"align-self" ~value
 ;;
 
-let resize (value : [ `None | `Both | `Horizontal | `Vertical | css_global_values ]) =
-  let value =
-    match value with
+type resize =
+  [ `None
+  | `Both
+  | `Horizontal
+  | `Vertical
+  | resize css_global_values
+  ]
+
+let resize value =
+  let rec to_string_css = function
     | `None -> "none"
     | `Both -> "both"
     | `Horizontal -> "horizontal"
     | `Vertical -> "vertical"
-    | #css_global_values as global -> global_to_string_css global
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
   in
-  create_raw ~field:"resize" ~value
+  create_raw ~field:"resize" ~value:(to_string_css value)
 ;;
+
+type direction =
+  [ `Normal
+  | `Reverse
+  | `Alternate
+  | `Alternate_reverse
+  | direction css_global_values
+  ]
+
+type fill_mode =
+  [ `None
+  | `Forwards
+  | `Backwards
+  | `Both
+  | fill_mode css_global_values
+  ]
 
 let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_function ()
   =
@@ -795,27 +868,25 @@ let animation ~name ~duration ?delay ?direction ?fill_mode ?iter_count ?timing_f
   let span_to_string s = [%string "%{f2s 2 (Time_ns.Span.to_sec s)}s"] in
   let direction =
     m direction ~f:(fun d ->
-      let value =
-        match d with
+      let rec to_string_css = function
         | `Normal -> "normal"
         | `Reverse -> "reverse"
         | `Alternate -> "alternate"
         | `Alternate_reverse -> "alternate-reverse"
-        | #css_global_values as global -> global_to_string_css global
+        | #css_global_values as global -> global_to_string_css global ~to_string_css
       in
-      create_raw ~field:"animation-direction" ~value)
+      create_raw ~field:"animation-direction" ~value:(to_string_css d))
   in
   let fill_mode =
     m fill_mode ~f:(fun f ->
-      let value =
-        match f with
+      let rec to_string_css = function
         | `None -> "none"
         | `Forwards -> "forwards"
         | `Backwards -> "backwards"
         | `Both -> "both"
-        | #css_global_values as global -> global_to_string_css global
+        | #css_global_values as global -> global_to_string_css global ~to_string_css
       in
-      create_raw ~field:"animation-fill-mode" ~value)
+      create_raw ~field:"animation-fill-mode" ~value:(to_string_css f))
   in
   [ Some (create_raw ~field:"animation-name" ~value:name)
   ; Some (create_raw ~field:"animation-duration" ~value:(span_to_string duration))

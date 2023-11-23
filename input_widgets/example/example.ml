@@ -195,12 +195,14 @@ module App = struct
             ~on_change:(fun examples -> inject (Set { model with examples })) )
       ; ( "Entry.of_stringable"
         , Entry.of_stringable
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Example)
             ~value:model.example_opt
             ~on_input:(fun example_opt -> inject (Set { model with example_opt })) )
       ; ( "Entry.validated (Time_ns.Span.t, press Enter = clear)"
         , Entry.validated
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Time_ns.Span)
             ~value:model.time_span
@@ -218,18 +220,21 @@ module App = struct
             () )
       ; ( "Entry.text"
         , Entry.text
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             ()
             ~value:model.string_opt
             ~on_input:(fun string_opt -> inject (Set { model with string_opt })) )
       ; ( "Entry.password"
         , Entry.password
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             ()
             ~value:model.string_opt
             ~on_input:(fun string_opt -> inject (Set { model with string_opt })) )
       ; ( "Entry.number (int)"
         , Entry.number
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Int)
             ~step:1.0
@@ -237,6 +242,7 @@ module App = struct
             ~on_input:(fun int_opt -> inject (Set { model with int_opt })) )
       ; ( "Entry.number (decimal)"
         , Entry.number
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Decimal)
             ~step:1.0
@@ -244,6 +250,7 @@ module App = struct
             ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
       ; ( "Entry.range (int)"
         , Entry.range
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Int)
             ~step:1.0
@@ -251,6 +258,7 @@ module App = struct
             ~on_input:(fun int_opt -> inject (Set { model with int_opt })) )
       ; ( "Entry.range (decimal)"
         , Entry.range
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             (module Decimal)
             ~step:0.1
@@ -258,12 +266,14 @@ module App = struct
             ~on_input:(fun float_opt -> inject (Set { model with float_opt })) )
       ; ( "Entry.datetime_local"
         , Entry.datetime_local
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             ()
             ~value:model.time_ns_opt
             ~on_input:(fun time_ns_opt -> inject (Set { model with time_ns_opt })) )
       ; ( "Entry.time (of_day)"
         , Entry.time
+            ~allow_updates_when_focused:`Never
             ~merge_behavior:Legacy_dont_merge
             ()
             ~value:model.time_of_day_opt

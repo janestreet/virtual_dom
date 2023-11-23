@@ -126,6 +126,11 @@ let empty = Many []
 let combine left right = Many [ left; right ]
 let ( @ ) = combine
 
+let of_opt = function
+  | None -> empty
+  | Some attr -> attr
+;;
+
 module Unmerged_warning_mode = struct
   type t =
     | No_warnings
@@ -383,6 +388,7 @@ let hidden = create "hidden" ""
 let readonly = create "readonly" ""
 let disabled = create "disabled" ""
 let placeholder x = create "placeholder" x
+let role r = create "role" r
 
 let autofocus = function
   | true -> create "autofocus" ""
