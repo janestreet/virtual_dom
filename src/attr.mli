@@ -160,10 +160,9 @@ val on_change : (Dom_html.event Js.t -> string -> unit Effect.t) -> t
 *)
 val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> unit Effect.t) -> t
 
-(** Used by dialogs *)
 val on_cancel : (Dom_html.event Js.t -> unit Effect.t) -> t
-
 val on_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_close : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_contextmenu : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 val on_double_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 val on_drag : (Dom_html.dragEvent Js.t -> unit Effect.t) -> t
@@ -229,7 +228,7 @@ module Multi : sig
 end
 
 module Always_focus_hook : sig
-  (* CONSIDER USING [Bonsai_web.Focus.*] functions *)
+  (* CONSIDER USING [Bonsai_web.Effect.Focus.*] functions *)
 
   (* This hook always causes the element to which it is attached to become
      focused when the element is attached to the DOM. This may behave
@@ -240,7 +239,7 @@ module Always_focus_hook : sig
 end
 
 module Single_focus_hook () : sig
-  (* CONSIDER USING [Bonsai_web.Focus.*] functions *)
+  (* CONSIDER USING [Bonsai_web.Effect.Focus.*] functions *)
 
   (* A hook that makes the element it is attached to become focused immediately
      after the attribute is applied. Afterward, the attribute has no effect on

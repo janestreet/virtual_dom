@@ -1,2 +1,6 @@
-(executables (names terminal) (libraries virtual_dom core js_of_ocaml)
- (preprocess (pps js_of_ocaml-ppx ppx_jane)))
+(executables
+ (modes byte exe)
+ (names terminal)
+ (libraries virtual_dom core js_of_ocaml)
+ (preprocess
+  (pps js_of_ocaml-ppx ppx_jane)))

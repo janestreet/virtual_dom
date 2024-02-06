@@ -3,6 +3,23 @@ module Dom = Js_of_ocaml.Dom
 module Dom_html = Js_of_ocaml.Dom_html
 module Js = Js_of_ocaml.Js
 
+(* History api only cares about path, query, and fragment and the browser doesn't
+   have access to userinfo to be able to fully recreate the uri correctly. Before
+   sending to history api we strip all the parts of the URI that are not necessary *)
+let uri_to_html5_history_string uri =
+  Uri.make
+    ~scheme:"https"
+    ~path:(Uri.path uri)
+    ~query:(Uri.query uri)
+    ?fragment:(Uri.fragment uri)
+    ()
+  (* http/s uri's get their paths canonicalized with a leading slash so we ensure we
+     canonicalize as a https uri and then remove. *)
+  |> Uri.canonicalize
+  |> (fun uri -> Uri.with_scheme uri None)
+  |> Uri.to_string
+;;
+
 module T = struct
   module type Payload = sig
     type t [@@deriving bin_io]
@@ -165,7 +182,7 @@ module T = struct
     let uri =
       match uri with
       | None -> Js.null
-      | Some uri -> Js.some (Js.string (Uri.to_string uri))
+      | Some uri -> uri |> uri_to_html5_history_string |> Js.string |> Js.some
     in
     match action with
     | `Replace -> Dom_html.window##.history##replaceState state title uri

@@ -157,7 +157,7 @@ module Time_compat = struct
 end
 
 let maybe_disabled ~disabled attrs = if disabled then Attr.disabled :: attrs else attrs
-let add_attrs attrs' attrs = attrs @ attrs' |> Attrs.merge_classes_and_styles
+let add_attrs attrs' attrs = [ Attr.many (attrs @ attrs') ]
 
 let merge = function
   | Merge_behavior.Merge -> Attr.many

@@ -180,3 +180,7 @@ module Opinionated : sig
     -> schedule_navigate_to:('s -> unit)
     -> unit
 end
+
+(** Strips all but path, query, and fragment. Ensures a leading / on empty path.
+    Mostly for testing but you can use it if you'd really like *)
+val uri_to_html5_history_string : Uri.t -> string
