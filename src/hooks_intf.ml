@@ -30,9 +30,14 @@ module type S = sig
       necessarily attached to the rest of the DOM tree. *)
   val init : Input.t -> Dom_html.element Js.t -> State.t
 
-  (** [on_mount] is called once, after the element is attached to the rest of the
-      DOM tree. *)
-  val on_mount : Input.t -> State.t -> Dom_html.element Js.t -> unit
+  (** [on_mount] specifies what happens when the element is attached to the rest of the
+      DOM tree. When [`Schedule_animation_frame] is passed, the browser will call the
+      provided function within a call to [window.requestAnimationFrame()] at which point
+      the provided element will be attached to the DOM tree. *)
+  val on_mount
+    : [ `Do_nothing
+      | `Schedule_animation_frame of Input.t -> State.t -> Dom_html.element Js.t -> unit
+      ]
 
   (** [update] is called when a previous attribute of the same kind existed on
       the vdom node.  You get access to the [Input.t] that the previous node was

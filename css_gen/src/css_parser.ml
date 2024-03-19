@@ -207,43 +207,43 @@ let%test_module "tests" =
       print_tokens value;
       [%expect
         {|
-    Number
-    White_space
-    Dimension
-    White_space
-    Dimension
-    White_space
-    Number
-    White_space
-    Function
-    Function
-    Ident
-    Rparen
-    Comma
-    White_space
-    Number
-    Rparen
-    Comma
-    White_space
-    Number
-    White_space
-    Dimension
-    White_space
-    Dimension
-    White_space
-    Number
-    White_space
-    Function
-    Function
-    Ident
-    Rparen
-    Comma
-    White_space
-    Number
-    Rparen |}];
+        Number
+        White_space
+        Dimension
+        White_space
+        Dimension
+        White_space
+        Number
+        White_space
+        Function
+        Function
+        Ident
+        Rparen
+        Comma
+        White_space
+        Number
+        Rparen
+        Comma
+        White_space
+        Number
+        White_space
+        Dimension
+        White_space
+        Dimension
+        White_space
+        Number
+        White_space
+        Function
+        Function
+        Ident
+        Rparen
+        Comma
+        White_space
+        Number
+        Rparen
+        |}];
       print_s [%message (validate_value value : unit Or_error.t)];
-      [%expect {|
-    ("validate_value value" (Ok ())) |}]
+      [%expect {| ("validate_value value" (Ok ())) |}]
     ;;
 
     let%expect_test "values" =
@@ -258,14 +258,15 @@ let%test_module "tests" =
       test "rgb(0,0,0)";
       [%expect
         {|
-      x --> (Ok ())
-      3 --> (Ok ())
-      3in --> (Ok ())
-      3% --> (Ok ())
-      #fff --> (Ok ())
-      1 0 auto --> (Ok ())
-      'Hello World' --> (Ok ())
-      rgb(0,0,0) --> (Ok ()) |}]
+        x --> (Ok ())
+        3 --> (Ok ())
+        3in --> (Ok ())
+        3% --> (Ok ())
+        #fff --> (Ok ())
+        1 0 auto --> (Ok ())
+        'Hello World' --> (Ok ())
+        rgb(0,0,0) --> (Ok ())
+        |}]
     ;;
 
     let%expect_test "declaration" =
@@ -278,10 +279,11 @@ let%test_module "tests" =
       (* but whitespace is handled in declaration (any really) *)
       [%expect
         {|
-      flex: 1 0 auto --> (Ok (flex "1 0 auto"))
-      content: 'Hello World' --> (Ok (content "'Hello World'"))
-      content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi_colon)))
-      content: bar  --> (Ok (content bar)) |}]
+        flex: 1 0 auto --> (Ok (flex "1 0 auto"))
+        content: 'Hello World' --> (Ok (content "'Hello World'"))
+        content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi_colon)))
+        content: bar  --> (Ok (content bar))
+        |}]
     ;;
 
     let%expect_test "unicode" =
@@ -290,10 +292,11 @@ let%test_module "tests" =
       print_endline (Sexp.to_string (Sexp.Atom "← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"));
       [%expect
         {|
-    content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶' --> (Ok
-     (content
-      "'\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182'"))
-    "\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182" |}]
+        content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶' --> (Ok
+         (content
+          "'\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182'"))
+        "\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182"
+        |}]
     ;;
 
     let%expect_test "declaration list" =
@@ -306,13 +309,14 @@ let%test_module "tests" =
       test "flex: 1 0 auto ;; other : sa ";
       [%expect
         {|
-    flex: 1 0 auto --> (Ok ((flex "1 0 auto")))
-    flex: 1 0 auto; --> (Ok ((flex "1 0 auto")))
-    background: #5d9ab2 url("img_tree.png") no-repeat top left;margin-left: 200px --> (Ok
-     ((background "#5d9ab2 url(\"img_tree.png\") no-repeat top left")
-      (margin-left 200px)))
-    ;;;;; --> (Ok ())
-    flex: 1 0 auto ;; other : sa  --> (Ok ((flex "1 0 auto") (other sa))) |}]
+        flex: 1 0 auto --> (Ok ((flex "1 0 auto")))
+        flex: 1 0 auto; --> (Ok ((flex "1 0 auto")))
+        background: #5d9ab2 url("img_tree.png") no-repeat top left;margin-left: 200px --> (Ok
+         ((background "#5d9ab2 url(\"img_tree.png\") no-repeat top left")
+          (margin-left 200px)))
+        ;;;;; --> (Ok ())
+        flex: 1 0 auto ;; other : sa  --> (Ok ((flex "1 0 auto") (other sa)))
+        |}]
     ;;
   end)
 ;;

@@ -4,7 +4,7 @@ module Stable = struct
   module V1 = struct
     (** (field * value) list.  Where value should be escaped / quoted
         as necessary as per https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
-    type t = (string * string) list [@@deriving sexp, compare, bin_io]
+    type t = (string * string) list [@@deriving sexp, compare, equal, bin_io]
   end
 end
 
@@ -944,16 +944,17 @@ let%test_module "tests" =
       t (create ~field:"content" ~value:{|";"|});
       [%expect
         {|
-    flex: 1.000000 1.000000 auto;overflow: scroll
-    flex: 1.000000 1.000000 auto;overflow: scroll
-    display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
-    display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
-    color: rgb(100,100,100)
-    color: rgb(100,100,100)
-    color: hsl(100,75%,60%)
-    color: hsl(100,75%,60%)
-    content: ";"
-    content: ";" |}]
+        flex: 1.000000 1.000000 auto;overflow: scroll
+        flex: 1.000000 1.000000 auto;overflow: scroll
+        display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
+        display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
+        color: rgb(100,100,100)
+        color: rgb(100,100,100)
+        color: hsl(100,75%,60%)
+        color: hsl(100,75%,60%)
+        content: ";"
+        content: ";"
+        |}]
     ;;
 
     let%expect_test "gradients" =

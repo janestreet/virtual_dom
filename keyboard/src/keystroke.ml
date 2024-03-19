@@ -543,27 +543,27 @@ let%expect_test "" =
     printf !"%{to_string_hum}\n" (create' ?ctrl ?alt ?shift ?meta key)
   in
   print KeyA;
-  [%expect {|a|}];
+  [%expect {| a |}];
   print ~shift:() KeyA;
-  [%expect {|Shift+a|}];
+  [%expect {| Shift+a |}];
   print ~ctrl:() ~alt:() ~shift:() ~meta:() KeyA;
-  [%expect {|Ctrl+Alt+Shift+Meta+a|}];
+  [%expect {| Ctrl+Alt+Shift+Meta+a |}];
   print Digit1;
-  [%expect {|1|}];
+  [%expect {| 1 |}];
   print ~ctrl:() Digit1;
-  [%expect {|Ctrl+1|}];
+  [%expect {| Ctrl+1 |}];
   print Numpad1;
-  [%expect {|1|}];
+  [%expect {| 1 |}];
   print ~ctrl:() Numpad1;
-  [%expect {|Ctrl+1|}];
+  [%expect {| Ctrl+1 |}];
   print ~ctrl:() Numpad1;
-  [%expect {|Ctrl+1|}];
+  [%expect {| Ctrl+1 |}];
   print Comma;
-  [%expect {|,|}];
+  [%expect {| , |}];
   print ~shift:() Comma;
-  [%expect {|<|}];
+  [%expect {| < |}];
   print ~ctrl:() Comma;
-  [%expect {|Ctrl+,|}];
+  [%expect {| Ctrl+, |}];
   print ~ctrl:() ~shift:() Comma;
-  [%expect {|Ctrl+<|}]
+  [%expect {| Ctrl+< |}]
 ;;

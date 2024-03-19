@@ -90,7 +90,7 @@ module Auto_or_length : sig
   val to_string_css : t -> string
 end
 
-type t [@@deriving sexp, compare, bin_io]
+type t [@@deriving sexp, compare, equal, bin_io]
 
 (** Create a single property, value pair (a declaration in CSS parlance).
     The value must be a valid CSS literal.  We do run a simple CSS parser on the value
@@ -498,7 +498,7 @@ val user_select : user_select -> t
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving sexp, compare, bin_io]
+    type nonrec t = t [@@deriving sexp, compare, equal, bin_io]
   end
 end
 

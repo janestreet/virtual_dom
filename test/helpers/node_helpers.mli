@@ -29,7 +29,7 @@ val select : t -> selector:string -> t list
 val select_first : t -> selector:string -> t option
 val select_first_exn : t -> selector:string -> t
 
-(* This function currently Stack Overflows when compiled with Js_of_ocaml
+(* This function currently stack overflows when compiled with Js_of_ocaml
    JavaScript because of limitations in the tail-call optimizer.
    INFO: https://github.com/aantron/markup.ml/issues/26
    INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)

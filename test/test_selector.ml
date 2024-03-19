@@ -39,7 +39,8 @@ let%expect_test "select finds multiple items" =
   [%expect
     {|
     ((Element ((tag_name span) (attributes ((id 1) (class a)))))
-     (Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
+     (Element ((tag_name span) (attributes ((id 2) (class a))))))
+    |}]
 ;;
 
 let%expect_test "select nth-child" =
@@ -50,11 +51,9 @@ let%expect_test "select nth-child" =
       ]
   in
   show "span:nth-child(1)" t;
-  [%expect {|
-    ((Element ((tag_name span) (attributes ((id 1) (class a)))))) |}];
+  [%expect {| ((Element ((tag_name span) (attributes ((id 1) (class a)))))) |}];
   show "span:nth-child(2)" t;
-  [%expect {|
-    ((Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
+  [%expect {| ((Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
 ;;
 
 let%expect_test "select on node-name" =
@@ -68,7 +67,8 @@ let%expect_test "select on node-name" =
   [%expect
     {|
     ((Element ((tag_name span) (attributes ((id 1) (class a)))))
-     (Element ((tag_name span) (attributes ((id 2) (class a)))))) |}]
+     (Element ((tag_name span) (attributes ((id 2) (class a))))))
+    |}]
 ;;
 
 module Person = struct
@@ -86,7 +86,7 @@ module H = Attr.Hooks.Make (struct
   module Input = Person
 
   let init _input _element = ()
-  let on_mount _input _state _element = ()
+  let on_mount = `Do_nothing
   let update ~old_input:_ ~new_input:_ _state _element = ()
   let destroy _input _state _element = ()
 end)
@@ -100,8 +100,7 @@ let%expect_test "print element with a hook" =
          ]
        []);
   [%expect
-    {|
-      ((Element ((tag_name div) (hooks ((unique-name ((age 20) (name person)))))))) |}]
+    {| ((Element ((tag_name div) (hooks ((unique-name ((age 20) (name person)))))))) |}]
 ;;
 
 let%expect_test "get value out of a hook in a test" =
@@ -154,6 +153,7 @@ let%expect_test "try to find hook with a bad type_id" =
     ());
   [%expect
     {|
-      (Failure
-       "get_hook_value: a hook for unique-name was found, but the type-ids were not the same; are you using the same type-id that you got from the For_testing module from your hook creator?") |}]
+    (Failure
+     "get_hook_value: a hook for unique-name was found, but the type-ids were not the same; are you using the same type-id that you got from the For_testing module from your hook creator?")
+    |}]
 ;;

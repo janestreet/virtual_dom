@@ -18,7 +18,8 @@ let%expect_test "basic text" =
   [%expect {|
     (Text hello)
     ----------------------
-    hello |}]
+    hello
+    |}]
 ;;
 
 let%expect_test "lazy text" =
@@ -26,7 +27,8 @@ let%expect_test "lazy text" =
   [%expect {|
     (Text hello)
     ----------------------
-    hello |}]
+    hello
+    |}]
 ;;
 
 let%expect_test "lazy div" =
@@ -35,7 +37,8 @@ let%expect_test "lazy div" =
     {|
     (Element ((tag_name div)))
     ----------------------
-    <div> </div> |}]
+    <div> </div>
+    |}]
 ;;
 
 let%expect_test "lazy lazy div" =
@@ -44,7 +47,8 @@ let%expect_test "lazy lazy div" =
     {|
     (Element ((tag_name div)))
     ----------------------
-    <div> </div> |}]
+    <div> </div>
+    |}]
 ;;
 
 let%expect_test "empty div" =
@@ -53,7 +57,8 @@ let%expect_test "empty div" =
     {|
     (Element ((tag_name div)))
     ----------------------
-    <div> </div> |}]
+    <div> </div>
+    |}]
 ;;
 
 let%expect_test "empty div" =
@@ -62,7 +67,8 @@ let%expect_test "empty div" =
     {|
     (Element ((tag_name div)))
     ----------------------
-    <div> </div> |}]
+    <div> </div>
+    |}]
 ;;
 
 let%expect_test "root level fragment converts into a div" =
@@ -71,7 +77,8 @@ let%expect_test "root level fragment converts into a div" =
     {|
     (Element ((tag_name div)))
     ----------------------
-    <div> </div> |}]
+    <div> </div>
+    |}]
 ;;
 
 let%expect_test "non-root fragment flattens into parent" =
@@ -80,7 +87,8 @@ let%expect_test "non-root fragment flattens into parent" =
     {|
     (Element ((tag_name div) (children ((Text "Hello, ") (Text world)))))
     ----------------------
-    <div> Hello,  world </div> |}]
+    <div> Hello,  world </div>
+    |}]
 ;;
 
 let%expect_test "deeply nested fragments are completely flattened" =
@@ -93,7 +101,8 @@ let%expect_test "deeply nested fragments are completely flattened" =
     {|
     (Element ((tag_name div) (children ((Text "Hello, ") (Text world)))))
     ----------------------
-    <div> Hello,  world </div> |}]
+    <div> Hello,  world </div>
+    |}]
 ;;
 
 let%expect_test "inner_html" =
@@ -107,7 +116,8 @@ let%expect_test "inner_html" =
     {|
     (Element ((tag_name div) (children ((Text <b>hi</b>)))))
     ----------------------
-    <div> <b>hi</b> </div> |}]
+    <div> <b>hi</b> </div>
+    |}]
 ;;
 
 let%expect_test "inner_html with custom renderer" =
@@ -121,7 +131,8 @@ let%expect_test "inner_html with custom renderer" =
   [%expect {|
     (Text overridden!)
     ----------------------
-    overridden! |}]
+    overridden!
+    |}]
 ;;
 
 let%expect_test "div with some text" =
@@ -130,7 +141,8 @@ let%expect_test "div with some text" =
     {|
     (Element ((tag_name div) (children ((Text "hello world")))))
     ----------------------
-    <div> hello world </div> |}]
+    <div> hello world </div>
+    |}]
 ;;
 
 let%expect_test "empty div with key" =
@@ -139,7 +151,8 @@ let%expect_test "empty div with key" =
     {|
     (Element ((tag_name div) (key keykey)))
     ----------------------
-    <div @key=keykey> </div> |}]
+    <div @key=keykey> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with string property" =
@@ -148,7 +161,8 @@ let%expect_test "empty div with string property" =
     {|
     (Element ((tag_name div) (string_properties ((foo bar)))))
     ----------------------
-    <div #foo="bar"> </div> |}]
+    <div #foo="bar"> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with bool property" =
@@ -157,7 +171,8 @@ let%expect_test "empty div with bool property" =
     {|
     (Element ((tag_name div) (bool_properties ((foo true)))))
     ----------------------
-    <div #foo="true"> </div> |}]
+    <div #foo="true"> </div>
+    |}]
 ;;
 
 let%expect_test "nested div with span" =
@@ -168,7 +183,8 @@ let%expect_test "nested div with span" =
     ----------------------
     <div>
       <span> </span>
-    </div> |}]
+    </div>
+    |}]
 ;;
 
 let%expect_test "empty div with string attribute" =
@@ -177,7 +193,8 @@ let%expect_test "empty div with string attribute" =
     {|
     (Element ((tag_name div) (attributes ((key value)))))
     ----------------------
-    <div key="value"> </div> |}]
+    <div key="value"> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with float attribute" =
@@ -186,7 +203,8 @@ let%expect_test "empty div with float attribute" =
     {|
     (Element ((tag_name div) (attributes ((some_attr 1.2345)))))
     ----------------------
-    <div some_attr="1.2345"> </div> |}]
+    <div some_attr="1.2345"> </div>
+    |}]
 ;;
 
 let%expect_test "widget" =
@@ -201,7 +219,8 @@ let%expect_test "widget" =
     {|
     (Element ((tag_name name_goes_here-widget)))
     ----------------------
-    <name_goes_here-widget> </name_goes_here-widget> |}]
+    <name_goes_here-widget> </name_goes_here-widget>
+    |}]
 ;;
 
 let%expect_test "widget with a vdom_for_testing" =
@@ -225,7 +244,8 @@ let%expect_test "widget with a vdom_for_testing" =
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
     ----------------------
-    <div onclick> </div> |}]
+    <div onclick> </div>
+    |}]
 ;;
 
 let%expect_test "widget inside of something else" =
@@ -245,7 +265,8 @@ let%expect_test "widget inside of something else" =
     ----------------------
     <div>
       <name_goes_here-widget> </name_goes_here-widget>
-    </div> |}]
+    </div>
+    |}]
 ;;
 
 let%expect_test "widget with info" =
@@ -261,7 +282,8 @@ let%expect_test "widget with info" =
     {|
     (Element ((tag_name widget) (children ((Text "info name")))))
     ----------------------
-    <widget> info name </widget> |}]
+    <widget> info name </widget>
+    |}]
 ;;
 
 let%expect_test "opaque_widget" =
@@ -276,7 +298,8 @@ let%expect_test "opaque_widget" =
     {|
     (Element ((tag_name name_goes_here-widget)))
     ----------------------
-    <name_goes_here-widget> </name_goes_here-widget> |}]
+    <name_goes_here-widget> </name_goes_here-widget>
+    |}]
 ;;
 
 let%expect_test "empty div with callback" =
@@ -285,7 +308,8 @@ let%expect_test "empty div with callback" =
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
     ----------------------
-    <div onclick> </div> |}]
+    <div onclick> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with class list" =
@@ -294,7 +318,8 @@ let%expect_test "empty div with class list" =
     {|
     (Element ((tag_name div) (attributes ((class "a b c")))))
     ----------------------
-    <div class="a b c"> </div> |}]
+    <div class="a b c"> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with id" =
@@ -303,7 +328,8 @@ let%expect_test "empty div with id" =
     {|
     (Element ((tag_name div) (attributes ((id my-id)))))
     ----------------------
-    <div id="my-id"> </div> |}]
+    <div id="my-id"> </div>
+    |}]
 ;;
 
 let%expect_test "later attributes override earlier ones" =
@@ -316,7 +342,8 @@ let%expect_test "later attributes override earlier ones" =
     ("WARNING: not combining attributes" (name id))
     (Element ((tag_name div) (attributes ((id final-id)))))
     ----------------------
-    <div id="final-id"> </div> |}]
+    <div id="final-id"> </div>
+    |}]
 ;;
 
 let%expect_test "later properties override earlier ones" =
@@ -335,7 +362,8 @@ let%expect_test "later properties override earlier ones" =
     ("WARNING: not combining properties" (name prop))
     (Element ((tag_name div) (string_properties ((prop final-prop)))))
     ----------------------
-    <div #prop="final-prop"> </div> |}]
+    <div #prop="final-prop"> </div>
+    |}]
 ;;
 
 let%expect_test "no merging without [many]" =
@@ -349,7 +377,8 @@ let%expect_test "no merging without [many]" =
     ("WARNING: not combining classes" (first (b)) (second (c)))
     (Element ((tag_name div) (attributes ((class c)))))
     ----------------------
-    <div class="c"> </div> |}]
+    <div class="c"> </div>
+    |}]
 ;;
 
 let%expect_test "merging only within [many]" =
@@ -364,7 +393,8 @@ let%expect_test "merging only within [many]" =
     ("WARNING: not combining classes" (first (b)) (second (c)))
     (Element ((tag_name div) (attributes ((class c)))))
     ----------------------
-    <div class="c"> </div> |}]
+    <div class="c"> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with [many] classes" =
@@ -376,7 +406,8 @@ let%expect_test "empty div with [many] classes" =
     {|
     (Element ((tag_name div) (attributes ((class "a b c")))))
     ----------------------
-    <div class="a b c"> </div> |}]
+    <div class="a b c"> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with [many] different attributes" =
@@ -412,7 +443,8 @@ let%expect_test "empty div with [many] different attributes" =
            font-weight: bold;
            z-index: 42;
            display: table;
-         }> </div> |}]
+         }> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with tree of nested [many]" =
@@ -435,7 +467,8 @@ let%expect_test "empty div with tree of nested [many]" =
      ((tag_name div) (attributes ((id my-id) (class "a b c")))
       (styles ((text-align center) (box-sizing border-box)))))
     ----------------------
-    <div id="my-id" class="a b c" style={ text-align: center; box-sizing: border-box; }> </div> |}]
+    <div id="my-id" class="a b c" style={ text-align: center; box-sizing: border-box; }> </div>
+    |}]
 ;;
 
 let%expect_test "empty div with [many] different attributes" =
@@ -464,7 +497,8 @@ let%expect_test "empty div with [many] different attributes" =
       (styles ((font-weight bold)))
       (handlers ((onblur <handler>) (onclick <handler>)))))
     ----------------------
-    <div onblur onclick> </div> |}];
+    <div onblur onclick> </div>
+    |}];
   show
     ~filter_printed_attributes:(fun ~key ~data:_ ->
       not (String.is_prefix ~prefix:"on" key))
@@ -476,7 +510,8 @@ let%expect_test "empty div with [many] different attributes" =
       (styles ((font-weight bold)))
       (handlers ((onblur <handler>) (onclick <handler>)))))
     ----------------------
-    <div id="my-id" checked="" class="a" style={ font-weight: bold; }> </div> |}]
+    <div id="my-id" checked="" class="a" style={ font-weight: bold; }> </div>
+    |}]
 ;;
 
 let%expect_test "[many_without_merge] inside merge" =
@@ -492,7 +527,8 @@ let%expect_test "[many_without_merge] inside merge" =
     ("WARNING: not combining classes" (first (b)) (second (c)))
     (Element ((tag_name div) (attributes ((class "a c d")))))
     ----------------------
-    <div class="a c d"> </div> |}];
+    <div class="a c d"> </div>
+    |}];
   let view =
     Node.div
       ~attrs:
@@ -509,7 +545,8 @@ let%expect_test "[many_without_merge] inside merge" =
     ("WARNING: not combining classes" (first (b)) (second (c)))
     (Element ((tag_name div) (attributes ((class "a c d")))))
     ----------------------
-    <div class="a c d"> </div> |}];
+    <div class="a c d"> </div>
+    |}];
   let view =
     Node.div
       ~attrs:
@@ -532,7 +569,8 @@ let%expect_test "[many_without_merge] inside merge" =
     ("WARNING: not combining classes" (first (ba bb)) (second (bab c)))
     (Element ((tag_name div) (attributes ((class "a bab c d")))))
     ----------------------
-    <div class="a bab c d"> </div> |}]
+    <div class="a bab c d"> </div>
+    |}]
 ;;
 
 let%expect_test "combining hooks" =
@@ -550,7 +588,7 @@ let%expect_test "combining hooks" =
       end
 
       let init _ _ = ()
-      let on_mount _ () _ = ()
+      let on_mount = `Do_nothing
       let update ~old_input:_ ~new_input:_ () _ = ()
       let destroy _ () _ = ()
     end)
@@ -563,7 +601,8 @@ let%expect_test "combining hooks" =
     (Element
      ((tag_name div) (attributes ((class x))) (hooks ((my-hook (hello world))))))
     ----------------------
-    <div class="x" my-hook=(hello world)> </div> |}]
+    <div class="x" my-hook=(hello world)> </div>
+    |}]
 ;;
 
 let%expect_test "hash censoring" =
@@ -579,7 +618,8 @@ let%expect_test "hash censoring" =
       (Element ((tag_name div) (attributes ((class foo_hash_abc123)))))
       ----------------------
     -|<div class="foo_hash_replaced_in_test"> </div>
-    +|<div class="foo#"> </div> |}]
+    +|<div class="foo#"> </div>
+    |}]
 ;;
 
 let%expect_test "path censoring" =
@@ -595,5 +635,6 @@ let%expect_test "path censoring" =
       (Element ((tag_name div) (attributes ((class bonsai_path_abcdefg)))))
       ----------------------
     -|<div class="bonsai_path_replaced_in_test"> </div>
-    +|<div class="<path>"> </div> |}]
+    +|<div class="<path>"> </div>
+    |}]
 ;;

@@ -246,7 +246,7 @@ module Value_normalizing_hook = struct
       { State.event_id }
     ;;
 
-    let on_mount _input _state _element = ()
+    let on_mount = `Do_nothing
 
     let destroy _input state =
       let { State.event_id } = state in

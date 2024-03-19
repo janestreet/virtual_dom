@@ -26,20 +26,14 @@ type t =
       { input : 'input
       ; input_id : 'input Type_equal.Id.t
       ; combine_inputs : 'input -> 'input -> 'input
-      ; init :
-          'input
-          -> Dom_html.element Js.t
-          -> 'input * Dom_html.animation_frame_request_id * 'state
+      ; init : 'input -> Dom_html.element Js.t -> 'input * 'extra * 'state
       ; update :
           'input
-          -> 'input * Dom_html.animation_frame_request_id * 'state
+          -> 'input * 'extra * 'state
           -> Dom_html.element Js.t
-          -> 'input * Dom_html.animation_frame_request_id * 'state
-      ; destroy :
-          'input * Dom_html.animation_frame_request_id * 'state
-          -> Dom_html.element Js.t
-          -> unit
-      ; id : ('input * Dom_html.animation_frame_request_id * 'state) Core.Type_equal.Id.t
+          -> 'input * 'extra * 'state
+      ; destroy : 'input * 'extra * 'state -> Dom_html.element Js.t -> unit
+      ; id : ('input * 'extra * 'state) Core.Type_equal.Id.t
       }
       -> t
 
@@ -82,19 +76,25 @@ module Make (S : S) = struct
 
   let init input element =
     let state = S.init input element in
-    let animation_id =
-      request_animation_frame (fun _ -> S.on_mount input state element)
+    let on_destroy =
+      match S.on_mount with
+      | `Do_nothing -> fun () -> ()
+      | `Schedule_animation_frame on_mount ->
+        let animation_id =
+          request_animation_frame (fun _ -> on_mount input state element)
+        in
+        fun () -> cancel_animation_frame animation_id
     in
-    input, animation_id, state
+    input, on_destroy, state
   ;;
 
-  let update input (old_input, animation_id, state) element =
+  let update input (old_input, on_destroy, state) element =
     S.update ~old_input ~new_input:input state element;
-    input, animation_id, state
+    input, on_destroy, state
   ;;
 
-  let destroy (old_input, animation_id, state) element =
-    cancel_animation_frame animation_id;
+  let destroy (old_input, on_destroy, state) element =
+    on_destroy ();
     S.destroy old_input state element
   ;;
 

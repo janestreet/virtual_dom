@@ -27,7 +27,8 @@ let%expect_test "combining classes and styles" =
      ((tag_name div) (attributes ((class "123 abc")))
       (styles ((margin-top 10px) (margin-bottom 20px)))))
     ----------------------
-    <div class="123 abc" style={ margin-top: 10px; margin-bottom: 20px; }> </div> |}]
+    <div class="123 abc" style={ margin-top: 10px; margin-bottom: 20px; }> </div>
+    |}]
 ;;
 
 let%expect_test "add class" =
@@ -42,5 +43,6 @@ let%expect_test "add class" =
     {|
     (Element ((tag_name div) (attributes ((autofocus "") (class "abc def")))))
     ----------------------
-    <div autofocus="" class="abc def"> </div> |}]
+    <div autofocus="" class="abc def"> </div>
+    |}]
 ;;

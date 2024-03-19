@@ -395,7 +395,7 @@ let%test_module "tests" =
 
     let%expect_test "eof" =
       test "";
-      [%expect {|((Eof 0 0))|}]
+      [%expect {| ((Eof 0 0)) |}]
     ;;
 
     let%expect_test "simple_tokens" =
@@ -414,18 +414,19 @@ let%test_module "tests" =
       test "RGBA";
       [%expect
         {|
-    ((Ident 0 8)(Colon 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
-    ((Function 0 9)(Eof 9 0))
-    ((Atkeyword 0 8)(Eof 8 0))
-    ((Atkeyword 0 9)(Eof 9 0))
-    ((Atkeyword 0 10)(Eof 10 0))
-    ((Ident 0 5)(Eof 5 0))
-    ((Ident 0 4)(Eof 4 0)) |}]
+        ((Ident 0 8)(Colon 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
+        ((Function 0 9)(Eof 9 0))
+        ((Atkeyword 0 8)(Eof 8 0))
+        ((Atkeyword 0 9)(Eof 9 0))
+        ((Atkeyword 0 10)(Eof 10 0))
+        ((Ident 0 5)(Eof 5 0))
+        ((Ident 0 4)(Eof 4 0))
+        |}]
     ;;
 
     let%expect_test "whitespace" =
       test "  ";
-      [%expect {|((White_space 0 2)(Eof 2 0))|}]
+      [%expect {| ((White_space 0 2)(Eof 2 0)) |}]
     ;;
 
     let%expect_test "numbers" =
@@ -444,29 +445,32 @@ let%test_module "tests" =
       test "margin: .02e20";
       [%expect
         {|
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-    ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Dimension 13 3)(Eof 16 0))
-    ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Percentage 13 4)(Eof 17 0))
-    ((Ident 0 4)(Colon 4 1)(White_space 5 1)(Number 6 1)(White_space 7 1)(Number 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 6)(Eof 14 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
-    ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0)) |}]
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+        ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Dimension 13 3)(Eof 16 0))
+        ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Percentage 13 4)(Eof 17 0))
+        ((Ident 0 4)(Colon 4 1)(White_space 5 1)(Number 6 1)(White_space 7 1)(Number 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 6)(Eof 14 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
+        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
+        |}]
     ;;
 
     let%expect_test "badly_quoted" =
       test "'foo bar";
       test "'";
       test "'\\'";
-      [%expect {|
-    ((Error 0 8))
-    ((Error 0 1))
-    ((Error 0 3)) |}]
+      [%expect
+        {|
+        ((Error 0 8))
+        ((Error 0 1))
+        ((Error 0 3))
+        |}]
     ;;
 
     let%expect_test "quoted" =
@@ -481,9 +485,10 @@ let%test_module "tests" =
       test {|color: rgb(255,0,0)|};
       [%expect
         {|
-    ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Hash 7 4)(Eof 11 0))
-    ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
-    ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0)) |}]
+        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Hash 7 4)(Eof 11 0))
+        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
+        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
+        |}]
     ;;
 
     let%expect_test "import" =
@@ -505,11 +510,12 @@ let%test_module "tests" =
       test {|url(  http://wwww.google."com )|};
       [%expect
         {|
-    ((Function 0 4)(White_space 4 1)(String 5 24)(Rparen 29 1)(Eof 30 0))
-    ((Function 0 4)(String 4 24)(Rparen 28 1)(Eof 29 0))
-    ((Function 0 4)(String 4 24)(White_space 28 1)(Rparen 29 1)(Eof 30 0))
-    ((Uri 0 30)(Eof 30 0))
-    ((Error 0 25)) |}]
+        ((Function 0 4)(White_space 4 1)(String 5 24)(Rparen 29 1)(Eof 30 0))
+        ((Function 0 4)(String 4 24)(Rparen 28 1)(Eof 29 0))
+        ((Function 0 4)(String 4 24)(White_space 28 1)(Rparen 29 1)(Eof 30 0))
+        ((Uri 0 30)(Eof 30 0))
+        ((Error 0 25))
+        |}]
     ;;
 
     let%expect_test "escape" =
@@ -518,9 +524,10 @@ let%test_module "tests" =
       test {|"← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"|};
       [%expect
         {|
-    ((String 0 15)(Eof 15 0))
-    ((String 0 51)(Eof 51 0))
-    ((String 0 49)(Eof 49 0)) |}]
+        ((String 0 15)(Eof 15 0))
+        ((String 0 51)(Eof 51 0))
+        ((String 0 49)(Eof 49 0))
+        |}]
     ;;
   end)
 ;;

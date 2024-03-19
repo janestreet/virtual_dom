@@ -44,7 +44,7 @@ val of_opt : t option -> t
     handlers, classes, and styles.
 
     - Hooks get merged via their [Input.combine] function
-    - All handlers get runin the order they appear
+    - All handlers get run in the order they appear
     - The set of classes is unioned
     - Styles are merged via concatenation
 *)
@@ -184,6 +184,7 @@ val on_keypress : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_keydown : (Dom_html.keyboardEvent Js.t -> unit Effect.t) -> t
 val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_load : (Dom_html.event Js.t -> unit Effect.t) -> t
+val on_error : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
 val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
 val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t

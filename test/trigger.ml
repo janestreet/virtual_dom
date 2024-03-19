@@ -32,7 +32,8 @@ let%expect_test "empty div with triggered callback (failing)" =
   [%expect
     {|
     ((missing_field_path screenX)
-     "The field was read on a fake DOM event.  You probably called [Handler.trigger] in a test, and the handler accessed a field of the event that was not provided to [~extra_fields].") |}]
+     "The field was read on a fake DOM event.  You probably called [Handler.trigger] in a test, and the handler accessed a field of the event that was not provided to [~extra_fields].")
+    |}]
 ;;
 
 let%expect_test "empty input with on_change (success!)" =
@@ -87,7 +88,8 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
   [%expect
     {|
     ((missing_field_path target.tagName)
-     "The field was read on a fake DOM event.  You probably called [Handler.trigger] in a test, and the handler accessed a field of the event that was not provided to [~extra_fields].") |}]
+     "The field was read on a fake DOM event.  You probably called [Handler.trigger] in a test, and the handler accessed a field of the event that was not provided to [~extra_fields].")
+    |}]
 ;;
 
 (* [Node_helpers.unsafe_convert_exn] only treats an attribute as a handler if it is named
@@ -128,7 +130,7 @@ module H = Attr.Hooks.Make (struct
   module State = Unit
 
   let init _input _element = ()
-  let on_mount _input _state _element = ()
+  let on_mount = `Do_nothing
   let update ~old_input:_ ~new_input:_ _state _element = ()
   let destroy _input _state _element = ()
 end)
@@ -146,7 +148,7 @@ module String_h = Attr.Hooks.Make (struct
   module State = Unit
 
   let init _input _element = ()
-  let on_mount _input _state _element = ()
+  let on_mount = `Do_nothing
   let update ~old_input:_ ~new_input:_ _state _element = ()
   let destroy _input _state _element = ()
 end)
@@ -188,7 +190,8 @@ let%expect_test "not merged " =
        ~arg:5;
   [%expect {|
     ("WARNING: not combining hooks" (name not-so-unique-name))
-    5 |}]
+    5
+    |}]
 ;;
 
 let%expect_test "bad merge" =
@@ -237,7 +240,8 @@ let%expect_test "not merged " =
     {|
     "hooks do not have the same type, so they cannot be combined; taking the second of the two"
     (Failure
-     "get_hook_value: a hook for not-so-unique-name was found, but the type-ids were not the same; are you using the same type-id that you got from the For_testing module from your hook creator?") |}]
+     "get_hook_value: a hook for not-so-unique-name was found, but the type-ids were not the same; are you using the same type-id that you got from the For_testing module from your hook creator?")
+    |}]
 ;;
 
 let%expect_test "fake event handler for on_click" =
@@ -293,7 +297,8 @@ let%expect_test "set checkbox with on_click" =
     ((checked (false)) (shift (false)))
     ((checked (false)) (shift (true)))
     ((checked (true)) (shift (false)))
-    ((checked (true)) (shift (true))) |}]
+    ((checked (true)) (shift (true)))
+    |}]
 ;;
 
 let%expect_test "set checkbox with onchange" =
@@ -321,7 +326,8 @@ let%expect_test "set checkbox with onchange" =
     ((checked (false)) (shift (false)))
     ((checked (false)) (shift (true)))
     ((checked (true)) (shift (false)))
-    ((checked (true)) (shift (true))) |}]
+    ((checked (true)) (shift (true)))
+    |}]
 ;;
 
 let%expect_test "not merged" =
@@ -343,7 +349,8 @@ let%expect_test "not merged" =
   |> Node_helpers.User_actions.click_on;
   [%expect {|
     ("WARNING: not combining handlers" (name click))
-    6 |}]
+    6
+    |}]
 ;;
 
 let%expect_test "merged" =
@@ -391,7 +398,8 @@ let%expect_test "add class in the middle of a [many]" =
   |> Node_helpers.User_actions.click_on;
   [%expect {|
     ("WARNING: not combining handlers" (name click))
-    1 3 4 |}]
+    1 3 4
+    |}]
 ;;
 
 let%expect_test "Regression: attributes and properties with the same name" =

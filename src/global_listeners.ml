@@ -37,7 +37,7 @@ struct
       state.State.listener <- new_state.listener
     ;;
 
-    let on_mount _input _state _element = ()
+    let on_mount = `Do_nothing
   end)
 end
 

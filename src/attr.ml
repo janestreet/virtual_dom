@@ -469,6 +469,7 @@ let on_keypress = on Type_id.keyboard "keypress"
 let on_keydown = on Type_id.keyboard "keydown"
 let on_scroll = on Type_id.event "scroll"
 let on_load = on Type_id.event "load"
+let on_error = on Type_id.event "error"
 let on_submit = on Type_id.submit "submit"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
@@ -536,6 +537,7 @@ module Always_focus_hook = struct
 
     let init () _ = ()
     let on_mount () () element = element##focus
+    let on_mount = `Schedule_animation_frame on_mount
     let update ~old_input:() ~new_input:() () _ = ()
     let destroy () () _ = ()
   end
@@ -571,6 +573,7 @@ module Single_focus_hook () = struct
         Effect.Expert.handle_non_dom_event_exn event)
     ;;
 
+    let on_mount = `Schedule_animation_frame on_mount
     let update ~old_input:_ ~new_input:_ () _ = ()
     let destroy _ () _ = ()
   end
@@ -595,7 +598,7 @@ struct
     module Input = M.Input
 
     let init _ _ = ()
-    let on_mount _ () _ = ()
+    let on_mount = `Do_nothing
     let update ~old_input:_ ~new_input:_ () _ = ()
     let destroy _ () _ = ()
   end)
@@ -632,7 +635,7 @@ module Css_var_hook = Hooks.Make (struct
       |> (ignore : Js.js_string Js.t -> unit))
   ;;
 
-  let on_mount _ () _ = ()
+  let on_mount = `Do_nothing
 
   let destroy input () (element : Dom_html.element Js.t) =
     List.iter input ~f:(fun (k, _) ->
