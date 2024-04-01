@@ -1,9 +1,17 @@
 {
   "scripts": {
-    "bundle": "browserify --standalone VirtualDom --no-browser-field virtualdom.js -o virtualdom.compiled.js"
+    "bundle": "browserify --standalone VirtualDom virtualdom.js -o virtualdom.compiled.js && prettier virtualdom.compiled.js > virtualdom.compiled.pretty.js"
   },
-  "devDependencies": {
-      "browserify": "^13.1.0",
-      "virtual-dom": "^2.1.1"
+  "dependencies": {
+    "browser-split": "0.0.1",
+    "browserify": "^13.1.0",
+    "error": "^4.3.0",
+    "ev-store": "^7.0.0",
+    "global": "^4.3.0",
+    "is-object": "^1.0.1",
+    "next-tick": "^0.2.2",
+    "prettier": "^2.8.4",
+    "x-is-array": "0.1.0",
+    "x-is-string": "0.1.0"
   }
 }
