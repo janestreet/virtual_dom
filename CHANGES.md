@@ -1,3 +1,43 @@
+## Release v0.17.0
+- css_gen 
+  - Generalize `css_global_values` to be polymorphic with a new variant for CSS variables.
+  - Add `equal` and `sexp_grammar` derivations to various types including
+    `css_global_values`, `Color.RGBA.t`, `Color.HSLA`, and `Color.t`.
+  - Introduce `LCHA` module with a `create` function for LCH color representation.
+  - Add `LCHA` type to `Color.t` variant.
+  - Update `Color.t` variant to support `css_global_values` with type `t`.
+  - Modify `Length` type to include a parameterized `css_global_values` type.
+  - Add `equal` derivation to the `t` type in both `Css_gen` module and `Stable.V1` module.
+- vdom_input_widgets 
+  - Updates to `Checklist` module:
+    - Renamed `extra_attrs` to `extra_container_attrs` in both `Checklist.of_values` and
+      `Checklist.of_enum` functions
+    - Added `extra_checkbox_attrs` parameter to both `Checklist.of_values` and
+      `Checklist.of_enum` functions for customization based on checkbox state
+  - Updates to `Entry` module:
+    - Added an optional `key` parameter to the `Entry` function
+    - Introduced `allow_updates_when_focused` parameter with options `Always` or `Never`
+      to control updates when focused
+  - Updates to `Radio_buttons` module:
+    - Renamed `extra_attrs` to `extra_container_attrs` in both `Radio_buttons.of_values`
+      and `Radio_buttons.of_values_horizontal` functions
+    - Added `extra_button_attrs` parameter to both `Radio_buttons.of_values` and
+      `Radio_buttons.of_values_horizontal` functions for customization based on button
+      checked state
+- `Vdom.Global_listeners.beforeunload` function now supports a new effect option
+  `Custom_best_effort` This option may or may not execute to completion upon tab close in
+  Chrome
+- Vdom.Node
+  - Add new variant and functions:
+    - `Node.t` type now includes a `Fragment` variant to support lists of nodes.
+    - `Node.fragment` function added to create a node from a list of nodes.
+  - Extend `Node` module with new node creator functions:
+    - `Node.b`
+    - `Node.dialog`
+    - `Node.small`
+    - `Node.kbd`
+    - `Node.form`
+
 ## Release v0.16.0
 
 The most significant change in this release is that most functions that create
