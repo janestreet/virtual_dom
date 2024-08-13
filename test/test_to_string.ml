@@ -15,7 +15,8 @@ let show ?path_censoring_message ?hash_censoring_message ?filter_printed_attribu
 
 let%expect_test "basic text" =
   show (Node.text "hello");
-  [%expect {|
+  [%expect
+    {|
     (Text hello)
     ----------------------
     hello
@@ -24,7 +25,8 @@ let%expect_test "basic text" =
 
 let%expect_test "lazy text" =
   show (Node.lazy_ (lazy (Node.text "hello")));
-  [%expect {|
+  [%expect
+    {|
     (Text hello)
     ----------------------
     hello
@@ -128,7 +130,8 @@ let%expect_test "inner_html with custom renderer" =
        ~attrs:[]
        ~override_vdom_for_testing:(lazy (Node.text "overridden!"))
        ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>hi</b>");
-  [%expect {|
+  [%expect
+    {|
     (Text overridden!)
     ----------------------
     overridden!
@@ -244,7 +247,7 @@ let%expect_test "widget with a vdom_for_testing" =
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
     ----------------------
-    <div onclick> </div>
+    <div @on_click> </div>
     |}]
 ;;
 
@@ -308,7 +311,7 @@ let%expect_test "empty div with callback" =
     {|
     (Element ((tag_name div) (handlers ((onclick <handler>)))))
     ----------------------
-    <div onclick> </div>
+    <div @on_click> </div>
     |}]
 ;;
 
@@ -438,7 +441,7 @@ let%expect_test "empty div with [many] different attributes" =
     <div id="my-id"
          class="a b c d"
          always-focus-hook=()
-         onclick
+         @on_click
          style={
            font-weight: bold;
            z-index: 42;
@@ -497,7 +500,7 @@ let%expect_test "empty div with [many] different attributes" =
       (styles ((font-weight bold)))
       (handlers ((onblur <handler>) (onclick <handler>)))))
     ----------------------
-    <div onblur onclick> </div>
+    <div @on_blur @on_click> </div>
     |}];
   show
     ~filter_printed_attributes:(fun ~key ~data:_ ->
@@ -636,5 +639,26 @@ let%expect_test "path censoring" =
       ----------------------
     -|<div class="bonsai_path_replaced_in_test"> </div>
     +|<div class="<path>"> </div>
+    |}]
+;;
+
+let%expect_test "literal onclick attr and on_click event handler can be differentiated." =
+  show
+    (Node.div
+       [ Node.div ~attrs:[ Attr.on_click (Fn.const Effect.Ignore) ] []
+       ; Node.div ~attrs:[ Attr.create "onclick" "" ] []
+       ]);
+  [%expect
+    {|
+    (Element
+     ((tag_name div)
+      (children
+       ((Element ((tag_name div) (handlers ((onclick <handler>)))))
+        (Element ((tag_name div) (attributes ((onclick "")))))))))
+    ----------------------
+    <div>
+      <div @on_click> </div>
+      <div onclick=""> </div>
+    </div>
     |}]
 ;;

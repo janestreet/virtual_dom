@@ -63,7 +63,13 @@ val trigger_hook
   -> unit
 
 (** Given an element, this function attempts to retrieve a hook with the name [name], and
-    the type-id from the hooks [For_testing] module. *)
+    the type-id from the hooks [For_testing] module.
+
+    Raises if called on a Widget or Text node, or if a hook matching [name] was found,
+    but the type id does not match. *)
+val get_hook_value_opt : t -> type_id:'a Type_equal.Id.t -> name:string -> 'a option
+
+(** Like [get_hook_value_opt], but also raises if the hook was not found. *)
 val get_hook_value : t -> type_id:'a Type_equal.Id.t -> name:string -> 'a
 
 module User_actions : sig
@@ -91,6 +97,12 @@ module User_actions : sig
     :  ?extra_event_fields:(string * Js.Unsafe.any) list
     -> t
     -> text:string
+    -> unit
+
+  val input_files
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> t
+    -> files:File.file Js.t list
     -> unit
 
   val keydown
@@ -132,5 +144,42 @@ module User_actions : sig
     :  ?extra_event_fields:(string * Js.Unsafe.any) list
     -> t
     -> delta_y:float
+    -> unit
+end
+
+module Linter : sig
+  module Rule : sig
+    type t =
+      | Undetectable_clickable_element
+      | Invalid_tabindex
+      | Event_handler_html_attribute
+      | Duplicate_ids
+      | Whitespace_in_id
+      | Siblings_have_same_vdom_key
+      | Unsafe_target_blank
+      | Clickable_role_but_no_tabindex
+      | Button_without_valid_type
+  end
+
+  module Severity : sig
+    (** Some errors, if not addressed, can unexpectedly crash your app at runtime.
+        For instance, if two sibling vdom nodes have the same key, vdom will throw an
+        unrecoverable exception.*)
+    type t =
+      | Only_report_app_crashing_errors
+      | Report_all_errors
+  end
+
+  val run
+    :  ?expected_failures:Rule.t list
+    -> ?min_severity:Severity.t
+    -> t
+    -> string option
+
+  val print_report
+    :  ?expected_failures:Rule.t list
+    -> ?min_severity:Severity.t
+    -> ?on_ok:(unit -> unit)
+    -> t
     -> unit
 end

@@ -58,10 +58,10 @@ let handle_registered_event (T (t, cb)) =
 ;;
 
 module Print_s = Define (struct
-  module Action = Sexp
+    module Action = Sexp
 
-  let handle s = Stdio.print_s s
-end)
+    let handle s = Stdio.print_s s
+  end)
 
 let print_s = Print_s.inject
 
@@ -90,12 +90,12 @@ let of_fun ~f = Fun f
 let lazy_ a = Lazy a
 
 include Base.Monad.Make (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let return = return
-  let bind = bind
-  let map = `Custom map
-end)
+    let return = return
+    let bind = bind
+    let map = `Custom map
+  end)
 
 let rec eval : type a. a t -> callback:(a -> unit) -> unit =
   fun t ~callback ->
@@ -230,12 +230,12 @@ module Advanced = struct
 
       let maybe_respond t ~f =
         t
-          := List.filter !t ~f:(fun { query; response } ->
-               match f query with
-               | No_response_yet -> true
-               | Respond resp ->
-                 Svar.fill_if_empty response resp;
-                 false)
+        := List.filter !t ~f:(fun { query; response } ->
+             match f query with
+             | No_response_yet -> true
+             | Respond resp ->
+               Svar.fill_if_empty response resp;
+               false)
       ;;
     end
 

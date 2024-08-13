@@ -11,11 +11,13 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
+  "async_kernel"
   "base"
   "core"
   "core_kernel"
   "js_of_ocaml_patches"
   "ppx_jane"
+  "sexplib"
   "stdio"
   "base64"              {>= "3.4.0"}
   "dune"                {>= "3.11.0"}

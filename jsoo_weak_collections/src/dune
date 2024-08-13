@@ -1,0 +1,6 @@
+(library
+ (name jsoo_weak_collections)
+ (public_name virtual_dom.jsoo_weak_collections)
+ (libraries js_of_ocaml gen_js_api)
+ (preprocess
+  (pps gen_js_api.ppx)))

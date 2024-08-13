@@ -32,3 +32,9 @@ val to_string_hum : t -> string
     - For '(', returns ["" , "("] instead of ["Shift+", "9"]
     - For 'A', returns ["Shift+" , "a"] *)
 val shift_string_and_keyboard_code_string : t -> string * string
+
+(** Same as [shift_string_and_keyboard_code_string], but indicates whether shift needs to
+    be displayed in a variant rather than via "Shift+" vs "". *)
+val shift_and_keyboard_code_string
+  :  t
+  -> [ `Display_shift | `Dont_display_shift ] * string

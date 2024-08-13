@@ -1,0 +1,5 @@
+(library
+ (name jsoo_weak_collections_test)
+ (libraries core js_of_ocaml jsoo_weak_collections)
+ (preprocess
+  (pps ppx_jane js_of_ocaml-ppx)))

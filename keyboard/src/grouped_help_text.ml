@@ -55,17 +55,17 @@ let of_command_list ?(custom_group_order = []) command_list =
       command_list
       ~init:(groups, rev_group_order)
       ~f:(fun (groups, rev_group_order) (group_name, command) ->
-      let rev_group_order =
-        if Map.mem groups group_name
-        then rev_group_order
-        else group_name :: rev_group_order
-      in
-      let groups =
-        Map.update groups group_name ~f:(fun commands ->
-          let commands = Option.value commands ~default:[] in
-          command :: commands)
-      in
-      groups, rev_group_order)
+        let rev_group_order =
+          if Map.mem groups group_name
+          then rev_group_order
+          else group_name :: rev_group_order
+        in
+        let groups =
+          Map.update groups group_name ~f:(fun commands ->
+            let commands = Option.value commands ~default:[] in
+            command :: commands)
+        in
+        groups, rev_group_order)
   in
   { groups =
       Map.filter_map groups ~f:(function

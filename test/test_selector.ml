@@ -82,14 +82,14 @@ module Person = struct
 end
 
 module H = Attr.Hooks.Make (struct
-  module State = Unit
-  module Input = Person
+    module State = Unit
+    module Input = Person
 
-  let init _input _element = ()
-  let on_mount = `Do_nothing
-  let update ~old_input:_ ~new_input:_ _state _element = ()
-  let destroy _input _state _element = ()
-end)
+    let init _input _element = ()
+    let on_mount = `Do_nothing
+    let update ~old_input:_ ~new_input:_ _state _element = ()
+    let destroy _input _state _element = ()
+  end)
 
 let%expect_test "print element with a hook" =
   show
@@ -116,7 +116,7 @@ let%expect_test "get value out of a hook in a test" =
 ;;
 
 let%expect_test "try to find hook that doesn't exist" =
-  Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+  Expect_test_helpers_core.require_does_raise (fun () ->
     let (_ : _) =
       Node.div []
       |> Node_helpers.unsafe_convert_exn
@@ -127,7 +127,7 @@ let%expect_test "try to find hook that doesn't exist" =
 ;;
 
 let%expect_test "try to find hook on a text node" =
-  Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+  Expect_test_helpers_core.require_does_raise (fun () ->
     let (_ : _) =
       Node.text ""
       |> Node_helpers.unsafe_convert_exn
@@ -138,7 +138,7 @@ let%expect_test "try to find hook on a text node" =
 ;;
 
 let%expect_test "try to find hook with a bad type_id" =
-  Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+  Expect_test_helpers_core.require_does_raise (fun () ->
     let (_ : _) =
       Node.div
         ~attrs:

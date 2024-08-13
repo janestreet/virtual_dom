@@ -43,7 +43,7 @@ module Command : sig
         (string -> string) option
       | `Text of string
       ]
-      list
+        list
 
     (** The [default] format is:
 

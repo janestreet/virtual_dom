@@ -15,6 +15,18 @@ module type S = sig
   val inject : action -> unit t
 end
 
+module Open_url_target : sig
+  (** Target for opening a URL.
+      See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target *)
+  type t =
+    | This_tab (** _self *)
+    | New_tab_or_window (** _blank *)
+    | Iframe_parent_or_this_tab (** _parent *)
+    | Iframe_root_parent_or_this_tab (** _top *)
+
+  val to_target : t -> string
+end
+
 type 'a t +=
   | Viewport_changed
       (** [Viewport_changed] events are delivered to all visibility handlers  *)
@@ -27,6 +39,12 @@ type 'a t +=
   | Prevent_default
       (** [Prevent_default] prevents the default browser action from occurring as a result
       of this event *)
+  | Open :
+      { url : string
+      ; target : Open_url_target.t
+      }
+      -> unit t
+      (** [Open (url, target)] is [window.open(url, target)]. *)
 
 (** Sequences two events, but only if the first is neither
     [Stop_immediate_propagation] nor a [Many] which contains
@@ -50,6 +68,9 @@ type 'a t +=
       fun x -> sequence_as_sibling (f x) (fun () -> (g x))
     ]} *)
 val sequence_as_sibling : unit t -> unless_stopped:(unit -> unit t) -> unit t
+
+(** [open_url ~in_ url] creates an effect that opens the given URL. *)
+val open_url : ?in_:Open_url_target.t -> string -> unit t
 
 (** For registering a handler for Viewport_changed events. Note that if this functor is
     called multiple times, each handler will see all of the events. *)

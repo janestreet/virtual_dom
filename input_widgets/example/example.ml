@@ -290,7 +290,7 @@ module App = struct
             ~merge_behavior:Legacy_dont_merge
             "Set date to now"
             ~on_click:(fun () ->
-            inject (Set { model with time_ns_opt = Some (Time_ns.now ()) })) )
+              inject (Set { model with time_ns_opt = Some (Time_ns.now ()) })) )
       ; ( "Button.submit"
         , Button.with_validation
             ~merge_behavior:Legacy_dont_merge

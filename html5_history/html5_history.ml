@@ -247,7 +247,7 @@ module Opinionated = struct
     let module Arg_modules = struct
       module History_state =
         (val history_state_module
-            : History_state with type t = s and type uri_routing = u)
+          : History_state with type t = s and type uri_routing = u)
 
       module Uri_routing = (val uri_routing_module : Uri_routing with type t = u)
     end

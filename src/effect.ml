@@ -13,11 +13,32 @@ module Define_visibility (VH : Visibility_handler) = struct
   let () = visibility_handlers := VH.handle :: !visibility_handlers
 end
 
+module Open_url_target = struct
+  type t =
+    | This_tab
+    | New_tab_or_window
+    | Iframe_parent_or_this_tab
+    | Iframe_root_parent_or_this_tab
+
+  let to_target = function
+    (* https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target *)
+    | This_tab -> "_self"
+    | New_tab_or_window -> "_blank"
+    | Iframe_parent_or_this_tab -> "_parent"
+    | Iframe_root_parent_or_this_tab -> "_top"
+  ;;
+end
+
 type _ t +=
   | Viewport_changed
   | Stop_propagation
   | Stop_immediate_propagation
   | Prevent_default
+  | Open :
+      { url : string
+      ; target : Open_url_target.t
+      }
+      -> unit t
 
 let sequence_as_sibling left ~unless_stopped =
   let rec contains_stop = function
@@ -27,6 +48,8 @@ let sequence_as_sibling left ~unless_stopped =
   in
   if contains_stop left then left else Ui_effect.Many [ left; unless_stopped () ]
 ;;
+
+let open_url ?(in_ = Open_url_target.This_tab) url = Open { url; target = in_ }
 
 (* We need to keep track of the current dom event here so that
    movement between [Vdom.Effect.Expert.handle] and
@@ -53,6 +76,23 @@ let () =
     Expert.handlers
     ~key:Stdlib.Obj.Extension_constructor.(id (of_val Prevent_default))
     ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom.preventDefault)
+;;
+
+let () =
+  Hashtbl.add_exn
+    Expert.handlers
+    ~key:(Stdlib.Obj.Extension_constructor.id [%extension_constructor Open])
+    ~data:(fun hidden ->
+      match hidden with
+      | T (Open { url; target }, callback) ->
+        let (_ : Dom_html.window Js.t Js.Opt.t) =
+          Dom_html.window##open_
+            (Js.string url)
+            (Js.string (Open_url_target.to_target target))
+            Js.Opt.empty
+        in
+        callback ()
+      | _ -> failwith "Unrecognized variant")
 ;;
 
 module Expert = struct

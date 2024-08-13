@@ -5,9 +5,8 @@ module Js_object = struct
   type t = Js.Unsafe.any
 
   let empty_obj () = Js.Unsafe.obj [||]
-  let set_prop_ascii t name value = Js.Unsafe.set t (Js.string name) value
-  let get_prop_ascii t name = Js.Unsafe.get t (Js.string name)
-  let has_property t name = Js.Optdef.test (Js.Unsafe.get t (Js.string name))
+  let set_prop_ascii = Js.Unsafe.set
+  let has_property t name = Js.Optdef.test (Js.Unsafe.get t name)
   let is_undefined a = not (Js.Optdef.test a)
 end
 
@@ -16,22 +15,29 @@ module Attrs = struct
 
   let create () : t = Js_object.empty_obj ()
 
-  let set_property : t -> string -> t -> unit =
+  let set_property : t -> Js.js_string Js.t -> t -> unit =
     fun t name value -> Js_object.set_prop_ascii t name value
   ;;
 
-  let has_property : t -> string -> bool = Js_object.has_property
+  let has_property : t -> Js.js_string Js.t -> bool = Js_object.has_property
 
-  let has_attribute t name =
-    Js_object.has_property t "attributes"
-    && Js_object.has_property (Js_object.get_prop_ascii t "attributes") name
+  let has_attribute t (name : Js.js_string Js.t) =
+    let attr = Js.Unsafe.get t (Js.string "attributes") in
+    Js.Optdef.test attr && Js_object.has_property attr name
   ;;
 
-  let set_attribute : t -> string -> t -> unit =
+  let set_attribute : t -> Js.js_string Js.t -> t -> unit =
     fun t name value ->
-    if Js_object.is_undefined (Js_object.get_prop_ascii t "attributes")
-    then Js_object.set_prop_ascii t "attributes" (Js_object.empty_obj ());
-    Js_object.set_prop_ascii (Js_object.get_prop_ascii t "attributes") name value
+    let attr = Js.Unsafe.get t (Js.string "attributes") in
+    let attr =
+      if Js_object.is_undefined attr
+      then (
+        let attr = Js_object.empty_obj () in
+        Js.Unsafe.set t (Js.string "attributes") attr;
+        attr)
+      else attr
+    in
+    Js_object.set_prop_ascii attr name value
   ;;
 end
 
@@ -46,8 +52,8 @@ module Virtual_dom = struct
        -> virtual_dom_node Js.t Js.js_array Js.t
        -> Js.js_string Js.t Js.optdef
        -> virtual_dom_node Js.t)
-      Js.constr
-      Js.readonly_prop
+        Js.constr
+        Js.readonly_prop
 
     method _VText :
       (Js.js_string Js.t -> virtual_dom_node Js.t) Js.constr Js.readonly_prop
@@ -66,8 +72,8 @@ module Virtual_dom = struct
        -> virtual_dom_node Js.t Js.js_array Js.t
        -> Js.js_string Js.t Js.optdef
        -> virtual_dom_node Js.t)
-      Js.constr
-      Js.readonly_prop
+        Js.constr
+        Js.readonly_prop
   end
 
   let virtual_dom : virtual_dom Js.t = Js.Unsafe.global ##. VirtualDom
@@ -83,11 +89,10 @@ module Node = struct
   ;;
 
   let node
-    :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
-    -> virtual_dom_node Js.t
+    :  Js.js_string Js.t -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t
+    -> string option -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
-    let tag = Js.string tag in
     let key =
       match key with
       | None -> Js.Optdef.empty
@@ -98,11 +103,10 @@ module Node = struct
   ;;
 
   let svg
-    :  string -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t -> string option
-    -> virtual_dom_node Js.t
+    :  Js.js_string Js.t -> Attrs.t -> virtual_dom_node Js.t Js.js_array Js.t
+    -> string option -> virtual_dom_node Js.t
     =
     fun tag attrs children key ->
-    let tag = Js.string tag in
     let key =
       match key with
       | None -> Js.Optdef.empty
@@ -178,7 +182,7 @@ module Widget = struct
 
     method update :
       (('other_state, 'other_element) widget Js.t -> 'element -> 'element) Js.callback
-      Js.writeonly_prop
+        Js.writeonly_prop
 
     method init : (unit -> 'element) Js.callback Js.writeonly_prop
   end
@@ -231,27 +235,27 @@ module Widget = struct
     obj##.id := id;
     obj##.vdomForTesting := vdom_for_testing;
     obj##.init
-      := Js.wrap_callback (fun () ->
-           let s0, dom_node = init () in
-           State_keeper.set ~id dom_node s0;
-           dom_node);
+    := Js.wrap_callback (fun () ->
+         let s0, dom_node = init () in
+         State_keeper.set ~id dom_node s0;
+         dom_node);
     obj##.update
-      := Js.wrap_callback (fun prev dom_node ->
-           (* The [update] method of [obj] is only called by virtual-dom after it has checked
+    := Js.wrap_callback (fun prev dom_node ->
+         (* The [update] method of [obj] is only called by virtual-dom after it has checked
          that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
          never raise. *)
-           match Type_equal.Id.same_witness_exn prev##.id id with
-           | Type_equal.T ->
-             let prev_state = State_keeper.get ~id dom_node in
-             let state', dom_node' = update prev_state dom_node in
-             State_keeper.delete dom_node;
-             State_keeper.set ~id dom_node' state';
-             dom_node');
-    obj##.destroy
-      := Js.wrap_callback (fun dom_node ->
+         match Type_equal.Id.same_witness_exn prev##.id id with
+         | Type_equal.T ->
            let prev_state = State_keeper.get ~id dom_node in
-           destroy prev_state dom_node;
-           State_keeper.delete dom_node);
+           let state', dom_node' = update prev_state dom_node in
+           State_keeper.delete dom_node;
+           State_keeper.set ~id dom_node' state';
+           dom_node');
+    obj##.destroy
+    := Js.wrap_callback (fun dom_node ->
+         let prev_state = State_keeper.get ~id dom_node in
+         destroy prev_state dom_node;
+         State_keeper.delete dom_node);
     node_of_widget obj
   ;;
 end

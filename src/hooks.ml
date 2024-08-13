@@ -43,6 +43,8 @@ let make_hook ~combine_inputs ~init ~extra:(input, input_id) ~update ~destroy ~i
   T { init; combine_inputs; input; input_id; update; destroy; id }
 ;;
 
+let unsafe_create = make_hook
+
 let pack (T { init; input; input_id; update; destroy; id; _ }) =
   let wrap a = a |> Js.wrap_callback |> Js.Unsafe.inject in
   let init = wrap (init input) in

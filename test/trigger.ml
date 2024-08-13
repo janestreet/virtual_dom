@@ -27,7 +27,7 @@ let%expect_test "empty div with triggered callback (failing)" =
            ]
          [])
   in
-  Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
+  Expect_test_helpers_core.require_does_raise (fun _ ->
     Node_helpers.trigger node ~event_name:"onclick");
   [%expect
     {|
@@ -78,7 +78,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
            ]
          ())
   in
-  Expect_test_helpers_core.require_does_raise [%here] (fun _ ->
+  Expect_test_helpers_core.require_does_raise (fun _ ->
     Node_helpers.trigger
       node
       ~extra_fields:[ "target", value_element ]
@@ -105,53 +105,53 @@ let%expect_test "fake event handler" =
 ;;
 
 module Print_int_event = Ui_effect.Define (struct
-  module Action = Int
+    module Action = Int
 
-  let handle = printf "%d "
-end)
+    let handle = printf "%d "
+  end)
 
 module Print_string_event = Ui_effect.Define (struct
-  module Action = String
+    module Action = String
 
-  let handle = printf "%s "
-end)
+    let handle = printf "%s "
+  end)
 
 module H = Attr.Hooks.Make (struct
-  module Input = struct
-    type t = int -> unit Ui_effect.t [@@deriving sexp]
+    module Input = struct
+      type t = int -> unit Ui_effect.t [@@deriving sexp]
 
-    let combine left right i =
-      (* adding 10 to [i] is silly, but it'll be obvious in the tests *)
-      let i = i + 10 in
-      Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
-    ;;
-  end
+      let combine left right i =
+        (* adding 10 to [i] is silly, but it'll be obvious in the tests *)
+        let i = i + 10 in
+        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+      ;;
+    end
 
-  module State = Unit
+    module State = Unit
 
-  let init _input _element = ()
-  let on_mount = `Do_nothing
-  let update ~old_input:_ ~new_input:_ _state _element = ()
-  let destroy _input _state _element = ()
-end)
+    let init _input _element = ()
+    let on_mount = `Do_nothing
+    let update ~old_input:_ ~new_input:_ _state _element = ()
+    let destroy _input _state _element = ()
+  end)
 
 module String_h = Attr.Hooks.Make (struct
-  module Input = struct
-    type t = string -> unit Ui_effect.t [@@deriving sexp]
+    module Input = struct
+      type t = string -> unit Ui_effect.t [@@deriving sexp]
 
-    let combine left right i =
-      let i = i ^ "_combine" in
-      Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
-    ;;
-  end
+      let combine left right i =
+        let i = i ^ "_combine" in
+        Effect.sequence_as_sibling (left i) ~unless_stopped:(fun () -> right i)
+      ;;
+    end
 
-  module State = Unit
+    module State = Unit
 
-  let init _input _element = ()
-  let on_mount = `Do_nothing
-  let update ~old_input:_ ~new_input:_ _state _element = ()
-  let destroy _input _state _element = ()
-end)
+    let init _input _element = ()
+    let on_mount = `Do_nothing
+    let update ~old_input:_ ~new_input:_ _state _element = ()
+    let destroy _input _state _element = ()
+  end)
 
 let%expect_test "fake event handler for hook" =
   let node =
@@ -188,7 +188,8 @@ let%expect_test "not merged " =
        ~f:Fn.id
        ~name:"not-so-unique-name"
        ~arg:5;
-  [%expect {|
+  [%expect
+    {|
     ("WARNING: not combining hooks" (name not-so-unique-name))
     5
     |}]
@@ -228,7 +229,7 @@ let%expect_test "not merged " =
         ]
       ()
   in
-  Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+  Expect_test_helpers_base.require_does_raise (fun () ->
     node
     |> Node_helpers.unsafe_convert_exn
     |> Node_helpers.trigger_hook
@@ -347,7 +348,8 @@ let%expect_test "not merged" =
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.select_first_exn ~selector:"#x"
   |> Node_helpers.User_actions.click_on;
-  [%expect {|
+  [%expect
+    {|
     ("WARNING: not combining handlers" (name click))
     6
     |}]
@@ -396,7 +398,8 @@ let%expect_test "add class in the middle of a [many]" =
   |> Node_helpers.unsafe_convert_exn
   |> Node_helpers.select_first_exn ~selector:"#x"
   |> Node_helpers.User_actions.click_on;
-  [%expect {|
+  [%expect
+    {|
     ("WARNING: not combining handlers" (name click))
     1 3 4
     |}]

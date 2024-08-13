@@ -34,7 +34,9 @@ val property : string -> Js.Unsafe.any -> t
  **)
 val suppress_merge_warnings : t -> t
 
-(** [create_hook name hook] creates a hook attribute with a name *)
+(** Hooks with the same [name] will be merged (via [Input.combine]) if they come from the
+    same [Hooks.t], or the first will be dropped if they come from different [Hooks.t]s.
+*)
 val create_hook : string -> Hooks.t -> t
 
 (** [of_opt attr] returns the underlying Attr.t for a Some, and Attr.empty for a None *)
@@ -65,6 +67,7 @@ val combine : t -> t -> t
 
 val autofocus : bool -> t
 val checked : t
+val checked_prop : bool -> t
 val class_ : string -> t
 val classes : string list -> t
 val classes' : Set.M(String).t -> t
@@ -73,6 +76,7 @@ val allow : string -> t
 val for_ : string -> t
 val label : string -> t
 val href : string -> t
+val rel : string -> t
 val target : string -> t
 val id : string -> t
 val name : string -> t
@@ -162,6 +166,7 @@ val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> unit Effect.t)
 
 val on_cancel : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
+val on_toggle : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_close : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_contextmenu : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 val on_double_click : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
@@ -264,10 +269,10 @@ module Single_focus_hook () : sig
 end
 
 module No_op_hook (M : sig
-  module Input : Hooks.Input
+    module Input : Hooks.Input
 
-  val name : string
-end) : sig
+    val name : string
+  end) : sig
   val attr : M.Input.t -> t
   val type_id : M.Input.t Type_equal.Id.t
 end

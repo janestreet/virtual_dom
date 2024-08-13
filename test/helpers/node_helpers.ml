@@ -85,8 +85,8 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
           (* We ignore [string_properties] / [bool_properties] as their names can overlap
            with attributes. Ignoring them here currently just means that people cannot
            select on them when triggering events.
-
-           *)
+            
+          *)
         ; string_properties = _
         ; bool_properties = _
         ; handlers
@@ -149,6 +149,7 @@ let bprint_element
   ~sep
   ~before_styles
   ~filter_printed_attributes
+  ~self_closing
   { tag_name
   ; attributes
   ; string_properties
@@ -174,8 +175,8 @@ let bprint_element
   in
   Option.bind key ~f:(fun key -> filter_printed_attributes ("@key", key))
   |> Option.iter ~f:(fun (_, v) ->
-       bprint_aligned_indent ();
-       bprintf buffer "@key=%s" v);
+    bprint_aligned_indent ();
+    bprintf buffer "@key=%s" v);
   list_iter_filter attributes ~f:(fun (k, v) ->
     bprint_aligned_indent ();
     bprintf buffer "%s=\"%s\"" k v);
@@ -185,19 +186,20 @@ let bprint_element
   bool_properties
   |> List.map ~f:(Tuple2.map_snd ~f:Bool.to_string)
   |> list_iter_filter ~f:(fun (k, v) ->
-       bprint_aligned_indent ();
-       bprintf buffer "#%s=\"%b\"" k (Bool.of_string v));
+    bprint_aligned_indent ();
+    bprintf buffer "#%s=\"%b\"" k (Bool.of_string v));
   hooks
   |> List.map ~f:(fun (k, v) ->
-       k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
+    k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
   |> list_iter_filter ~f:(fun (k, v) ->
-       bprint_aligned_indent ();
-       bprintf buffer "%s=%s" k v);
+    bprint_aligned_indent ();
+    bprintf buffer "%s=%s" k v);
   handlers
   |> List.map ~f:(fun (k, _) -> k, "handler")
   |> list_iter_filter ~f:(fun (k, _) ->
-       bprint_aligned_indent ();
-       bprintf buffer "%s" k);
+    bprint_aligned_indent ();
+    let formatted_key = String.chop_prefix_if_exists k ~prefix:"on" in
+    bprintf buffer "@on_%s" formatted_key);
   let styles =
     List.filter_map styles ~f:(fun (name, v) ->
       let open Option.Let_syntax in
@@ -213,6 +215,7 @@ let bprint_element
       bprintf buffer "%s%s: %s;" before_styles k v);
     bprint_aligned_indent ();
     bprintf buffer "}");
+  if self_closing then bprintf buffer "/";
   bprintf buffer ">"
 ;;
 
@@ -229,27 +232,44 @@ let bprint_element_multi_line buffer ~indent element =
 let path_regexp = Js_of_ocaml.Regexp.regexp "bonsai_path(_[a-z]*)*"
 let hash_regexp = Js_of_ocaml.Regexp.regexp "_hash_[a-f0-9]+"
 
-let to_string_html
-  ?(filter_printed_attributes = fun ~key:_ ~data:_ -> true)
+let pre_censor to_censor apply_censor kv =
+  if to_censor then Tuple2.map ~f:apply_censor kv else kv
+;;
+
+let gen_filter_printed_attributes
   ?(censor_paths = true)
   ?(censor_hash = true)
   ?(path_censoring_message = "bonsai_path_replaced_in_test")
   ?(hash_censoring_message = "_hash_replaced_in_test")
+  ~f
+  (key, data)
+  =
+  match f ~key ~data with
+  | true ->
+    (key, data)
+    |> pre_censor censor_paths (fun s ->
+      Js_of_ocaml.Regexp.global_replace path_regexp s path_censoring_message)
+    |> pre_censor censor_hash (fun s ->
+      Js_of_ocaml.Regexp.global_replace hash_regexp s hash_censoring_message)
+    |> Some
+  | false -> None
+;;
+
+let to_string_html
+  ?(filter_printed_attributes = fun ~key:_ ~data:_ -> true)
+  ?censor_paths
+  ?censor_hash
+  ?path_censoring_message
+  ?hash_censoring_message
   t
   =
-  let pre_censor to_censor apply_censor kv =
-    if to_censor then Tuple2.map ~f:apply_censor kv else kv
-  in
-  let filter_printed_attributes (key, data) =
-    match filter_printed_attributes ~key ~data with
-    | true ->
-      (key, data)
-      |> pre_censor censor_paths (fun s ->
-           Js_of_ocaml.Regexp.global_replace path_regexp s path_censoring_message)
-      |> pre_censor censor_hash (fun s ->
-           Js_of_ocaml.Regexp.global_replace hash_regexp s hash_censoring_message)
-      |> Some
-    | false -> None
+  let filter_printed_attributes =
+    gen_filter_printed_attributes
+      ?censor_paths
+      ?censor_hash
+      ?path_censoring_message
+      ?hash_censoring_message
+      ~f:filter_printed_attributes
   in
   (* Keep around the buffer so that it is not re-allocated for every element *)
   let single_line_buffer = Buffer.create 200 in
@@ -260,10 +280,20 @@ let to_string_html
     | Element element ->
       bprintf buffer "%s" indent;
       Buffer.reset single_line_buffer;
-      bprint_element_single_line ~filter_printed_attributes single_line_buffer element;
+      bprint_element_single_line
+        ~self_closing:false
+        ~filter_printed_attributes
+        single_line_buffer
+        element;
       if Buffer.length single_line_buffer < 100 - String.length indent
       then Buffer.add_buffer buffer single_line_buffer
-      else bprint_element_multi_line ~filter_printed_attributes buffer ~indent element;
+      else
+        bprint_element_multi_line
+          ~self_closing:false
+          ~filter_printed_attributes
+          buffer
+          ~indent
+          element;
       let children_should_collapse =
         List.for_all element.children ~f:(function
           | Text _ -> true
@@ -311,17 +341,24 @@ let select_first_exn t ~selector =
           ~from_node:(to_string_html t : string)]
 ;;
 
+class type ['a] prop = object
+  method key : Js.js_string Js.t Js.prop
+  method value : 'a Js.prop
+end
+
+let with_prop f p = f (p##.key, p##.value)
+
 let rec unsafe_of_js_exn =
   let make_text_node (text : Js.js_string Js.t) = Text (Js.to_string text) in
   let make_element_node
     (tag_name : Js.js_string Js.t)
     (children : t Js.js_array Js.t)
-    (handlers : (Js.js_string Js.t * Js.Unsafe.any) Js.js_array Js.t)
-    (attributes : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-    (string_properties : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-    (bool_properties : (Js.js_string Js.t * bool Js.t) Js.js_array Js.t)
-    (styles : (Js.js_string Js.t * Js.js_string Js.t) Js.js_array Js.t)
-    (hooks : (Js.js_string Js.t * Vdom.Attr.Hooks.For_testing.Extra.t) Js.js_array Js.t)
+    (handlers : Js.Unsafe.any prop Js.t Js.js_array Js.t)
+    (attributes : Js.js_string Js.t prop Js.t Js.js_array Js.t)
+    (string_properties : Js.js_string Js.t prop Js.t Js.js_array Js.t)
+    (bool_properties : bool Js.t prop Js.t Js.js_array Js.t)
+    (styles : Js.js_string Js.t prop Js.t Js.js_array Js.t)
+    (hooks : Vdom.Attr.Hooks.For_testing.Extra.t prop Js.t Js.js_array Js.t)
     (key : Js.js_string Js.t Js.Opt.t)
     =
     let tag_name = tag_name |> Js.to_string in
@@ -330,50 +367,56 @@ let rec unsafe_of_js_exn =
       handlers
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (s, h) ->
-           let name = Js.to_string s in
-           name, Handler.of_any_exn h ~name)
+      |> List.map
+           ~f:
+             (with_prop
+              @@ fun (s, h) ->
+              let name = Js.to_string s in
+              name, Handler.of_any_exn h ~name)
     in
     let attributes =
       attributes
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) ->
-           let k, v = Js.to_string k, Js.to_string v in
-           let v =
-             if [%equal: string] k "class"
-             then
-               v
-               |> String.split ~on:' '
-               |> List.dedup_and_sort ~compare:[%compare: string]
-               |> String.concat ~sep:" "
-             else v
-           in
-           k, v)
+      |> List.map
+           ~f:
+             (with_prop
+              @@ fun (k, v) ->
+              let k, v = Js.to_string k, Js.to_string v in
+              let v =
+                if [%equal: string] k "class"
+                then
+                  v
+                  |> String.split ~on:' '
+                  |> List.dedup_and_sort ~compare:[%compare: string]
+                  |> String.concat ~sep:" "
+                else v
+              in
+              k, v)
     in
     let hooks =
       hooks
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) -> Js.to_string k, v)
+      |> List.map ~f:(with_prop @@ fun (k, v) -> Js.to_string k, v)
     in
     let string_properties =
       string_properties
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
+      |> List.map ~f:(with_prop @@ fun (k, v) -> Js.to_string k, Js.to_string v)
     in
     let bool_properties =
       bool_properties
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_bool v)
+      |> List.map ~f:(with_prop @@ fun (k, v) -> Js.to_string k, Js.to_bool v)
     in
     let styles =
       styles
       |> Js.to_array
       |> Array.to_list
-      |> List.map ~f:(fun (k, v) -> Js.to_string k, Js.to_string v)
+      |> List.map ~f:(with_prop @@ fun (k, v) -> Js.to_string k, Js.to_string v)
     in
     let key = key |> Js.Opt.to_option |> Option.map ~f:Js.to_string in
     Element
@@ -418,7 +461,7 @@ let rec unsafe_of_js_exn =
            case 'VirtualNode':
                var attributes = node.properties.attributes || {};
                var attr_list = Object.keys(attributes).map(function(key) {
-                   return [0, key, attributes[key].toString()];
+                   return {key:key, value:attributes[key].toString()};
                });
                var children = node.children.map(function(node) {
                    return convert(node, make_text_node, make_element_node, make_widget_node, raise_unknown_node_type);
@@ -431,8 +474,7 @@ let rec unsafe_of_js_exn =
                        return key.startsWith("on") && typeof node.properties[key] === 'function';
                    })
                    .map(function(key) {
-                       // [0, ...] is how to generate an OCaml tuple from the JavaScript side.
-                       return [0, key, node.properties[key]];
+                       return {key:key, value:node.properties[key]};
                    });
                var string_properties =
                    Object.keys(node.properties)
@@ -440,7 +482,7 @@ let rec unsafe_of_js_exn =
                        return typeof node.properties[key] === 'string';
                    })
                    .map(function(key) {
-                       return [0, key, node.properties[key]]
+                       return {key:key, value:node.properties[key]};
                    });
                var bool_properties =
                    Object.keys(node.properties)
@@ -448,7 +490,7 @@ let rec unsafe_of_js_exn =
                      return typeof node.properties[key] === 'boolean';
                    })
                    .map(function(key) {
-                       return [0, key, node.properties[key]]
+                      return {key:key, value:node.properties[key]};
                    });
                var styles =
                    Object.keys(node.properties.style ? node.properties.style : {})
@@ -456,7 +498,7 @@ let rec unsafe_of_js_exn =
                        return typeof node.properties.style[key] === 'string';
                    })
                    .map(function(key) {
-                       return [0, key, node.properties.style[key]]
+                       return {key, value:node.properties.style[key]}
                    });
                var hooks =
                    Object.keys(node.properties)
@@ -465,7 +507,7 @@ let rec unsafe_of_js_exn =
                            typeof node.properties[key]['extra'] === 'object';
                    })
                    .map(function(key) {
-                       return [0, key, node.properties[key]['extra']]
+                       return {key, value:node.properties[key]['extra']}
                    });
                var soft_set_hooks =
                    Object.keys(node.properties)
@@ -473,7 +515,7 @@ let rec unsafe_of_js_exn =
                      return node.properties[key] instanceof joo_global_object.SoftSetHook;
                    })
                    .map(function(key) {
-                     return [0, key, "" + node.properties[key].value];
+                     return {key, value:"" + node.properties[key].value};
                    });
                return make_element_node(
                    node.tagName,
@@ -531,22 +573,37 @@ let trigger ?extra_fields node ~event_name =
   trigger_many ?extra_fields node ~event_names:[ event_name ]
 ;;
 
-let get_hook_value : type a. t -> type_id:a Type_equal.Id.t -> name:string -> a =
-  fun t ~type_id ~name ->
+let get_element_hook_value
+  : type a. element -> type_id:a Type_equal.Id.t -> name:string -> a option
+  =
+  fun { hooks; _ } ~type_id ~name ->
+  match List.Assoc.find ~equal:String.equal hooks name with
+  | Some hook ->
+    let (Vdom.Attr.Hooks.For_testing.Extra.T { type_id = type_id_v; value }) = hook in
+    (match Type_equal.Id.same_witness type_id_v type_id with
+     | Some T -> Some value
+     | None ->
+       failwithf
+         "get_hook_value: a hook for %s was found, but the type-ids were not the same; \
+          are you using the same type-id that you got from the For_testing module from \
+          your hook creator?"
+         name
+         ())
+  | None -> None
+;;
+
+let get_hook_value_opt t ~type_id ~name =
   match t with
-  | Element { hooks; _ } ->
-    (match List.Assoc.find ~equal:String.equal hooks name with
-     | Some hook ->
-       let (Vdom.Attr.Hooks.For_testing.Extra.T { type_id = type_id_v; value }) = hook in
-       (match Type_equal.Id.same_witness type_id_v type_id with
-        | Some T -> value
-        | None ->
-          failwithf
-            "get_hook_value: a hook for %s was found, but the type-ids were not the \
-             same; are you using the same type-id that you got from the For_testing \
-             module from your hook creator?"
-            name
-            ())
+  | Element e -> get_element_hook_value e ~type_id ~name
+  | Text _ -> failwith "get_hook_value: expected Element, found Text"
+  | Widget -> failwith "get_hook_value: expected Element, found Widget"
+;;
+
+let get_hook_value t ~type_id ~name =
+  match t with
+  | Element e ->
+    (match get_element_hook_value e ~type_id ~name with
+     | Some v -> v
      | None -> failwithf "get_hook_value: no hook found with name %s" name ())
   | Text _ -> failwith "get_hook_value: expected Element, found Text"
   | Widget -> failwith "get_hook_value: expected Element, found Widget"
@@ -718,6 +775,32 @@ module User_actions = struct
            [ "target", target ])
   ;;
 
+  let input_files ?(extra_event_fields = []) element ~files =
+    let value =
+      match files with
+      | [] -> ""
+      | (file : File.file Js.t) :: _ -> Js.to_string file##.name
+    in
+    let target =
+      Js.Unsafe.inject
+        (object%js
+           val tagName = Js.string (tag_name_exn element)
+           val value = Js.string value
+
+           val files =
+             object%js
+               val length = Js.number_of_float (Float.of_int (List.length files))
+               method item i = List.nth_exn files (Js.float_of_number i |> Int.of_float)
+             end
+        end)
+    in
+    let event_names = [ "oninput"; "onchange" ] in
+    trigger_many
+      element
+      ~event_names
+      ~extra_fields:([ "target", target ] @ extra_event_fields)
+  ;;
+
   let keydown
     ?extra_event_fields
     ?shift_key_down
@@ -861,6 +944,460 @@ module User_actions = struct
         (build_event_object
            ~extra_event_fields
            ~include_modifier_keys:false
-           [ "deltaY", Js.Unsafe.inject delta_y ])
+           [ "deltaY", Js.Unsafe.inject (Js.float delta_y) ])
+  ;;
+end
+
+module Linter = struct
+  module Outcome = struct
+    type t =
+      | Pass
+      | Fail
+  end
+
+  module Severity = struct
+    type t =
+      | Only_report_app_crashing_errors
+      | Report_all_errors
+    [@@deriving equal, compare]
+
+    let to_string = function
+      | Only_report_app_crashing_errors -> "Fatal"
+      | Report_all_errors -> "High"
+    ;;
+
+    let at_least ~compare_to t = compare t compare_to <= 0
+
+    let%expect_test "more severe than" =
+      assert (at_least ~compare_to:Report_all_errors Only_report_app_crashing_errors);
+      assert (at_least ~compare_to:Report_all_errors Report_all_errors);
+      assert (
+        at_least
+          ~compare_to:Only_report_app_crashing_errors
+          Only_report_app_crashing_errors)
+    ;;
+  end
+
+  module Rule = struct
+    type t =
+      | Undetectable_clickable_element
+      | Invalid_tabindex
+      | Event_handler_html_attribute
+      | Duplicate_ids
+      | Whitespace_in_id
+      | Siblings_have_same_vdom_key
+      | Unsafe_target_blank
+      | Clickable_role_but_no_tabindex
+      | Button_without_valid_type
+    [@@deriving hash, compare, sexp, equal, enumerate, string ~capitalize:"Sentence case"]
+
+    let severity = function
+      | Undetectable_clickable_element -> Severity.Report_all_errors
+      | Invalid_tabindex -> Report_all_errors
+      | Event_handler_html_attribute -> Report_all_errors
+      | Duplicate_ids -> Report_all_errors
+      | Whitespace_in_id -> Report_all_errors
+      | Siblings_have_same_vdom_key -> Only_report_app_crashing_errors
+      | Unsafe_target_blank -> Report_all_errors
+      | Clickable_role_but_no_tabindex -> Report_all_errors
+      | Button_without_valid_type -> Report_all_errors
+    ;;
+
+    let recommendation = function
+      | Undetectable_clickable_element ->
+        String.strip
+          {|
+This element has a "click" event listener, but does not have an HTML tag or
+role that indicates that it's accessible (e.g. `a`, `button`, a form control, etc).
+Accessibility tools, such as Vimium, might not detect this element.
+
+Likely fix: Add a `role="button"` attribute, or use a `<button />` tag instead of
+`<div />`.|}
+      | Invalid_tabindex -> "Only use `0` and `-1` as tabindex values."
+      | Event_handler_html_attribute ->
+        let ppx_html_string = "{%html|<button on_click=%{...}></button>|}" in
+        String.strip
+          {%string|
+Event handling via literal `onclick`, `onfocus`, `onblur`, etc
+HTML attributes is bad practice, and will likely result in CSP errors.
+
+You should attach event handlers via `Vdom.Attr.on_*` functions, or
+%{ppx_html_string}, which attaches event listeners programmatically.
+|}
+      | Duplicate_ids ->
+        String.strip
+          {|
+Do not use the same value for an HTML id attribute more than once.|}
+      | Whitespace_in_id -> "HTML IDs must not contain spaces."
+      | Siblings_have_same_vdom_key ->
+        String.strip
+          {|
+Sibling vdom nodes MUST NOT have the same key. This will crash your web app at runtime.|}
+      | Unsafe_target_blank ->
+        String.strip
+          {|
+HTML `<a />` links may only have `target="_blank"` if they are relative links, or
+`rel="noopener noreferrer"` is set. For more info, see:
+https://hackernoon.com/unsafe-use-of-target_blank-39413ycf
+
+Likely fix: either use a relative link, or specify `rel="noopener noreferrer"`|}
+      | Clickable_role_but_no_tabindex ->
+        String.strip
+          {|
+This element has a role attribute that marks it as clickable, but has not set
+tabindex="0". This means it will not be focusable via tab, which negatively impacts
+keyboard users.
+
+Likely fix: add tabindex="0".|}
+      | Button_without_valid_type ->
+        String.strip
+          {|
+HTML `<button />` elements should explicitly specify a `type` attribute, which should be
+"button", "submit", or "reset". If not set, the browser will use "submit" by default,
+which will cause the button to submit any `<form />`s that contain it when clicked.
+
+Likely fix: add a `type="button"` attribute. |}
+    ;;
+
+    let display ~failure_expected t =
+      let expected_message = if failure_expected then " (failure expected)" else "" in
+      let first_line =
+        [%string "[%{Severity.to_string (severity t)}] %{to_string t}%{expected_message}"]
+      in
+      let spacer = String.init (String.length first_line) ~f:(fun _ -> '-') in
+      [%string "%{first_line}\n%{spacer}\n%{recommendation t}"]
+    ;;
+  end
+
+  module Test = struct
+    module Node_context = struct
+      type 'a t =
+        { acc : 'a
+        ; rules_broken : Rule.t Hash_set.t
+        }
+    end
+
+    type t =
+      | T :
+          { rule : Rule.t
+          ; f : 'a Node_context.t -> element -> Outcome.t * 'a
+          ; mutable acc : 'a
+          }
+          -> t
+
+    let create rule ~init ~f = T { rule; f; acc = init }
+    let create_isolated rule ~f = create rule ~init:() ~f:(fun _ helper -> f helper, ())
+    let rule (T { rule; _ }) = rule
+
+    let rules_broken ts element =
+      let rules_broken = Hash_set.create (module Rule) in
+      List.filter ts ~f:(fun (T test) ->
+        let outcome, acc = test.f { acc = test.acc; rules_broken } element in
+        test.acc <- acc;
+        match outcome with
+        | Pass -> false
+        | Fail -> true)
+      |> List.iter ~f:(fun (T { rule; _ }) -> Hash_set.add rules_broken rule);
+      rules_broken
+    ;;
+
+    let severity_at_least ~min_severity (T { rule; _ }) =
+      let severity = Rule.severity rule in
+      Severity.at_least ~compare_to:min_severity severity
+    ;;
+  end
+
+  let pass_if cond = if cond then Outcome.Pass else Fail
+  let fail_if cond = pass_if (not cond)
+
+  let clickable_tags =
+    Set.of_list
+      (module String)
+      [ "a"; "textarea"; "input"; "button"; "select"; "object"; "embed"; "details" ]
+  ;;
+
+  let clickable_roles =
+    Set.of_list
+      (module String)
+      [ "button"
+      ; "tab"
+      ; "link"
+      ; "checkbox"
+      ; "menuitem"
+      ; "menuitemcheckbox"
+      ; "menuitemradio"
+      ; "radio"
+      ]
+  ;;
+
+  let test_unrecognized_clickable = function
+    | { handlers; _ } when not (List.Assoc.mem ~equal:String.equal handlers "onclick") ->
+      Outcome.Pass
+    | { tag_name; _ } when Set.mem clickable_tags tag_name -> Pass
+    | { attributes; _ } ->
+      (match List.Assoc.find attributes "role" ~equal:String.equal with
+       | None -> Fail
+       | Some role_val ->
+         let has_clickable_role =
+           String.split role_val ~on:' ' |> List.exists ~f:(Set.mem clickable_roles)
+         in
+         pass_if has_clickable_role)
+  ;;
+
+  let get_attr = List.Assoc.find ~equal:String.equal
+  let uri_has_scheme str = Uri.of_string str |> Uri.scheme |> Option.is_some
+
+  open struct
+    open Outcome
+
+    let test_invalid_tab_index { attributes; _ } =
+      match get_attr attributes "tabindex" with
+      | None -> Pass
+      | Some tabindex -> pass_if String.(tabindex = "0" || tabindex = "-1")
+    ;;
+
+    let test_event_handler_html_attribute { attributes; _ } =
+      List.exists attributes ~f:(fun (name, _) ->
+        match String.chop_prefix name ~prefix:"on" with
+        | None -> false
+        | Some rest -> String.for_all rest ~f:Char.is_alpha)
+      |> fail_if
+    ;;
+
+    let test_whitespace_in_id { attributes; _ } =
+      match get_attr attributes "id" with
+      | None -> Pass
+      | Some id -> fail_if (String.contains id ' ')
+    ;;
+
+    let test_clickable_role_but_no_tabindex { attributes; _ } =
+      match get_attr attributes "role", get_attr attributes "tabindex" with
+      | None, None -> Pass
+      | Some role, None when Set.mem clickable_roles role -> Fail
+      | Some _, None | _, Some _ -> Pass
+    ;;
+
+    let test_button_without_valid_type { tag_name; attributes; _ } =
+      match tag_name with
+      | "button" ->
+        (match get_attr attributes "type" with
+         | Some "button" | Some "submit" | Some "reset" -> Pass
+         | _ -> Fail)
+      | _ -> Pass
+    ;;
+
+    let test_unsafe_target_blank = function
+      | { tag_name = "a"; attributes; _ } ->
+        (match
+           ( get_attr attributes "target"
+           , get_attr attributes "href"
+           , get_attr attributes "rel" )
+         with
+         | None, _, _ -> Outcome.Pass
+         | Some "_blank", Some href, _ when not (uri_has_scheme href) -> Pass
+         | Some "_blank", _, Some rel
+           when List.for_all [ "noopener"; "noreferrer" ] ~f:(fun substring ->
+                  String.is_substring ~substring rel) -> Pass
+         | Some "_blank", _, _ -> Fail
+         | _ -> Pass)
+      | _ -> Pass
+    ;;
+  end
+
+  let test_for_rule : Rule.t -> Test.t =
+    fun rule ->
+    let isolated = Test.create_isolated rule in
+    match rule with
+    | Undetectable_clickable_element -> isolated ~f:test_unrecognized_clickable
+    | Invalid_tabindex -> isolated ~f:test_invalid_tab_index
+    | Event_handler_html_attribute -> isolated ~f:test_event_handler_html_attribute
+    | Whitespace_in_id -> isolated ~f:test_whitespace_in_id
+    | Duplicate_ids ->
+      Test.create
+        rule
+        ~init:String.Map.empty
+        ~f:(fun { acc; rules_broken = curr_node_rules_broken } { attributes; _ } ->
+          match get_attr attributes "id" with
+          | None -> Pass, acc
+          | Some id ->
+            (match Map.find acc id with
+             | Some first_occurence_rules_broken ->
+               Hash_set.add first_occurence_rules_broken Rule.Duplicate_ids;
+               Fail, acc
+             | None ->
+               (* The match asserts that this key is not in the map *)
+               Pass, Map.add_exn acc ~key:id ~data:curr_node_rules_broken))
+    | Siblings_have_same_vdom_key ->
+      Test.create rule ~init:[] ~f:(fun { acc; _ } ({ children; _ } as self) ->
+        let failing_children =
+          List.filter_map children ~f:(function
+            | Text _ | Widget | Element { key = None; _ } -> None
+            | Element ({ key = Some key; _ } as e) -> Some (key, e))
+          |> Map.of_alist_multi (module String)
+          |> Map.data
+          |> List.filter ~f:(fun data -> List.length data > 1)
+          |> List.concat
+        in
+        let result, acc_without_self =
+          match List.mem acc self ~equal:phys_equal with
+          | true -> Outcome.Fail, List.filter acc ~f:(fun e -> not (phys_equal e self))
+          | false -> Pass, acc
+        in
+        result, failing_children @ acc_without_self)
+    | Unsafe_target_blank -> isolated ~f:test_unsafe_target_blank
+    | Clickable_role_but_no_tabindex -> isolated ~f:test_clickable_role_but_no_tabindex
+    | Button_without_valid_type -> isolated ~f:test_button_without_valid_type
+  ;;
+
+  let tests = lazy (List.map Rule.all ~f:test_for_rule)
+
+  let%expect_test "All rules accounted for" =
+    let all_rules = Rule.all in
+    let rules_tested = force tests |> List.map ~f:Test.rule in
+    assert (List.length all_rules = List.length rules_tested);
+    List.iter all_rules ~f:(fun rule ->
+      assert (List.exists rules_tested ~f:(Rule.equal rule)));
+    [%expect {| |}]
+  ;;
+
+  module Tree = struct
+    type t =
+      | Node of
+          { element : element
+          ; children : t list
+              (* [rules_broken] is mutable because we might only know that a rule is broken
+                 after the [Tree.t] has been built. *)
+          ; rules_broken : Rule.t Hash_set.t
+          }
+      | Empty
+
+    let build ~min_severity helper =
+      let tests = force tests |> List.filter ~f:(Test.severity_at_least ~min_severity) in
+      let rec loop helper =
+        match helper with
+        | Text _ | Widget -> Empty
+        | Element ({ children; _ } as element) ->
+          let rules_broken = Test.rules_broken tests element in
+          let unpruned_children = List.map children ~f:loop in
+          let pruned_children =
+            List.fold unpruned_children ~init:[] ~f:(fun acc child ->
+              match acc, child with
+              | Empty :: _, Empty -> acc
+              | _, _ -> child :: acc)
+            |> List.rev
+          in
+          (match pruned_children, Hash_set.to_list rules_broken with
+           | [], [] | [ Empty ], [] -> Empty
+           | [ Empty ], _ -> Node { element; rules_broken; children = [] }
+           | _, _ -> Node { element; rules_broken; children = pruned_children })
+      in
+      loop helper
+    ;;
+
+    let filter_printed_attributes =
+      gen_filter_printed_attributes
+        ~censor_paths:false
+        ~censor_hash:false
+        ~f:(fun ~key:_ ~data:_ -> true)
+    ;;
+
+    let rec to_string_hum ~depth ~buf t =
+      let recurse ?(incr_depth_by = 1) t =
+        to_string_hum ~depth:(depth + incr_depth_by) ~buf t
+      in
+      let pad ?(depth_offset = 0) () =
+        Buffer.add_char buf '\n';
+        Fn.apply_n_times
+          ~n:((depth + depth_offset) * 2)
+          (fun () -> Buffer.add_char buf ' ')
+          ()
+      in
+      let print_error rules =
+        let errors_string =
+          Hash_set.to_list rules |> List.map ~f:Rule.to_string |> String.concat ~sep:", "
+        in
+        bprintf buf " <- [ERRORS]: %s" errors_string
+      in
+      pad ();
+      match t with
+      | Empty -> bprintf buf "..."
+      | Node { rules_broken; children = []; _ } when Hash_set.is_empty rules_broken ->
+        bprintf buf "ERROR_IN_LINTER"
+      | Node { element; rules_broken; children = [] } ->
+        bprint_element_single_line
+          ~self_closing:true
+          ~filter_printed_attributes
+          buf
+          element;
+        print_error rules_broken
+      | Node { element; rules_broken; children } ->
+        (match Hash_set.to_list rules_broken with
+         | [] -> bprintf buf "<%s>" element.tag_name
+         | _ ->
+           bprint_element_single_line
+             ~self_closing:false
+             ~filter_printed_attributes
+             buf
+             element;
+           print_error rules_broken);
+        List.iter children ~f:recurse;
+        pad ();
+        bprintf buf "</%s>" element.tag_name
+    ;;
+  end
+
+  let get_all_broken_rules tree =
+    let all_rules_broken = Hash_set.create (module Rule) in
+    let rec loop = function
+      | Tree.Empty -> ()
+      | Node { rules_broken; children; _ } ->
+        Hash_set.iter rules_broken ~f:(Hash_set.add all_rules_broken);
+        List.iter children ~f:loop
+    in
+    loop tree;
+    Hash_set.to_list all_rules_broken
+  ;;
+
+  let run ?(expected_failures = []) ?(min_severity = Severity.Report_all_errors) helper =
+    match Tree.build ~min_severity helper with
+    | Empty -> None
+    | tree ->
+      let buf = Buffer.create 1024 in
+      let expected_failures, unexpected_failures =
+        get_all_broken_rules tree
+        |> List.partition_tf ~f:(fun rule ->
+          List.mem ~equal:Rule.equal expected_failures rule)
+      in
+      let display_and_sort ~failure_expected rules =
+        List.sort rules ~compare:(fun a b ->
+          Severity.compare (Rule.severity a) (Rule.severity b))
+        |> List.map ~f:(Rule.display ~failure_expected)
+      in
+      let title =
+        if List.is_empty unexpected_failures
+        then "Linting Failures:\n"
+        else
+          "(* C$R require-failed: UNEXPECTED LINTER ERRORS *)\n"
+          |> String.substr_replace_first ~pattern:"$" ~with_:""
+      in
+      bprintf buf "%s" title;
+      Tree.to_string_hum ~depth:0 ~buf tree;
+      bprintf buf "\n\n";
+      display_and_sort ~failure_expected:false unexpected_failures
+      @ display_and_sort ~failure_expected:true expected_failures
+      |> List.intersperse ~sep:"\n\n"
+      |> List.iter ~f:(bprintf buf "%s");
+      Some (Buffer.contents buf)
+  ;;
+
+  let print_report
+    ?expected_failures
+    ?min_severity
+    ?(on_ok = fun () -> print_endline "ok!")
+    helper
+    =
+    match run ?expected_failures ?min_severity helper with
+    | None -> on_ok ()
+    | Some report -> print_endline report
   ;;
 end

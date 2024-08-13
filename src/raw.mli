@@ -5,18 +5,18 @@ module Attrs : sig
   type t = private Js.Unsafe.any
 
   val create : unit -> t
-  val has_property : t -> string -> bool
-  val has_attribute : t -> string -> bool
-  val set_property : t -> string -> Js.Unsafe.any -> unit
-  val set_attribute : t -> string -> Js.Unsafe.any -> unit
+  val has_property : t -> Js.js_string Js.t -> bool
+  val has_attribute : t -> Js.js_string Js.t -> bool
+  val set_property : t -> Js.js_string Js.t -> Js.Unsafe.any -> unit
+  val set_attribute : t -> Js.js_string Js.t -> Js.Unsafe.any -> unit
 end
 
 module Node : sig
   type t
 
-  val node : string -> Attrs.t -> t Js.js_array Js.t -> string option -> t
+  val node : Js.js_string Js.t -> Attrs.t -> t Js.js_array Js.t -> string option -> t
   val text : string -> t
-  val svg : string -> Attrs.t -> t Js.js_array Js.t -> string option -> t
+  val svg : Js.js_string Js.t -> Attrs.t -> t Js.js_array Js.t -> string option -> t
   val to_dom : t -> Dom_html.element Js.t
 end
 

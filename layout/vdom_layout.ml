@@ -75,7 +75,7 @@ let as_box
            let has_flex_shrink_set =
              Css_gen.to_string_list style
              |> List.exists ~f:(fun (f, _) ->
-                  String.( = ) f "flex-shrink" || String.( = ) f "flex")
+               String.( = ) f "flex-shrink" || String.( = ) f "flex")
            in
            if has_flex_shrink_set
            then style

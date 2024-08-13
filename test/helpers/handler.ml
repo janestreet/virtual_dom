@@ -4,8 +4,7 @@ open! Js_of_ocaml
 type t = Js.Unsafe.any
 
 let of_any_exn t ~name =
-  let javascript_strict_equal = phys_equal in
-  if not (javascript_strict_equal (Js.typeof t) (Js.string "function"))
+  if not (Js.equals (Js.typeof t) (Js.string "function"))
   then raise_s [%message "handler for" name "is not a function"];
   t
 ;;

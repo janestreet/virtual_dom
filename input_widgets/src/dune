@@ -3,4 +3,4 @@
  (public_name virtual_dom.input_widgets)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries core js_of_ocaml virtual_dom))
+ (libraries core css_gen js_of_ocaml virtual_dom))

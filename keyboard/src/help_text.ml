@@ -56,7 +56,7 @@ module Command = struct
       | `Description of (string -> string) option
       | `Text of string
       ]
-      list
+        list
 
     let default =
       [ `Text "Press "
@@ -74,12 +74,12 @@ module Command = struct
       |> dedup_keys
       |> List.group ~break:(fun a b -> not (keys_are_consecutive a b))
       |> List.map ~f:(function
-           | [] -> []
-           | first_key :: keys ->
-             let keys = first_key :: Option.to_list (List.last keys) in
-             List.map keys ~f:Keystroke.to_string_hum
-             |> List.map ~f:view_spec.key
-             |> List.intersperse ~sep:(view_spec.plain_text " to "))
+        | [] -> []
+        | first_key :: keys ->
+          let keys = first_key :: Option.to_list (List.last keys) in
+          List.map keys ~f:Keystroke.to_string_hum
+          |> List.map ~f:view_spec.key
+          |> List.intersperse ~sep:(view_spec.plain_text " to "))
     in
     List.intersperse keys ~sep:[ view_spec.plain_text sep ] |> List.concat
   ;;
@@ -113,9 +113,9 @@ let group_consecutive_commands (commands : Command.t list) =
       not (keys_are_consecutive k0 k1 && String.( = ) c0.description c1.description)
     | _ -> true)
   |> List.map ~f:(fun commands ->
-       { Command.keys = List.concat_map commands ~f:(fun c -> c.keys)
-       ; description = (List.hd_exn commands).description
-       })
+    { Command.keys = List.concat_map commands ~f:(fun c -> c.keys)
+    ; description = (List.hd_exn commands).description
+    })
 ;;
 
 let view_rows ?(sep = " or ") t (view_spec : View_spec.t) =

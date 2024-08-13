@@ -3,4 +3,5 @@
  (public_name virtual_dom.vdom_test_helpers)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries core js_of_ocaml lambdasoup virtual_dom vdom_keyboard))
+ (libraries core js_of_ocaml lambdasoup virtual_dom ui_effect vdom_keyboard
+   uri))

@@ -45,3 +45,87 @@ let%expect_test _ =
   in
   ()
 ;;
+
+let via_empty_object : Dom_html.keyboardEvent Js.t = Obj.magic (object%js end)
+
+let via_getmodifierstate : Dom_html.keyboardEvent Js.t =
+  Obj.magic
+    (object%js
+       val getModifierState = Js.wrap_callback (fun _ -> Js._true)
+    end)
+;;
+
+let via_bad_getmodifierstate : Dom_html.keyboardEvent Js.t =
+  Obj.magic
+    (object%js
+       val getModifierState = Js.wrap_callback (fun _ -> Js.string "foo")
+    end)
+;;
+
+let%expect_test "ctrl" =
+  let via_property : Dom_html.keyboardEvent Js.t =
+    Obj.magic
+      (object%js
+         val ctrlKey = Js.bool true
+      end)
+  in
+  print_s [%message (Keyboard_event.ctrl via_property : bool)];
+  [%expect {| ("Keyboard_event.ctrl via_property" true) |}];
+  print_s [%message (Keyboard_event.ctrl via_empty_object : bool)];
+  [%expect {| ("Keyboard_event.ctrl via_empty_object" false) |}];
+  print_s [%message (Keyboard_event.ctrl via_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.ctrl via_getmodifierstate" true) |}];
+  print_s [%message (Keyboard_event.ctrl via_bad_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.ctrl via_bad_getmodifierstate" false) |}]
+;;
+
+let%expect_test "alt" =
+  let via_property : Dom_html.keyboardEvent Js.t =
+    Obj.magic
+      (object%js
+         val altKey = Js.bool true
+      end)
+  in
+  print_s [%message (Keyboard_event.alt via_property : bool)];
+  [%expect {| ("Keyboard_event.alt via_property" true) |}];
+  print_s [%message (Keyboard_event.alt via_empty_object : bool)];
+  [%expect {| ("Keyboard_event.alt via_empty_object" false) |}];
+  print_s [%message (Keyboard_event.alt via_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.alt via_getmodifierstate" true) |}];
+  print_s [%message (Keyboard_event.alt via_bad_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.alt via_bad_getmodifierstate" false) |}]
+;;
+
+let%expect_test "shift" =
+  let via_property : Dom_html.keyboardEvent Js.t =
+    Obj.magic
+      (object%js
+         val shiftKey = Js.bool true
+      end)
+  in
+  print_s [%message (Keyboard_event.shift via_property : bool)];
+  [%expect {| ("Keyboard_event.shift via_property" true) |}];
+  print_s [%message (Keyboard_event.shift via_empty_object : bool)];
+  [%expect {| ("Keyboard_event.shift via_empty_object" false) |}];
+  print_s [%message (Keyboard_event.shift via_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.shift via_getmodifierstate" true) |}];
+  print_s [%message (Keyboard_event.shift via_bad_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.shift via_bad_getmodifierstate" false) |}]
+;;
+
+let%expect_test "meta" =
+  let via_property : Dom_html.keyboardEvent Js.t =
+    Obj.magic
+      (object%js
+         val metaKey = Js.bool true
+      end)
+  in
+  print_s [%message (Keyboard_event.meta via_property : bool)];
+  [%expect {| ("Keyboard_event.meta via_property" true) |}];
+  print_s [%message (Keyboard_event.meta via_empty_object : bool)];
+  [%expect {| ("Keyboard_event.meta via_empty_object" false) |}];
+  print_s [%message (Keyboard_event.meta via_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.meta via_getmodifierstate" true) |}];
+  print_s [%message (Keyboard_event.meta via_bad_getmodifierstate : bool)];
+  [%expect {| ("Keyboard_event.meta via_bad_getmodifierstate" false) |}]
+;;

@@ -69,7 +69,23 @@ module Aliases : sig
   type nonrec node_creator_childless = node_creator_childless
 end
 
+(** [none] is the absence of a node. You can use it as a placeholder for "no content".
+
+    In practice, it will appear as a DOM comment node, which shouldn't interfere with
+    CSS or selectors. This allows for more performant and correct diffing of lists where
+    elements might switch between `none` and a "real" node. *)
 val none : t
+
+(**
+   [(none_deprecated[@alert"-deprecated"])] is a node that isn't ever mounted into the dom, so you can use it as a
+    placeholder for "no content".
+
+    It is deprecated due to poor performance characteristics when virtual_dom diffing. Please use
+    [none] instead
+*)
+val none_deprecated : t
+[@@deprecated "[since 2024-05] use [none] instead"]
+
 val fragment : t list -> t
 val text : string -> t
 val textf : ('a, unit, string, t) format4 -> 'a
@@ -130,6 +146,9 @@ val kbd : node_creator
 val form : node_creator
 val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 
+(** [of_opt node] returns the underlying Node.t for a Some, and Node.none for a None *)
+val of_opt : t option -> t
+
 (* [lazy_] allows you to defer the computation of a virtual-dom node until
    the node is actually necessary for rendering.  This can be _very_ valuable
    in situations where a node might be computed multiple-times per frame - but
@@ -165,7 +184,7 @@ val inner_html_svg
     [input] does not accept a list of child nodes, but [input_deprecated] does.
     HTML <input> tags are not meant to have any child elements. *)
 val input_deprecated : node_creator
-  [@@deprecated "[since 2022-05] use [input] instead"]
+[@@deprecated "[since 2022-05] use [input] instead"]
 
 (** [key] is used by Virtual_dom as a hint during diffing/patching *)
 val create : string -> node_creator

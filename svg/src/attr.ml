@@ -264,59 +264,59 @@ let d =
   fun commands ->
     commands
     |> List.map ~f:(function
-         | Move_to_abs { x; y } -> sprintf !"M%{Number},%{Number}" x y
-         | Move_to_rel { x; y } -> sprintf !"m%{Number},%{Number}" x y
-         | Line_to_abs { x; y } -> sprintf !"L%{Number},%{Number}" x y
-         | Line_to_rel { x; y } -> sprintf !"l%{Number},%{Number}" x y
-         | Arc_to_abs { rx; ry; x_axis_rotation; large_arc; sweep; x; y } ->
-           sprintf
-             !"A %{Number} %{Number}, %{Number}, %{Int}, %{Int}, %{Number} %{Number}"
-             rx
-             ry
-             x_axis_rotation
-             (if large_arc then 1 else 0)
-             (if sweep then 1 else 0)
-             x
-             y
-         | Arc_to_rel { rx; ry; x_axis_rotation; large_arc; sweep; dx; dy } ->
-           sprintf
-             !"a %{Number} %{Number} %{Number} %{Int} %{Int} %{Number} %{Number}"
-             rx
-             ry
-             x_axis_rotation
-             (if large_arc then 1 else 0)
-             (if sweep then 1 else 0)
-             dx
-             dy
-         | Cubic_abs { x1; y1; x2; y2; x; y } ->
-           sprintf
-             !"C %{Number},%{Number},%{Number},%{Number},%{Number},%{Number}"
-             x1
-             y1
-             x2
-             y2
-             x
-             y
-         | Cubic_rel { x1; y1; x2; y2; x; y } ->
-           sprintf
-             !"c %{Number},%{Number},%{Number},%{Number},%{Number},%{Number}"
-             x1
-             y1
-             x2
-             y2
-             x
-             y
-         | Cubic_smooth_abs { x2; y2; x; y } ->
-           sprintf !"S %{Number},%{Number},%{Number},%{Number}" x2 y2 x y
-         | Cubic_smooth_rel { x2; y2; x; y } ->
-           sprintf !"s %{Number},%{Number},%{Number},%{Number}" x2 y2 x y
-         | Quadratic_abs { x1; y1; x; y } ->
-           sprintf !"Q %{Number},%{Number},%{Number},%{Number}" x1 y1 x y
-         | Quadratic_rel { x1; y1; x; y } ->
-           sprintf !"q %{Number},%{Number},%{Number},%{Number}" x1 y1 x y
-         | Quadratic_smooth_abs { x; y } -> sprintf !"T %{Number},%{Number}" x y
-         | Quadratic_smooth_rel { x; y } -> sprintf !"t %{Number},%{Number}" x y
-         | Close_path -> "Z")
+      | Move_to_abs { x; y } -> sprintf !"M%{Number},%{Number}" x y
+      | Move_to_rel { x; y } -> sprintf !"m%{Number},%{Number}" x y
+      | Line_to_abs { x; y } -> sprintf !"L%{Number},%{Number}" x y
+      | Line_to_rel { x; y } -> sprintf !"l%{Number},%{Number}" x y
+      | Arc_to_abs { rx; ry; x_axis_rotation; large_arc; sweep; x; y } ->
+        sprintf
+          !"A %{Number} %{Number}, %{Number}, %{Int}, %{Int}, %{Number} %{Number}"
+          rx
+          ry
+          x_axis_rotation
+          (if large_arc then 1 else 0)
+          (if sweep then 1 else 0)
+          x
+          y
+      | Arc_to_rel { rx; ry; x_axis_rotation; large_arc; sweep; dx; dy } ->
+        sprintf
+          !"a %{Number} %{Number} %{Number} %{Int} %{Int} %{Number} %{Number}"
+          rx
+          ry
+          x_axis_rotation
+          (if large_arc then 1 else 0)
+          (if sweep then 1 else 0)
+          dx
+          dy
+      | Cubic_abs { x1; y1; x2; y2; x; y } ->
+        sprintf
+          !"C %{Number},%{Number},%{Number},%{Number},%{Number},%{Number}"
+          x1
+          y1
+          x2
+          y2
+          x
+          y
+      | Cubic_rel { x1; y1; x2; y2; x; y } ->
+        sprintf
+          !"c %{Number},%{Number},%{Number},%{Number},%{Number},%{Number}"
+          x1
+          y1
+          x2
+          y2
+          x
+          y
+      | Cubic_smooth_abs { x2; y2; x; y } ->
+        sprintf !"S %{Number},%{Number},%{Number},%{Number}" x2 y2 x y
+      | Cubic_smooth_rel { x2; y2; x; y } ->
+        sprintf !"s %{Number},%{Number},%{Number},%{Number}" x2 y2 x y
+      | Quadratic_abs { x1; y1; x; y } ->
+        sprintf !"Q %{Number},%{Number},%{Number},%{Number}" x1 y1 x y
+      | Quadratic_rel { x1; y1; x; y } ->
+        sprintf !"q %{Number},%{Number},%{Number},%{Number}" x1 y1 x y
+      | Quadratic_smooth_abs { x; y } -> sprintf !"T %{Number},%{Number}" x y
+      | Quadratic_smooth_rel { x; y } -> sprintf !"t %{Number},%{Number}" x y
+      | Close_path -> "Z")
     |> String.concat
     |> c
 ;;

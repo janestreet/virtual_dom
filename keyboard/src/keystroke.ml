@@ -508,14 +508,14 @@ let keyboard_code_to_string (key : Keyboard_code.t) (key_with_prefix : With_pref
      | _ -> str)
 ;;
 
-let shift_string_and_keyboard_code_string (t : t) =
-  let shift_str, shift_combo_str =
+let shift_and_keyboard_code_string (t : t) =
+  let shift, shift_combo_str =
     match t.shift with
-    | false -> "", None
+    | false -> `Dont_display_shift, None
     | true ->
       (match shift_combo_to_string t.key with
-       | None -> "Shift+", None
-       | Some str -> "", Some str)
+       | None -> `Display_shift, None
+       | Some str -> `Dont_display_shift, Some str)
   in
   let keyboard_code_str =
     match shift_combo_str with
@@ -526,7 +526,14 @@ let shift_string_and_keyboard_code_string (t : t) =
       in
       keyboard_code_to_string t.key key_with_prefix
   in
-  shift_str, keyboard_code_str
+  shift, keyboard_code_str
+;;
+
+let shift_string_and_keyboard_code_string t =
+  shift_and_keyboard_code_string t
+  |> Tuple2.map_fst ~f:(function
+    | `Display_shift -> "Shift+"
+    | `Dont_display_shift -> "")
 ;;
 
 let to_string_hum t =
@@ -552,12 +559,14 @@ let%expect_test "" =
   [%expect {| 1 |}];
   print ~ctrl:() Digit1;
   [%expect {| Ctrl+1 |}];
+  print ~shift:() Digit1;
+  [%expect {| ! |}];
   print Numpad1;
   [%expect {| 1 |}];
   print ~ctrl:() Numpad1;
   [%expect {| Ctrl+1 |}];
-  print ~ctrl:() Numpad1;
-  [%expect {| Ctrl+1 |}];
+  print ~shift:() Numpad1;
+  [%expect {| Shift+1 |}];
   print Comma;
   [%expect {| , |}];
   print ~shift:() Comma;

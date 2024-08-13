@@ -68,11 +68,6 @@ module type Hooks = sig
   val pack : t -> Js.Unsafe.any
 
   module Make (S : S) : sig
-    (** [name] is a unique identifier that is treated like the names of regular
-        attributes like "id" and "class" in <div id=... class=...> in that
-        there can only be one attribute with the same name on an element, and
-        that hooks are diffed only if the same hook has the same name between
-        stabilizations. *)
     val create : S.Input.t -> t
 
     module For_testing : sig
@@ -82,6 +77,19 @@ module type Hooks = sig
       val type_id : S.Input.t Type_equal.Id.t
     end
   end
+
+  val unsafe_create
+    :  combine_inputs:('input -> 'input -> 'input)
+    -> init:('input -> Dom_html.element Js.t -> 'input * unit * 'state)
+    -> extra:'input * 'input Type_equal.Id.t
+    -> update:
+         ('input
+          -> 'input * unit * 'state
+          -> Dom_html.element Js.t
+          -> 'input * unit * 'state)
+    -> destroy:('input * unit * 'state -> Dom_html.element Js.t -> unit)
+    -> id:('input * unit * 'state) Type_equal.Id.t
+    -> t
 
   module For_testing : sig
     module Extra : sig

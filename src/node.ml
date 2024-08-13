@@ -2,7 +2,7 @@ open Base
 open Js_of_ocaml
 
 type element =
-  { tag : string
+  { tag : Js.js_string Js.t
   ; key : string option
   ; attrs : Attr.t
   ; raw_attrs : Raw.Attrs.t Lazy.t
@@ -31,7 +31,7 @@ end
 module Element = struct
   type t = element
 
-  let tag t = t.tag
+  let tag t = Js.to_string t.tag
   let attrs t = t.attrs
   let key t = t.key
   let with_key t key = { t with key = Some key }
@@ -83,7 +83,7 @@ let rec t_to_js = function
     let attrs = Attr.to_raw Attr.empty in
     let key : string option = None in
     let children_raw = to_raw_children children ~t_to_js in
-    Raw.Node.node "div" attrs children_raw key
+    Raw.Node.node (Js.string "div") attrs children_raw key
   | Text s -> Raw.Node.text s
   | Element { tag; key; attrs = _; raw_attrs = (lazy raw_attrs); children; kind = `Vnode }
     -> Raw.Node.node tag raw_attrs children key
@@ -102,8 +102,10 @@ let element kind ~tag ~key attrs children =
   { kind; tag; key; attrs; raw_attrs; children = children_raw }
 ;;
 
-let create tag ?key ?(attrs = []) children =
-  Element (element `Vnode ~tag ~key (Attr.many attrs) children)
+let create tag =
+  let tag = Js.string tag in
+  fun ?key ?(attrs = []) children ->
+    Element (element `Vnode ~tag ~key (Attr.many attrs) children)
 ;;
 
 module Widget = struct
@@ -197,9 +199,13 @@ let widget ?vdom_for_testing ?destroy ?update ~id ~init () =
   Widget (Widget.create ~vdom_for_testing ?destroy ?update ~id ~init ())
 ;;
 
-let create_childless tag ?key ?attrs () = create tag ?key ?attrs []
+let create_childless tag =
+  let create = create tag in
+  fun ?key ?attrs () -> create ?key ?attrs []
+;;
 
 let create_svg tag ?key ?(attrs = []) children =
+  let tag = Js.string tag in
   Element (element `Svg ~tag ~key (Attr.many attrs) children)
 ;;
 
@@ -207,7 +213,30 @@ let create_svg_monoid tag ?key ?(attrs = []) children =
   Element (element `Svg ~tag ~key (Attr.many attrs) children)
 ;;
 
-let none = None
+let none_deprecated = None
+
+let none =
+  let comment_content = Js_of_ocaml.Js.string " Vdom.Node.none " in
+  let id = Type_equal.Id.create ~name:"Vdom.Node.none" Core.sexp_of_opaque in
+  widget
+    ~destroy:(fun _ _ -> ())
+    ~update:(fun () e -> (), e)
+    ~id
+    ~init:(fun () ->
+      let comment = Js_of_ocaml.Dom_html.document##createComment comment_content in
+      (* The widget signature wants to produce an element node (which almost always makes
+         sense), but here we have a coment node.  The underlying virtual dom library is ok
+         with all node types, so it's safe to lie here. *)
+      let element = Stdlib.Obj.magic comment in
+      (), element)
+    ()
+;;
+
+let of_opt = function
+  | Option.None -> none
+  | Some node -> node
+;;
+
 let fragment children = Fragment children
 let textf format = Printf.ksprintf text format
 
@@ -220,6 +249,31 @@ let to_raw = t_to_js
 let to_dom t = Raw.Node.to_dom (to_raw t)
 
 module Inner_html = struct
+  let update'
+    ~create
+    ~prev:(prev_content, prev_tag, prev_attr)
+    ~next:(content, tag, attrs)
+    ~element
+    =
+    let element =
+      (* if the tag or the attributes are different, do a diff/patch cycle to
+                 get it up to date *)
+      if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
+      then
+        Raw.Patch.create
+          ~previous:(create prev_tag ~attrs:prev_attr [] |> to_raw)
+          ~current:(create tag ~attrs [] |> to_raw)
+        |> Raw.Patch.apply element
+      else element
+    in
+    (* if the tag changed, then [element] will be empty, so we need to update the
+       innerHTML.  If the content changed, then we need to set the innerHTML for
+       obvious reasons. *)
+    if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
+    then element##.innerHTML := Js.string content;
+    (content, tag, attrs), element
+  ;;
+
   let widget ~name create =
     let id =
       (* stage the id generation *)
@@ -232,48 +286,35 @@ module Inner_html = struct
           ~attrs
           ~this_html_is_sanitized_and_is_totally_safe_trust_me:content
           ()
-          ->
-      let element = create tag ~attrs [] in
-      let init () =
-        let element = to_dom element in
-        element##.innerHTML := Js.string content;
-        (content, tag, attrs), element
-      in
-      let update (prev_content, prev_tag, prev_attr) element =
-        let element =
-          (* if the tag or the attributes are different, do a diff/patch cycle to
-                 get it up to date *)
-          if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
-          then
-            Raw.Patch.create
-              ~previous:(create prev_tag ~attrs:prev_attr [] |> to_raw)
-              ~current:(create tag ~attrs [] |> to_raw)
-            |> Raw.Patch.apply element
-          else element
-        in
-        (* if the tag changed, then [element] will be empty, so we need to update the
-               innerHTML.  If the content changed, then we need to set the innerHTML for
-               obvious reasons. *)
-        if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
-        then element##.innerHTML := Js.string content;
-        (content, tag, attrs), element
-      in
-      (* We use the [widget] function directly, rather than through the
-             easier-to-use [widget_of_module] function because we want to
-             explicitly create the id such that it is distinct between
-             [inner_html] and [inner_html_svg]. *)
-      let vdom_for_testing =
-        match override_vdom_for_testing with
-        | None -> lazy (create tag ~attrs [ text content ])
-        | Some v -> v
-      in
-      widget ~id ~vdom_for_testing ~init ~update ())
+        ->
+         let element = create tag ~attrs [] in
+         let init () =
+           let element = to_dom element in
+           element##.innerHTML := Js.string content;
+           (content, tag, attrs), element
+         in
+         let update prev element =
+           update' ~create ~prev ~next:(content, tag, attrs) ~element
+         in
+         let destroy prev element =
+           let _state, _elem = update' ~create ~prev ~next:("", "div", []) ~element in
+           ()
+         in
+         let vdom_for_testing =
+           match override_vdom_for_testing with
+           | None -> lazy (create tag ~attrs [ text content ])
+           | Some v -> v
+         in
+         (* We use the [widget] function directly, rather than through the
+            easier-to-use [widget_of_module] function because we want to explicitly create
+            the id such that it is distinct between [inner_html] and [inner_html_svg]. *)
+         widget ~id ~vdom_for_testing ~init ~update ~destroy ())
   ;;
 end
 
 let inner_html_svg =
   Inner_html.widget ~name:"inner-html-svg-node" (fun tag ~attrs ->
-    create_svg_monoid tag ?key:None ~attrs)
+    create_svg_monoid (Js.string tag) ?key:None ~attrs)
   |> Staged.unstage
 ;;
 
@@ -357,10 +398,12 @@ end
 
 module Expert = struct
   let create ?key tag attrs children =
+    let tag = Js.string tag in
     Element (element_expert `Vnode ?key ~tag attrs children)
   ;;
 
   let create_svg ?key tag attrs children =
+    let tag = Js.string tag in
     Element (element_expert `Svg ?key ~tag attrs children)
   ;;
 end

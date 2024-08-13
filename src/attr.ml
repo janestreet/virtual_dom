@@ -253,7 +253,8 @@ let to_raw attr =
     List.fold ~init:acc ~f:(fun acc attr ->
       match attr with
       | Property { suppress_merge_warnings; name; value } ->
-        if Raw.Attrs.has_property attrs_obj name && not suppress_merge_warnings
+        let js_name = Js.string name in
+        if Raw.Attrs.has_property attrs_obj js_name && not suppress_merge_warnings
         then
           Unmerged_warning_mode.warn_s
             [%message "WARNING: not combining properties" (name : string)];
@@ -261,15 +262,16 @@ let to_raw attr =
          | "value" ->
            let softSetHook x : Js.Unsafe.any = Js.Unsafe.global ## SoftSetHook x in
            let value = softSetHook value in
-           Vdom_raw.Attrs.set_property attrs_obj "value" value
-         | name -> Raw.Attrs.set_property attrs_obj name value);
+           Vdom_raw.Attrs.set_property attrs_obj (Js.string "value") value
+         | _ -> Raw.Attrs.set_property attrs_obj js_name value);
         acc
       | Attribute { suppress_merge_warnings; name; value } ->
-        if Raw.Attrs.has_attribute attrs_obj name && not suppress_merge_warnings
+        let js_name = Js.string name in
+        if Raw.Attrs.has_attribute attrs_obj js_name && not suppress_merge_warnings
         then
           Unmerged_warning_mode.warn_s
             [%message "WARNING: not combining attributes" (name : string)];
-        Raw.Attrs.set_attribute attrs_obj name value;
+        Raw.Attrs.set_attribute attrs_obj js_name value;
         acc
       | Style new_styles -> { acc with styles = combine_styles acc.styles new_styles }
       | Class new_classes ->
@@ -339,21 +341,24 @@ let to_raw attr =
       attrs
   in
   Map.iteri merge.hooks ~f:(fun ~key:name ~data:hook ->
-    Raw.Attrs.set_property attrs_obj name (Hooks.pack hook));
+    Raw.Attrs.set_property attrs_obj (Js.string name) (Hooks.pack hook));
   Map.iteri merge.handlers ~f:(fun ~key:name ~data:(Event_handler.T { handler; _ }) ->
     let f e =
       Effect.Expert.handle e (handler e);
       Js._true
     in
-    Raw.Attrs.set_property attrs_obj ("on" ^ name) (Js.Unsafe.inject (Dom.handler f)));
+    Raw.Attrs.set_property
+      attrs_obj
+      (Js.string ("on" ^ name))
+      (Js.Unsafe.inject (Dom.handler f)));
   let () =
     if not (Css_gen.is_empty merge.styles)
     then (
       let props = Css_gen.to_string_list merge.styles in
       let obj = Raw.Attrs.create () in
       List.iter props ~f:(fun (k, v) ->
-        Raw.Attrs.set_property obj k (Js.Unsafe.inject (Js.string v)));
-      Raw.Attrs.set_property attrs_obj "style" (obj :> Js.Unsafe.any))
+        Raw.Attrs.set_property obj (Js.string k) (Js.Unsafe.inject (Js.string v)));
+      Raw.Attrs.set_property attrs_obj (Js.string "style") (obj :> Js.Unsafe.any))
   in
   let () =
     if List.is_empty merge.classes
@@ -361,7 +366,7 @@ let to_raw attr =
     else
       Raw.Attrs.set_attribute
         attrs_obj
-        "class"
+        (Js.string "class")
         (Js.Unsafe.inject (Js.string (String.concat merge.classes ~sep:" ")))
   in
   attrs_obj
@@ -380,9 +385,11 @@ let classes classnames = Class classnames
 let id s = create "id" s
 let name s = create "name" s
 let href r = create "href" r
+let rel r = create "rel" r
 let label r = create "label" r
 let target s = create "target" s
 let checked = create "checked" ""
+let checked_prop b = bool_property "checked" b
 let selected = create "selected" ""
 let hidden = create "hidden" ""
 let readonly = create "readonly" ""
@@ -471,6 +478,7 @@ let on_scroll = on Type_id.event "scroll"
 let on_load = on Type_id.event "load"
 let on_error = on Type_id.event "error"
 let on_submit = on Type_id.submit "submit"
+let on_toggle = on Type_id.event "toggle"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
 let on_mousewheel = on Type_id.mousewheel "mousewheel"
@@ -510,8 +518,8 @@ let on_input_event type_id event handler =
         (coerce_value_element target)
         ~default:Effect.Ignore
         ~f:(fun target ->
-        let text = Js.to_string target##.value in
-        handler ev text)))
+          let text = Js.to_string target##.value in
+          handler ev text)))
 ;;
 
 let on_change = on_input_event Type_id.event "change"
@@ -588,20 +596,20 @@ module Single_focus_hook () = struct
 end
 
 module No_op_hook (M : sig
-  module Input : Hooks_intf.Input
+    module Input : Hooks_intf.Input
 
-  val name : string
-end) =
+    val name : string
+  end) =
 struct
   module Hook = Hooks.Make (struct
-    module State = Unit
-    module Input = M.Input
+      module State = Unit
+      module Input = M.Input
 
-    let init _ _ = ()
-    let on_mount = `Do_nothing
-    let update ~old_input:_ ~new_input:_ () _ = ()
-    let destroy _ () _ = ()
-  end)
+      let init _ _ = ()
+      let on_mount = `Do_nothing
+      let update ~old_input:_ ~new_input:_ () _ = ()
+      let destroy _ () _ = ()
+    end)
 
   let attr input = create_hook M.name (Hook.create input)
   let type_id = Hook.For_testing.type_id
@@ -620,38 +628,38 @@ module Multi = struct
 end
 
 module Css_var_hook = Hooks.Make (struct
-  open Js_of_ocaml
-  module State = Unit
+    open Js_of_ocaml
+    module State = Unit
 
-  module Input = struct
-    type t = (string * string) list [@@deriving sexp_of]
+    module Input = struct
+      type t = (string * string) list [@@deriving sexp_of]
 
-    let combine = List.append
-  end
+      let combine = List.append
+    end
 
-  let init input (element : Dom_html.element Js.t) =
-    List.iter input ~f:(fun (k, v) ->
-      element##.style##setProperty (Js.string k) (Js.string v) Js.undefined
-      |> (ignore : Js.js_string Js.t -> unit))
-  ;;
+    let init input (element : Dom_html.element Js.t) =
+      List.iter input ~f:(fun (k, v) ->
+        element##.style##setProperty (Js.string k) (Js.string v) Js.undefined
+        |> (ignore : Js.js_string Js.t -> unit))
+    ;;
 
-  let on_mount = `Do_nothing
+    let on_mount = `Do_nothing
 
-  let destroy input () (element : Dom_html.element Js.t) =
-    List.iter input ~f:(fun (k, _) ->
-      element##.style##removeProperty (Js.string k)
-      |> (ignore : Js.js_string Js.t -> unit))
-  ;;
+    let destroy input () (element : Dom_html.element Js.t) =
+      List.iter input ~f:(fun (k, _) ->
+        element##.style##removeProperty (Js.string k)
+        |> (ignore : Js.js_string Js.t -> unit))
+    ;;
 
-  let update ~old_input ~new_input () (element : Dom_html.element Js.t) =
-    if phys_equal old_input new_input
-       || [%equal: (string * string) list] old_input new_input
-    then ()
-    else (
-      destroy old_input () element;
-      init new_input element)
-  ;;
-end)
+    let update ~old_input ~new_input () (element : Dom_html.element Js.t) =
+      if phys_equal old_input new_input
+         || [%equal: (string * string) list] old_input new_input
+      then ()
+      else (
+        destroy old_input () element;
+        init new_input element)
+    ;;
+  end)
 
 let __css_vars_no_kebabs alist = create_hook "custom-css-vars" (Css_var_hook.create alist)
 let css_var ~name v = __css_vars_no_kebabs [ "--" ^ name, v ]
