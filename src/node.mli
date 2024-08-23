@@ -91,6 +91,7 @@ val text : string -> t
 val textf : ('a, unit, string, t) format4 -> 'a
 val a : node_creator
 val abbr : node_creator
+val aside : node_creator
 val b : node_creator
 val body : node_creator
 val button : node_creator

@@ -196,7 +196,9 @@ module For_testing = struct
     ; bubbling : 'a option
     }
 
-  let combine_capture_and_bubbling : ('a -> unit Ui_effect.t) t -> 'a -> unit Ui_effect.t =
+  let combine_capture_and_bubbling
+    : ('a -> unit Ui_effect.t) t -> ('a -> unit Ui_effect.t)
+    =
     fun { capture; bubbling } event ->
     match capture, bubbling with
     | None, None -> Effect.Ignore

@@ -75,7 +75,9 @@ module For_testing : sig
   (** In tests, you might just want to run all global listeners.
       This helper will run the `combine` and `bubbling` handlers in parallel.
       If your tests include running other handlers, you probably don't want this.*)
-  val combine_capture_and_bubbling : ('a -> unit Ui_effect.t) t -> 'a -> unit Ui_effect.t
+  val combine_capture_and_bubbling
+    :  ('a -> unit Ui_effect.t) t
+    -> ('a -> unit Ui_effect.t)
 
   val mousedown_type_id : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) t Type_equal.Id.t
   val mouseup_type_id : (Dom_html.mouseEvent Js.t -> unit Ui_effect.t) t Type_equal.Id.t

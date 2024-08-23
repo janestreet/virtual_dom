@@ -79,7 +79,7 @@ module type Hooks = sig
   end
 
   val unsafe_create
-    :  combine_inputs:('input -> 'input -> 'input)
+    :  combine_inputs:('input -> ('input -> 'input))
     -> init:('input -> Dom_html.element Js.t -> 'input * unit * 'state)
     -> extra:'input * 'input Type_equal.Id.t
     -> update:
