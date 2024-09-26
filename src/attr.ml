@@ -84,6 +84,7 @@ type t =
   | Style of Css_gen.t
   | Class of string list
   | Many of t list
+  | Lazy of t Lazy.t
   | Many_only_merge_classes_and_styles of
       t list * (Css_gen.t -> Css_gen.t) * (string list -> string list)
   | Many_without_merge of t list
@@ -123,6 +124,7 @@ let create_hook name hook = Hook { name; hook }
 let many attrs = Many attrs
 let many_without_merge attrs = Many_without_merge attrs
 let empty = Many []
+let lazy_ lazy_t = Lazy lazy_t
 let combine left right = Many [ left; right ]
 let ( @ ) = combine
 
@@ -282,6 +284,8 @@ let to_raw attr =
         { acc with
           handlers = combining_map_add acc.handlers name handler ~combine:combine_handler
         }
+      | Lazy (lazy t) ->
+        merge ~combine_hook ~combine_handler ~combine_styles ~combine_classes acc [ t ]
       | Many attrs ->
         let sub_merge =
           merge
@@ -673,6 +677,7 @@ module Expert = struct
     | Handler _ -> if f `Handler then t else empty
     | Style _ -> if f `Style then t else empty
     | Class _ -> if f `Class then t else empty
+    | Lazy (lazy t) -> filter_by_kind t ~f
     | Many attrs -> Many (List.map attrs ~f:(filter_by_kind ~f))
     | Many_only_merge_classes_and_styles (attrs, a, b) ->
       Many_only_merge_classes_and_styles (List.map attrs ~f:(filter_by_kind ~f), a, b)
@@ -686,6 +691,7 @@ module Expert = struct
     | Handler { name; _ } -> String.equal ("on" ^ name) looking_for
     | Style _ -> String.equal looking_for "style"
     | Class _ -> String.equal looking_for "class"
+    | Lazy (lazy t) -> contains_name looking_for t
     | Many attrs
     | Many_only_merge_classes_and_styles (attrs, _, _)
     | Many_without_merge attrs -> List.exists ~f:(contains_name looking_for) attrs

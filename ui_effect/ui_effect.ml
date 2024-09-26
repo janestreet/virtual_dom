@@ -89,13 +89,15 @@ let never = Never
 let of_fun ~f = Fun f
 let lazy_ a = Lazy a
 
-include Base.Monad.Make (struct
+module As_monad = Base.Monad.Make (struct
     type nonrec 'a t = 'a t
 
     let return = return
     let bind = bind
     let map = `Custom map
   end)
+
+include As_monad
 
 let rec eval : type a. a t -> callback:(a -> unit) -> unit =
   fun t ~callback ->
@@ -121,6 +123,75 @@ module Expert = struct
 
   let handlers = handlers
   let of_fun = of_fun
+end
+
+let both_parallel a b =
+  Expert.of_fun ~f:(fun ~callback ->
+    let a_res = ref None
+    and b_res = ref None
+    and finished = ref false in
+    let maybe_finalize () =
+      match !finished, !a_res, !b_res with
+      | false, Some a, Some b ->
+        finished := true;
+        callback (a, b)
+      | _ -> ()
+    in
+    let dispatch effect ref =
+      Expert.eval effect ~f:(fun x ->
+        ref := Some x;
+        maybe_finalize ())
+    in
+    dispatch a a_res;
+    dispatch b b_res)
+;;
+
+let all_parallel xs =
+  if List.is_empty xs
+  then return []
+  else
+    Expert.of_fun ~f:(fun ~callback ->
+      let number_of_effects = List.length xs in
+      let remaining = ref number_of_effects in
+      let results = Array.create ~len:number_of_effects None in
+      let complete_one i v =
+        match Array.get results i with
+        | Some _ ->
+          (* this branch can only be hit if an effect completes multiple times *)
+          ()
+        | None ->
+          Array.set results i (Some v);
+          Int.decr remaining;
+          if !remaining = 0
+          then (
+            let result =
+              Array.filter_map results ~f:(function
+                | None ->
+                  Stdio.eprint_s
+                    [%message
+                      "BUG in ui_effect.ml: length of [all_parallel x] is not equal to \
+                       length of [x]. The result of an effect is missing."
+                        [%here]];
+                  None
+                | Some _ as e -> e)
+            in
+            callback (Array.to_list result))
+      in
+      List.iteri xs ~f:(fun i e -> Expert.eval e ~f:(complete_one i)))
+;;
+
+module Par = struct
+  include As_monad
+
+  module Let_syntax = struct
+    include Let_syntax
+
+    module Let_syntax = struct
+      include Let_syntax
+
+      let both = both_parallel
+    end
+  end
 end
 
 module Advanced = struct

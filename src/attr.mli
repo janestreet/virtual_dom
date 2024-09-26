@@ -48,9 +48,12 @@ val of_opt : t option -> t
     - Hooks get merged via their [Input.combine] function
     - All handlers get run in the order they appear
     - The set of classes is unioned
-    - Styles are merged via concatenation
-*)
+    - Styles are merged via concatenation *)
 val many : t list -> t
+
+(** The lazily-generated attr will only be forced when it's used by a 
+    vdom node. *)
+val lazy_ : t Lazy.t -> t
 
 (** Like [many], except instead of merging attributes of the same type, it
     takes the last one. Don't use this function - use [many] instead. *)
