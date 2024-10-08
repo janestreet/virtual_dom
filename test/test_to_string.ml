@@ -662,3 +662,26 @@ let%expect_test "literal onclick attr and on_click event handler can be differen
     </div>
     |}]
 ;;
+
+let%expect_test "disabled_prop" =
+  show
+    (Node.div
+       [ Node.button ~attrs:[ Attr.disabled' true ] [ Node.text "Disabled" ]
+       ; Node.button ~attrs:[ Attr.disabled' false ] [ Node.text "Not disabled" ]
+       ]);
+  [%expect
+    {|
+    (Element
+     ((tag_name div)
+      (children
+       ((Element
+         ((tag_name button) (attributes ((disabled "")))
+          (children ((Text Disabled)))))
+        (Element ((tag_name button) (children ((Text "Not disabled")))))))))
+    ----------------------
+    <div>
+      <button disabled=""> Disabled </button>
+      <button> Not disabled </button>
+    </div>
+    |}]
+;;

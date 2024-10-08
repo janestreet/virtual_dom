@@ -386,148 +386,146 @@ let to_list s =
   loop []
 ;;
 
-let%test_module "tests" =
-  (module struct
-    let test s =
-      print_endline
-        (Sexp.to_string_mach ([%sexp_of: (Token.t * int * int) list] (to_list s)))
-    ;;
+module%test [@name "tests"] _ = struct
+  let test s =
+    print_endline
+      (Sexp.to_string_mach ([%sexp_of: (Token.t * int * int) list] (to_list s)))
+  ;;
 
-    let%expect_test "eof" =
-      test "";
-      [%expect {| ((Eof 0 0)) |}]
-    ;;
+  let%expect_test "eof" =
+    test "";
+    [%expect {| ((Eof 0 0)) |}]
+  ;;
 
-    let%expect_test "simple_tokens" =
-      test ")({}[];:";
-      [%expect
-        {| ((Rparen 0 1)(Lparen 1 1)(Lcurly 2 1)(Rcurly 3 1)(Lbracket 4 1)(Rbracket 5 1)(Semi_colon 6 1)(Colon 7 1)(Eof 8 0)) |}]
-    ;;
+  let%expect_test "simple_tokens" =
+    test ")({}[];:";
+    [%expect
+      {| ((Rparen 0 1)(Lparen 1 1)(Lcurly 2 1)(Rcurly 3 1)(Lbracket 4 1)(Rbracket 5 1)(Semi_colon 6 1)(Colon 7 1)(Eof 8 0)) |}]
+  ;;
 
-    let%expect_test "ident" =
-      test "-foo-bar: baz";
-      test "-foo-bar(";
-      test "@foo-bar";
-      test "@-foo-bar";
-      test "@--foo-bar";
-      test "--var";
-      test "RGBA";
-      [%expect
-        {|
-        ((Ident 0 8)(Colon 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
-        ((Function 0 9)(Eof 9 0))
-        ((Atkeyword 0 8)(Eof 8 0))
-        ((Atkeyword 0 9)(Eof 9 0))
-        ((Atkeyword 0 10)(Eof 10 0))
-        ((Ident 0 5)(Eof 5 0))
-        ((Ident 0 4)(Eof 4 0))
-        |}]
-    ;;
+  let%expect_test "ident" =
+    test "-foo-bar: baz";
+    test "-foo-bar(";
+    test "@foo-bar";
+    test "@-foo-bar";
+    test "@--foo-bar";
+    test "--var";
+    test "RGBA";
+    [%expect
+      {|
+      ((Ident 0 8)(Colon 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
+      ((Function 0 9)(Eof 9 0))
+      ((Atkeyword 0 8)(Eof 8 0))
+      ((Atkeyword 0 9)(Eof 9 0))
+      ((Atkeyword 0 10)(Eof 10 0))
+      ((Ident 0 5)(Eof 5 0))
+      ((Ident 0 4)(Eof 4 0))
+      |}]
+  ;;
 
-    let%expect_test "whitespace" =
-      test "  ";
-      [%expect {| ((White_space 0 2)(Eof 2 0)) |}]
-    ;;
+  let%expect_test "whitespace" =
+    test "  ";
+    [%expect {| ((White_space 0 2)(Eof 2 0)) |}]
+  ;;
 
-    let%expect_test "numbers" =
-      test "margin: 0.5en";
-      test "margin: 0.5em";
-      test "margin: 0.5in";
-      test "line-height: 3cm";
-      test "line-height: 120%";
-      test "grid: 0 1 foo";
-      test "margin: 0.5-in";
-      test "margin: .02e+20";
-      test "margin: .02e-20";
-      test "margin: .02E+20";
-      test "margin: .02E-20";
-      test "margin: .02E20";
-      test "margin: .02e20";
-      [%expect
-        {|
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
-        ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Dimension 13 3)(Eof 16 0))
-        ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Percentage 13 4)(Eof 17 0))
-        ((Ident 0 4)(Colon 4 1)(White_space 5 1)(Number 6 1)(White_space 7 1)(Number 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 6)(Eof 14 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
-        ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
-        |}]
-    ;;
+  let%expect_test "numbers" =
+    test "margin: 0.5en";
+    test "margin: 0.5em";
+    test "margin: 0.5in";
+    test "line-height: 3cm";
+    test "line-height: 120%";
+    test "grid: 0 1 foo";
+    test "margin: 0.5-in";
+    test "margin: .02e+20";
+    test "margin: .02e-20";
+    test "margin: .02E+20";
+    test "margin: .02E-20";
+    test "margin: .02E20";
+    test "margin: .02e20";
+    [%expect
+      {|
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 5)(Eof 13 0))
+      ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Dimension 13 3)(Eof 16 0))
+      ((Ident 0 11)(Colon 11 1)(White_space 12 1)(Percentage 13 4)(Eof 17 0))
+      ((Ident 0 4)(Colon 4 1)(White_space 5 1)(Number 6 1)(White_space 7 1)(Number 8 1)(White_space 9 1)(Ident 10 3)(Eof 13 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Dimension 8 6)(Eof 14 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 7)(Eof 15 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
+      ((Ident 0 6)(Colon 6 1)(White_space 7 1)(Number 8 6)(Eof 14 0))
+      |}]
+  ;;
 
-    let%expect_test "badly_quoted" =
-      test "'foo bar";
-      test "'";
-      test "'\\'";
-      [%expect
-        {|
-        ((Error 0 8))
-        ((Error 0 1))
-        ((Error 0 3))
-        |}]
-    ;;
+  let%expect_test "badly_quoted" =
+    test "'foo bar";
+    test "'";
+    test "'\\'";
+    [%expect
+      {|
+      ((Error 0 8))
+      ((Error 0 1))
+      ((Error 0 3))
+      |}]
+  ;;
 
-    let%expect_test "quoted" =
-      test {|'Foo '"Bar"';' '\'' "\""|};
-      [%expect
-        {| ((String 0 6)(String 6 5)(String 11 3)(White_space 14 1)(String 15 4)(White_space 19 1)(String 20 4)(Eof 24 0)) |}]
-    ;;
+  let%expect_test "quoted" =
+    test {|'Foo '"Bar"';' '\'' "\""|};
+    [%expect
+      {| ((String 0 6)(String 6 5)(String 11 3)(White_space 14 1)(String 15 4)(White_space 19 1)(String 20 4)(Eof 24 0)) |}]
+  ;;
 
-    let%expect_test "colors" =
-      test {|color: #f00|};
-      test {|color: rgb(255,0,0)|};
-      test {|color: rgb(255,0,0)|};
-      [%expect
-        {|
-        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Hash 7 4)(Eof 11 0))
-        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
-        ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
-        |}]
-    ;;
+  let%expect_test "colors" =
+    test {|color: #f00|};
+    test {|color: rgb(255,0,0)|};
+    test {|color: rgb(255,0,0)|};
+    [%expect
+      {|
+      ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Hash 7 4)(Eof 11 0))
+      ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
+      ((Ident 0 5)(Colon 5 1)(White_space 6 1)(Function 7 4)(Number 11 3)(Comma 14 1)(Number 15 1)(Comma 16 1)(Number 17 1)(Rparen 18 1)(Eof 19 0))
+      |}]
+  ;;
 
-    let%expect_test "import" =
-      test {|@import "foo.bar";|};
-      [%expect
-        {| ((Atkeyword 0 7)(White_space 7 1)(String 8 9)(Semi_colon 17 1)(Eof 18 0)) |}]
-    ;;
+  let%expect_test "import" =
+    test {|@import "foo.bar";|};
+    [%expect
+      {| ((Atkeyword 0 7)(White_space 7 1)(String 8 9)(Semi_colon 17 1)(Eof 18 0)) |}]
+  ;;
 
-    let%expect_test "red example" =
-      test "red-->";
-      [%expect {| ((Ident 0 5)(Delim 5 1)(Eof 6 0)) |}]
-    ;;
+  let%expect_test "red example" =
+    test "red-->";
+    [%expect {| ((Ident 0 5)(Delim 5 1)(Eof 6 0)) |}]
+  ;;
 
-    let%expect_test "url" =
-      test {|url( "http://wwww.google.com")|};
-      test {|url('http://wwww.google.com')|};
-      test {|url('http://wwww.google.com' )|};
-      test {|url(  http://wwww.google.com )|};
-      test {|url(  http://wwww.google."com )|};
-      [%expect
-        {|
-        ((Function 0 4)(White_space 4 1)(String 5 24)(Rparen 29 1)(Eof 30 0))
-        ((Function 0 4)(String 4 24)(Rparen 28 1)(Eof 29 0))
-        ((Function 0 4)(String 4 24)(White_space 28 1)(Rparen 29 1)(Eof 30 0))
-        ((Uri 0 30)(Eof 30 0))
-        ((Error 0 25))
-        |}]
-    ;;
+  let%expect_test "url" =
+    test {|url( "http://wwww.google.com")|};
+    test {|url('http://wwww.google.com')|};
+    test {|url('http://wwww.google.com' )|};
+    test {|url(  http://wwww.google.com )|};
+    test {|url(  http://wwww.google."com )|};
+    [%expect
+      {|
+      ((Function 0 4)(White_space 4 1)(String 5 24)(Rparen 29 1)(Eof 30 0))
+      ((Function 0 4)(String 4 24)(Rparen 28 1)(Eof 29 0))
+      ((Function 0 4)(String 4 24)(White_space 28 1)(Rparen 29 1)(Eof 30 0))
+      ((Uri 0 30)(Eof 30 0))
+      ((Error 0 25))
+      |}]
+  ;;
 
-    let%expect_test "escape" =
-      test {|"test\19abf2\2"|};
-      test {|"\010\xFFa\o123\n\\\u{12345}aa🐪🐪🐪🐪🐪"|};
-      test {|"← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"|};
-      [%expect
-        {|
-        ((String 0 15)(Eof 15 0))
-        ((String 0 51)(Eof 51 0))
-        ((String 0 49)(Eof 49 0))
-        |}]
-    ;;
-  end)
-;;
+  let%expect_test "escape" =
+    test {|"test\19abf2\2"|};
+    test {|"\010\xFFa\o123\n\\\u{12345}aa🐪🐪🐪🐪🐪"|};
+    test {|"← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"|};
+    [%expect
+      {|
+      ((String 0 15)(Eof 15 0))
+      ((String 0 51)(Eof 51 0))
+      ((String 0 49)(Eof 49 0))
+      |}]
+  ;;
+end

@@ -197,126 +197,123 @@ let test_parser p sexp_of_arg s =
   printf !"%s --> %{sexp:arg Or_error.t}\n" s r
 ;;
 
-let%test_module "tests" =
-  (module struct
-    let%expect_test "" =
-      let value =
-        "0 4px 8px 0 RGBA(var(--js-text-color-rgb), 0.12), 0 2px 4px 0 \
-         RGBA(var(--js-text-color-rgb), 0.08)"
-      in
-      print_tokens value;
-      [%expect
-        {|
-        Number
-        White_space
-        Dimension
-        White_space
-        Dimension
-        White_space
-        Number
-        White_space
-        Function
-        Function
-        Ident
-        Rparen
-        Comma
-        White_space
-        Number
-        Rparen
-        Comma
-        White_space
-        Number
-        White_space
-        Dimension
-        White_space
-        Dimension
-        White_space
-        Number
-        White_space
-        Function
-        Function
-        Ident
-        Rparen
-        Comma
-        White_space
-        Number
-        Rparen
-        |}];
-      print_s [%message (validate_value value : unit Or_error.t)];
-      [%expect {| ("validate_value value" (Ok ())) |}]
-    ;;
+module%test [@name "tests"] _ = struct
+  let%expect_test "" =
+    let value =
+      "0 4px 8px 0 RGBA(var(--js-text-color-rgb), 0.12), 0 2px 4px 0 \
+       RGBA(var(--js-text-color-rgb), 0.08)"
+    in
+    print_tokens value;
+    [%expect
+      {|
+      Number
+      White_space
+      Dimension
+      White_space
+      Dimension
+      White_space
+      Number
+      White_space
+      Function
+      Function
+      Ident
+      Rparen
+      Comma
+      White_space
+      Number
+      Rparen
+      Comma
+      White_space
+      Number
+      White_space
+      Dimension
+      White_space
+      Dimension
+      White_space
+      Number
+      White_space
+      Function
+      Function
+      Ident
+      Rparen
+      Comma
+      White_space
+      Number
+      Rparen
+      |}];
+    print_s [%message (validate_value value : unit Or_error.t)];
+    [%expect {| ("validate_value value" (Ok ())) |}]
+  ;;
 
-    let%expect_test "values" =
-      let test = test_parser expect_value Unit.sexp_of_t in
-      test "x";
-      test "3";
-      test "3in";
-      test "3%";
-      test "#fff";
-      test "1 0 auto";
-      test "'Hello World'";
-      test "rgb(0,0,0)";
-      [%expect
-        {|
-        x --> (Ok ())
-        3 --> (Ok ())
-        3in --> (Ok ())
-        3% --> (Ok ())
-        #fff --> (Ok ())
-        1 0 auto --> (Ok ())
-        'Hello World' --> (Ok ())
-        rgb(0,0,0) --> (Ok ())
-        |}]
-    ;;
+  let%expect_test "values" =
+    let test = test_parser expect_value Unit.sexp_of_t in
+    test "x";
+    test "3";
+    test "3in";
+    test "3%";
+    test "#fff";
+    test "1 0 auto";
+    test "'Hello World'";
+    test "rgb(0,0,0)";
+    [%expect
+      {|
+      x --> (Ok ())
+      3 --> (Ok ())
+      3in --> (Ok ())
+      3% --> (Ok ())
+      #fff --> (Ok ())
+      1 0 auto --> (Ok ())
+      'Hello World' --> (Ok ())
+      rgb(0,0,0) --> (Ok ())
+      |}]
+  ;;
 
-    let%expect_test "declaration" =
-      let test = test_parser expect_declaration [%sexp_of: string * string] in
-      test "flex: 1 0 auto";
-      test "content: 'Hello World'";
-      test "content: foo;";
-      (* Semi's are handled in declaration list *)
-      test "content: bar ";
-      (* but whitespace is handled in declaration (any really) *)
-      [%expect
-        {|
-        flex: 1 0 auto --> (Ok (flex "1 0 auto"))
-        content: 'Hello World' --> (Ok (content "'Hello World'"))
-        content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi_colon)))
-        content: bar  --> (Ok (content bar))
-        |}]
-    ;;
+  let%expect_test "declaration" =
+    let test = test_parser expect_declaration [%sexp_of: string * string] in
+    test "flex: 1 0 auto";
+    test "content: 'Hello World'";
+    test "content: foo;";
+    (* Semi's are handled in declaration list *)
+    test "content: bar ";
+    (* but whitespace is handled in declaration (any really) *)
+    [%expect
+      {|
+      flex: 1 0 auto --> (Ok (flex "1 0 auto"))
+      content: 'Hello World' --> (Ok (content "'Hello World'"))
+      content: foo; --> (Error ("Unexpected token" (expected Eof) (got Semi_colon)))
+      content: bar  --> (Ok (content bar))
+      |}]
+  ;;
 
-    let%expect_test "unicode" =
-      let test = test_parser expect_declaration [%sexp_of: string * string] in
-      test "content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶'";
-      print_endline (Sexp.to_string (Sexp.Atom "← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"));
-      [%expect
-        {|
-        content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶' --> (Ok
-         (content
-          "'\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182'"))
-        "\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182"
-        |}]
-    ;;
+  let%expect_test "unicode" =
+    let test = test_parser expect_declaration [%sexp_of: string * string] in
+    test "content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶'";
+    print_endline (Sexp.to_string (Sexp.Atom "← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶"));
+    [%expect
+      {|
+      content: '← ↑ → ↓ ↔ ↕ ⇪ ↹ ⬈ ↘ ⟾ ↶' --> (Ok
+       (content
+        "'\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182'"))
+      "\226\134\144 \226\134\145 \226\134\146 \226\134\147 \226\134\148 \226\134\149 \226\135\170 \226\134\185 \226\172\136 \226\134\152 \226\159\190 \226\134\182"
+      |}]
+  ;;
 
-    let%expect_test "declaration list" =
-      let test = test_parser expect_declaration_list [%sexp_of: (string * string) list] in
-      test "flex: 1 0 auto";
-      test "flex: 1 0 auto;";
-      test
-        "background: #5d9ab2 url(\"img_tree.png\") no-repeat top left;margin-left: 200px";
-      test ";;;;;";
-      test "flex: 1 0 auto ;; other : sa ";
-      [%expect
-        {|
-        flex: 1 0 auto --> (Ok ((flex "1 0 auto")))
-        flex: 1 0 auto; --> (Ok ((flex "1 0 auto")))
-        background: #5d9ab2 url("img_tree.png") no-repeat top left;margin-left: 200px --> (Ok
-         ((background "#5d9ab2 url(\"img_tree.png\") no-repeat top left")
-          (margin-left 200px)))
-        ;;;;; --> (Ok ())
-        flex: 1 0 auto ;; other : sa  --> (Ok ((flex "1 0 auto") (other sa)))
-        |}]
-    ;;
-  end)
-;;
+  let%expect_test "declaration list" =
+    let test = test_parser expect_declaration_list [%sexp_of: (string * string) list] in
+    test "flex: 1 0 auto";
+    test "flex: 1 0 auto;";
+    test "background: #5d9ab2 url(\"img_tree.png\") no-repeat top left;margin-left: 200px";
+    test ";;;;;";
+    test "flex: 1 0 auto ;; other : sa ";
+    [%expect
+      {|
+      flex: 1 0 auto --> (Ok ((flex "1 0 auto")))
+      flex: 1 0 auto; --> (Ok ((flex "1 0 auto")))
+      background: #5d9ab2 url("img_tree.png") no-repeat top left;margin-left: 200px --> (Ok
+       ((background "#5d9ab2 url(\"img_tree.png\") no-repeat top left")
+        (margin-left 200px)))
+      ;;;;; --> (Ok ())
+      flex: 1 0 auto ;; other : sa  --> (Ok ((flex "1 0 auto") (other sa)))
+      |}]
+  ;;
+end

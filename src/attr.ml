@@ -398,6 +398,7 @@ let selected = create "selected" ""
 let hidden = create "hidden" ""
 let readonly = create "readonly" ""
 let disabled = create "disabled" ""
+let disabled' b = if b then disabled else empty
 let placeholder x = create "placeholder" x
 let role r = create "role" r
 
@@ -485,6 +486,7 @@ let on_submit = on Type_id.submit "submit"
 let on_toggle = on Type_id.event "toggle"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
+let on_pointermove = on Type_id.pointer "pointermove"
 let on_mousewheel = on Type_id.mousewheel "mousewheel"
 let on_wheel = on Type_id.wheel "wheel"
 let on_copy = on Type_id.clipboard "copy"
