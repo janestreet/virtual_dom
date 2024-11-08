@@ -46,3 +46,29 @@ let%expect_test "add class" =
     <div autofocus="" class="abc def"> </div>
     |}]
 ;;
+
+let%expect_test "vdom.attr.lazy_" =
+  show
+    (Node.div
+       ~attrs:
+         [ Attr.many_without_merge
+             (Attr.Multi.add_class
+                [ Attr.autofocus true
+                ; Attr.class_ "def"
+                ; Attr.lazy_
+                    (lazy
+                      (print_endline "forced!";
+                       Attr.class_ "lazily"))
+                ]
+                "abc")
+         ]
+       []);
+  [%expect
+    {|
+    forced!
+    (Element
+     ((tag_name div) (attributes ((autofocus "") (class "abc def lazily")))))
+    ----------------------
+    <div autofocus="" class="abc def lazily"> </div>
+    |}]
+;;

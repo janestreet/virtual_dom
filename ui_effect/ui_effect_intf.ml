@@ -52,8 +52,23 @@ module type Effect = sig
 
   include Monad.S with type 'a t := 'a t
 
+  (** The [Par] module contains a Let_syntax whose [both] function 
+      executes the effects in parallel.
+
+      This means that if you have a [let%map] or [let%bind], then 
+      bindings separated by `and` will run at the same time instead of 
+      being sequenced. *)
+  module Par : Monad.S with type 'a t := 'a t
+
   (** An effect that never completes *)
   val never : 'a t
+
+  (** evaluates both effects in parallel and returns their product when both complete *)
+  val both_parallel : 'a t -> 'b t -> ('a * 'b) t
+
+  (** evaluates all effects in the list in parallel and returns the list of results when
+      all of them complete.  The output list is always the same length as the input list. *)
+  val all_parallel : 'a t list -> 'a list t
 
   (** If creating an effect could be expensive, you can
       wrap its construction in a lazy and pass it to this function so that
@@ -137,8 +152,7 @@ module type Effect = sig
     (** Create an effect from a function that returns an [Svar.t]. This is mostly useful in
         testing, to emulate a ['query -> 'result Deferred.t] function that does not return
         immediately. You may find [Query_response_tracker] a more convenient interface than
-        using [of_svar] directly.
-    *)
+        using [of_svar] directly. *)
     val of_svar_fun : ('query -> 'result Svar.t) -> 'query -> 'result t
 
     module Query_response_tracker : sig

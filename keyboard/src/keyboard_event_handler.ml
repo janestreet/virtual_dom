@@ -69,6 +69,10 @@ module Condition = struct
     | None -> false
     | Some element -> Js.to_bool (element##.classList##contains (Js.string class_))
   ;;
+
+  let any_element_exists ~selector _ev =
+    Js.Opt.test (Dom_html.document##querySelector (Js.string selector))
+  ;;
 end
 
 module Handler = struct

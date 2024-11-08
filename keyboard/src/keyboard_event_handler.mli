@@ -44,6 +44,9 @@ module Condition : sig
   (** [element_has_target_class] returns true if the element specified by [selector] has
       the given class *)
   val element_has_target_class : selector:string -> class_:string -> t
+
+  (** [any_element_exists] returns true if any element that matches [selector] exists. *)
+  val any_element_exists : selector:string -> t
 end
 
 module Handler : sig

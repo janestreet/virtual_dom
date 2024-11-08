@@ -48,9 +48,12 @@ val of_opt : t option -> t
     - Hooks get merged via their [Input.combine] function
     - All handlers get run in the order they appear
     - The set of classes is unioned
-    - Styles are merged via concatenation
-*)
+    - Styles are merged via concatenation *)
 val many : t list -> t
+
+(** The lazily-generated attr will only be forced when it's used by a
+    vdom node. *)
+val lazy_ : t Lazy.t -> t
 
 (** Like [many], except instead of merging attributes of the same type, it
     takes the last one. Don't use this function - use [many] instead. *)
@@ -72,6 +75,10 @@ val class_ : string -> t
 val classes : string list -> t
 val classes' : Set.M(String).t -> t
 val disabled : t
+
+(** [disabled'] returns [disabled] if the input is [true], and [empty] if false.*)
+val disabled' : bool -> t
+
 val allow : string -> t
 val for_ : string -> t
 val label : string -> t
@@ -191,8 +198,17 @@ val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_load : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_error : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
-val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
-val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
+
+val on_pointerdown
+  :  (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t)
+  -> t
+
+val on_pointerup : (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
+
+val on_pointermove
+  :  (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t)
+  -> t
+
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
 val on_wheel : (Js_of_ocaml_patches.Dom_html.wheelEvent Js.t -> unit Effect.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t

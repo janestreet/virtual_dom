@@ -921,66 +921,61 @@ let user_select s =
   create_raw ~field:"user-select" ~value
 ;;
 
-let%test_module "tests" =
-  (module struct
-    let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
-      let t css =
-        let s = to_string_css css in
-        let s2 = to_string_css (of_string_css_exn s) in
-        print_endline s;
-        print_endline s2
-      in
-      t (flex_item ~grow:1.0 () @> overflow `Scroll);
-      t (flex_container ~inline:true ~direction:`Column () @> border ~style:`Dashed ());
-      t (color (`RGBA (Color.RGBA.create ~r:100 ~g:100 ~b:100 ())));
-      t
-        (color
-           (`HSLA
-             (Color.HSLA.create
-                ~h:100
-                ~s:(Percent.of_mult 0.75)
-                ~l:(Percent.of_mult 0.60)
-                ())));
-      t (create ~field:"content" ~value:{|";"|});
-      [%expect
-        {|
-        flex: 1.000000 1.000000 auto;overflow: scroll
-        flex: 1.000000 1.000000 auto;overflow: scroll
-        display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
-        display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
-        color: rgb(100,100,100)
-        color: rgb(100,100,100)
-        color: hsl(100,75%,60%)
-        color: hsl(100,75%,60%)
-        content: ";"
-        content: ";"
-        |}]
-    ;;
+module%test [@name "tests"] _ = struct
+  let%expect_test "to_string_css -> of_string_css_exn -> to_string_css" =
+    let t css =
+      let s = to_string_css css in
+      let s2 = to_string_css (of_string_css_exn s) in
+      print_endline s;
+      print_endline s2
+    in
+    t (flex_item ~grow:1.0 () @> overflow `Scroll);
+    t (flex_container ~inline:true ~direction:`Column () @> border ~style:`Dashed ());
+    t (color (`RGBA (Color.RGBA.create ~r:100 ~g:100 ~b:100 ())));
+    t
+      (color
+         (`HSLA
+           (Color.HSLA.create
+              ~h:100
+              ~s:(Percent.of_mult 0.75)
+              ~l:(Percent.of_mult 0.60)
+              ())));
+    t (create ~field:"content" ~value:{|";"|});
+    [%expect
+      {|
+      flex: 1.000000 1.000000 auto;overflow: scroll
+      flex: 1.000000 1.000000 auto;overflow: scroll
+      display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
+      display: inline-flex;flex-direction: column;flex-wrap: nowrap;border: dashed
+      color: rgb(100,100,100)
+      color: rgb(100,100,100)
+      color: hsl(100,75%,60%)
+      color: hsl(100,75%,60%)
+      content: ";"
+      content: ";"
+      |}]
+  ;;
 
-    let%expect_test "gradients" =
-      let p x = Percent.of_mult x in
-      let c s = `Name s in
-      let t css = print_endline (to_string_css css) in
-      t
-        (background_image
-           (`Linear_gradient
-             { direction = `Deg 90
-             ; stops =
-                 [ p 0., c "black"
-                 ; p 0.2, c "#ff0000"
-                 ; p 0.4, c "red"
-                 ; ( p 1.
-                   , `RGBA
-                       (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ())
-                   )
-                 ]
-             }));
-      [%expect
-        {| background-image: linear-gradient(90deg, black 0.000000%, #ff0000 20.000000%, red 40.000000%, rgba(100,50,30,0.75) 100.000000%) |}];
-      t
-        (background_image
-           (`Radial_gradient { stops = [ p 0., c "black"; p 1., c "red" ] }));
-      [%expect {| background-image: radial-gradient(black 0.000000%, red 100.000000%) |}]
-    ;;
-  end)
-;;
+  let%expect_test "gradients" =
+    let p x = Percent.of_mult x in
+    let c s = `Name s in
+    let t css = print_endline (to_string_css css) in
+    t
+      (background_image
+         (`Linear_gradient
+           { direction = `Deg 90
+           ; stops =
+               [ p 0., c "black"
+               ; p 0.2, c "#ff0000"
+               ; p 0.4, c "red"
+               ; ( p 1.
+                 , `RGBA
+                     (Color.RGBA.create ~r:100 ~g:50 ~b:30 ~a:(Percent.of_mult 0.75) ()) )
+               ]
+           }));
+    [%expect
+      {| background-image: linear-gradient(90deg, black 0.000000%, #ff0000 20.000000%, red 40.000000%, rgba(100,50,30,0.75) 100.000000%) |}];
+    t (background_image (`Radial_gradient { stops = [ p 0., c "black"; p 1., c "red" ] }));
+    [%expect {| background-image: radial-gradient(black 0.000000%, red 100.000000%) |}]
+  ;;
+end
