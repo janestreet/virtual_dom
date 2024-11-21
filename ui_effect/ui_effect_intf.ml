@@ -52,11 +52,11 @@ module type Effect = sig
 
   include Monad.S with type 'a t := 'a t
 
-  (** The [Par] module contains a Let_syntax whose [both] function 
+  (** The [Par] module contains a Let_syntax whose [both] function
       executes the effects in parallel.
 
-      This means that if you have a [let%map] or [let%bind], then 
-      bindings separated by `and` will run at the same time instead of 
+      This means that if you have a [let%map] or [let%bind], then
+      bindings separated by `and` will run at the same time instead of
       being sequenced. *)
   module Par : Monad.S with type 'a t := 'a t
 
@@ -69,6 +69,9 @@ module type Effect = sig
   (** evaluates all effects in the list in parallel and returns the list of results when
       all of them complete.  The output list is always the same length as the input list. *)
   val all_parallel : 'a t list -> 'a list t
+
+  (** like [all_parallel], but for [unit Effect.t]s. *)
+  val all_parallel_unit : unit t list -> unit t
 
   (** If creating an effect could be expensive, you can
       wrap its construction in a lazy and pass it to this function so that

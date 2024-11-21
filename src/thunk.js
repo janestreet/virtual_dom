@@ -11,7 +11,7 @@ function VdomThunk(fn, args, key) {
     this.args = args;
 };
 
-joo_global_object.VdomThunk = VdomThunk;
+globalThis.VdomThunk = VdomThunk;
 
 VdomThunk.prototype.type = 'Thunk';
 VdomThunk.prototype.render = function (prev) {

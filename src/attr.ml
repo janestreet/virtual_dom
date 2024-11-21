@@ -447,7 +447,11 @@ module Type_id = struct
 
   let (clipboard : Dom_html.clipboardEvent Type_equal.Id.t) = create "clipboardEvent"
   let (drag : Dom_html.dragEvent Type_equal.Id.t) = create "dragEvent"
-  let (pointer : Dom_html.pointerEvent Type_equal.Id.t) = create "pointerEvent"
+
+  let (pointer : Js_of_ocaml_patches.Dom_html.pointerEvent Type_equal.Id.t) =
+    create "pointerEvent"
+  ;;
+
   let (animation : Dom_html.animationEvent Type_equal.Id.t) = create "animationEvent"
 end
 

@@ -198,9 +198,17 @@ val on_scroll : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_load : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_error : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_submit : (Dom_html.submitEvent Js.t -> unit Effect.t) -> t
-val on_pointerdown : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
-val on_pointerup : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
-val on_pointermove : (Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
+
+val on_pointerdown
+  :  (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t)
+  -> t
+
+val on_pointerup : (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t) -> t
+
+val on_pointermove
+  :  (Js_of_ocaml_patches.Dom_html.pointerEvent Js.t -> unit Effect.t)
+  -> t
+
 val on_mousewheel : (Dom_html.mousewheelEvent Js.t -> unit Effect.t) -> t
 val on_wheel : (Js_of_ocaml_patches.Dom_html.wheelEvent Js.t -> unit Effect.t) -> t
 val on_copy : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
