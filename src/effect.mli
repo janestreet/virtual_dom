@@ -16,8 +16,8 @@ module type S = sig
 end
 
 module Open_url_target : sig
-  (** Target for opening a URL.
-      See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target *)
+  (** Target for opening a URL. See
+      https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target *)
   type t =
     | This_tab (** _self *)
     | New_tab_or_window (** _blank *)
@@ -29,16 +29,16 @@ end
 
 type 'a t +=
   | Viewport_changed
-      (** [Viewport_changed] events are delivered to all visibility handlers  *)
+      (** [Viewport_changed] events are delivered to all visibility handlers *)
   | Stop_propagation
       (** [Stop_propagation] prevents the underlying DOM event from propagating up to the
-      parent elements *)
+          parent elements *)
   | Stop_immediate_propagation
       (** [Stop_immediate_propagation] causes [sequence_as_sibling] to ignore next
-      sequenced event. *)
+          sequenced event. *)
   | Prevent_default
       (** [Prevent_default] prevents the default browser action from occurring as a result
-      of this event *)
+          of this event *)
   | Open :
       { url : string
       ; target : Open_url_target.t
@@ -46,16 +46,15 @@ type 'a t +=
       -> unit t
       (** [Open (url, target)] is [window.open(url, target)]. *)
 
-(** Sequences two events, but only if the first is neither
-    [Stop_immediate_propagation] nor a [Many] which contains
-    [Stop_immediate_propagation]. Use this instead of [Many] if combining events
-    that are associated with the same source; for example, the motivation for
-    this function is for merging Inputs of hooks.
+(** Sequences two events, but only if the first is neither [Stop_immediate_propagation]
+    nor a [Many] which contains [Stop_immediate_propagation]. Use this instead of [Many]
+    if combining events that are associated with the same source; for example, the
+    motivation for this function is for merging Inputs of hooks.
 
-    The second argument is a function that takes unit not because it is
-    expected to be impure, but because often it is computed via some arbitrary
-    handler function. Using hooks as an example, often the input to a hook has
-    type ['a -> Effect.t]. To merge inputs [f] and [g], you might write
+    The second argument is a function that takes unit not because it is expected to be
+    impure, but because often it is computed via some arbitrary handler function. Using
+    hooks as an example, often the input to a hook has type ['a -> Effect.t]. To merge
+    inputs [f] and [g], you might write
 
     {[
       fun x -> sequence_as_sibling (f x) (g x)
@@ -65,7 +64,7 @@ type 'a t +=
     [Stop_immediate_propagation]. Instead, using this API, you must write
 
     {[
-      fun x -> sequence_as_sibling (f x) (fun () -> (g x))
+      fun x -> sequence_as_sibling (f x) (fun () -> g x)
     ]} *)
 val sequence_as_sibling : unit t -> unless_stopped:(unit -> unit t) -> unit t
 
@@ -79,13 +78,13 @@ module Define_visibility (VH : Visibility_handler) : sig end
 module Expert : sig
   (** [handle t] looks up the [Handler.handle] function in the table of [Define]d
       functions, unwraps the [Effect.t] back into its underlying [Action.t], and applies
-      the two.  This is only intended for internal use by this library, specifically by
-      the attribute code. *)
+      the two. This is only intended for internal use by this library, specifically by the
+      attribute code. *)
   val handle : #Dom_html.event Js.t -> unit t -> unit
 
-  (** [handle_non_dom_event_exn] is the same as [handle] except that it raises in any
-      case that would have required the [#Dom_html.event Js.t]. In particular, this
-      can be to feed Actions back to the system that are not triggered by events from
-      the DOM and do not have a corresponding [#Dom_html.event Js.t]. *)
+  (** [handle_non_dom_event_exn] is the same as [handle] except that it raises in any case
+      that would have required the [#Dom_html.event Js.t]. In particular, this can be to
+      feed Actions back to the system that are not triggered by events from the DOM and do
+      not have a corresponding [#Dom_html.event Js.t]. *)
   val handle_non_dom_event_exn : unit t -> unit
 end

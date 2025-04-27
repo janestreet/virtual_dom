@@ -2,6 +2,8 @@ open! Core
 open Js_of_ocaml
 module Vdom_raw = Raw
 
+let explicitly_print_locations = ref false
+
 let () =
   (* use the native-javascript implementation of float -> string with a fixed number of
      numbers after the decimal place. *)
@@ -22,21 +24,43 @@ let () =
       - Hooks, which register callbacks on property addition and removal.
     v}
 
-    Generally speaking one should avoid creating a property or attribute
-    for something for which we have a first class representation.
-*)
+    Generally speaking one should avoid creating a property or attribute for something for
+    which we have a first class representation. *)
 
-module Event_handler = struct
+module Event_handler : sig
+  type t
+
+  val create
+    :  handler:((#Dom_html.event as 'a) Js.t -> unit Ui_effect.t)
+    -> type_id:'a Type_equal.Id.t
+    -> t
+
+  val get_function : t -> Js.Unsafe.any
+  val combine : t -> t -> t
+end = struct
   type t =
     | T :
         { type_id : 'a Type_equal.Id.t
         ; handler : (#Dom_html.event as 'a) Js.t -> unit Ui_effect.t
+        ; lowered : (_, (#Dom_html.event as 'a) Js.t) Dom.event_listener Lazy.t
         }
         -> t
 
+  let create ~handler ~type_id =
+    let lowered =
+      lazy
+        (Dom.handler (fun e ->
+           Effect.Expert.handle e (handler e);
+           Js._true))
+    in
+    T { handler; lowered; type_id }
+  ;;
+
+  let get_function (T { lowered; _ }) = Js.Unsafe.inject (Lazy.force lowered)
+
   let combine
-    (T { type_id = ltid; handler = lhandler })
-    (T { type_id = rtid; handler = rhandler } as right)
+    (T { type_id = ltid; handler = lhandler; lowered = _ })
+    (T { type_id = rtid; handler = rhandler; lowered = _ } as right)
     =
     (* If they are not the same witness, then it is a bug in virtual_dom, since
        we do not expose [on] anymore which means this library can determined the
@@ -45,13 +69,9 @@ module Event_handler = struct
        that have the same [Type_equal.Id]. *)
     match Type_equal.Id.same_witness ltid rtid with
     | Some T ->
-      T
-        { type_id = ltid
-        ; handler =
-            (fun value ->
-              Effect.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
-                rhandler value))
-        }
+      create ~type_id:ltid ~handler:(fun value ->
+        Effect.sequence_as_sibling (lhandler value) ~unless_stopped:(fun () ->
+          rhandler value))
     | None ->
       eprint_s
         [%message
@@ -67,11 +87,13 @@ type t =
       { suppress_merge_warnings : bool
       ; name : string
       ; value : Js.Unsafe.any
+      ; here : Source_code_position.t
       }
   | Attribute of
       { suppress_merge_warnings : bool
       ; name : string
       ; value : Js.Unsafe.any
+      ; here : Source_code_position.t
       }
   | Handler of
       { name : string
@@ -86,32 +108,54 @@ type t =
   | Many of t list
   | Lazy of t Lazy.t
   | Many_only_merge_classes_and_styles of
-      t list * (Css_gen.t -> Css_gen.t) * (string list -> string list)
-  | Many_without_merge of t list
+      { attrs : t list
+      ; map_styles : Css_gen.t -> Css_gen.t
+      ; map_classes : string list -> string list
+      ; here : Source_code_position.t
+      }
+  | Many_without_merge of
+      { attrs : t list
+      ; here : Source_code_position.t
+      }
 
-let create name value =
+let create ~here name value =
   Attribute
-    { suppress_merge_warnings = false; name; value = Js.Unsafe.inject (Js.string value) }
+    { suppress_merge_warnings = false
+    ; name
+    ; value = Js.Unsafe.inject (Js.string value)
+    ; here
+    }
 ;;
 
-let create_float name value =
+let create_float ~here name value =
   Attribute
     { suppress_merge_warnings = false
     ; name
     ; value = Js.Unsafe.inject (Dom_float.to_js_string value)
+    ; here
     }
 ;;
 
-let property name value = Property { suppress_merge_warnings = false; name; value }
-
-let string_property name value =
-  Property
-    { suppress_merge_warnings = false; name; value = Js.Unsafe.inject (Js.string value) }
+let property ~here name value =
+  Property { suppress_merge_warnings = false; name; value; here }
 ;;
 
-let bool_property name value =
+let string_property ~here name value =
   Property
-    { suppress_merge_warnings = false; name; value = Js.Unsafe.inject (Js.bool value) }
+    { suppress_merge_warnings = false
+    ; name
+    ; value = Js.Unsafe.inject (Js.string value)
+    ; here
+    }
+;;
+
+let bool_property ~here name value =
+  Property
+    { suppress_merge_warnings = false
+    ; name
+    ; value = Js.Unsafe.inject (Js.bool value)
+    ; here
+    }
 ;;
 
 let suppress_merge_warnings = function
@@ -122,7 +166,7 @@ let suppress_merge_warnings = function
 
 let create_hook name hook = Hook { name; hook }
 let many attrs = Many attrs
-let many_without_merge attrs = Many_without_merge attrs
+let many_without_merge ~(here : [%call_pos]) attrs = Many_without_merge { attrs; here }
 let empty = Many []
 let lazy_ lazy_t = Lazy lazy_t
 let combine left right = Many [ left; right ]
@@ -142,8 +186,29 @@ module Unmerged_warning_mode = struct
   let warning_count = ref 0
   let current = ref (Stop_after_quota 100)
 
-  let warn_s s =
+  let warn_s ~here s =
     incr warning_count;
+    let add_location s =
+      match s with
+      | Sexp.List x ->
+        Sexp.List (List.append x [ [%message (here : Source_code_position.t)] ])
+      | Atom s -> List [ Atom s; [%message (here : Source_code_position.t)] ]
+    in
+    let s =
+      (* NOTE: Similar to async, we sometimes intentionally hide the location to avoid
+         introducing brittleness. We could revisit this at some point in the future. *)
+      let location_might_be_noisy =
+        Source_code_position.is_dummy here
+        || Dynamic.get Backtrace.elide
+        || (not (Backtrace.Exn.am_recording ()))
+        || am_running_test
+      in
+      if !explicitly_print_locations
+      then add_location s
+      else if location_might_be_noisy
+      then s
+      else add_location s
+    in
     match !current with
     | No_warnings -> ()
     | All_warnings -> eprint_s s
@@ -202,31 +267,36 @@ let to_raw attr =
   (* [take_second_*] is the trivial merge function (i.e. no merge at all); it
      takes two attributes of the same kind, ignores a first, and emits
      a warning if [warn_about_unmerged_attributes] is enabled. *)
-  let take_second_styles first second =
+  let take_second_styles ~here first second =
     if not (Css_gen.is_empty first)
     then
       Unmerged_warning_mode.warn_s
+        ~here
         [%message
           "WARNING: not combining styles" (first : Css_gen.t) (second : Css_gen.t)];
     second
   in
-  let take_second_classes first second =
+  let take_second_classes ~here first second =
     if not (List.is_empty first)
     then (
       let first = List.sort ~compare:[%compare: string] first in
       let second = List.sort ~compare:[%compare: string] second in
       Unmerged_warning_mode.warn_s
+        ~here
         [%message
           "WARNING: not combining classes" (first : string list) (second : string list)]);
     second
   in
-  let take_second_handler ~key:name _first second =
+  let take_second_handler ~here ~key:name _first second =
     Unmerged_warning_mode.warn_s
+      ~here
       [%message "WARNING: not combining handlers" (name : string)];
     second
   in
-  let take_second_hook ~key:name _first second =
-    Unmerged_warning_mode.warn_s [%message "WARNING: not combining hooks" (name : string)];
+  let take_second_hook ~here ~key:name _first second =
+    Unmerged_warning_mode.warn_s
+      ~here
+      [%message "WARNING: not combining hooks" (name : string)];
     second
   in
   (* We merge attributes when they are written to the raw attribute object,
@@ -254,11 +324,12 @@ let to_raw attr =
   let rec merge ~combine_hook ~combine_handler ~combine_styles ~combine_classes acc =
     List.fold ~init:acc ~f:(fun acc attr ->
       match attr with
-      | Property { suppress_merge_warnings; name; value } ->
+      | Property { suppress_merge_warnings; name; value; here } ->
         let js_name = Js.string name in
         if Raw.Attrs.has_property attrs_obj js_name && not suppress_merge_warnings
         then
           Unmerged_warning_mode.warn_s
+            ~here
             [%message "WARNING: not combining properties" (name : string)];
         (match name with
          | "value" ->
@@ -267,11 +338,12 @@ let to_raw attr =
            Vdom_raw.Attrs.set_property attrs_obj (Js.string "value") value
          | _ -> Raw.Attrs.set_property attrs_obj js_name value);
         acc
-      | Attribute { suppress_merge_warnings; name; value } ->
+      | Attribute { suppress_merge_warnings; name; value; here } ->
         let js_name = Js.string name in
         if Raw.Attrs.has_attribute attrs_obj js_name && not suppress_merge_warnings
         then
           Unmerged_warning_mode.warn_s
+            ~here
             [%message "WARNING: not combining attributes" (name : string)];
         Raw.Attrs.set_attribute attrs_obj js_name value;
         acc
@@ -302,11 +374,11 @@ let to_raw attr =
             Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
         ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
         }
-      | Many_only_merge_classes_and_styles (attrs, map_styles, map_classes) ->
+      | Many_only_merge_classes_and_styles { attrs; map_styles; map_classes; here } ->
         let sub_merge =
           merge
-            ~combine_hook:take_second_hook
-            ~combine_handler:take_second_handler
+            ~combine_hook:(take_second_hook ~here)
+            ~combine_handler:(take_second_handler ~here)
             ~combine_styles:Css_gen.combine
             ~combine_classes:Core.( @ )
             empty_merge
@@ -318,13 +390,13 @@ let to_raw attr =
             Map.merge_skewed acc.handlers sub_merge.handlers ~combine:combine_handler
         ; hooks = Map.merge_skewed acc.hooks sub_merge.hooks ~combine:combine_hook
         }
-      | Many_without_merge attrs ->
+      | Many_without_merge { attrs; here } ->
         let sub_merge =
           merge
-            ~combine_hook:take_second_hook
-            ~combine_handler:take_second_handler
-            ~combine_styles:take_second_styles
-            ~combine_classes:take_second_classes
+            ~combine_hook:(take_second_hook ~here)
+            ~combine_handler:(take_second_handler ~here)
+            ~combine_styles:(take_second_styles ~here)
+            ~combine_classes:(take_second_classes ~here)
             empty_merge
             attrs
         in
@@ -337,24 +409,18 @@ let to_raw attr =
   in
   let merge =
     merge
-      ~combine_hook:take_second_hook
-      ~combine_handler:take_second_handler
-      ~combine_styles:take_second_styles
-      ~combine_classes:take_second_classes
+      ~combine_hook:(take_second_hook ~here:[%here])
+      ~combine_handler:(take_second_handler ~here:[%here])
+      ~combine_styles:(take_second_styles ~here:[%here])
+      ~combine_classes:(take_second_classes ~here:[%here])
       empty_merge
       attrs
   in
   Map.iteri merge.hooks ~f:(fun ~key:name ~data:hook ->
     Raw.Attrs.set_property attrs_obj (Js.string name) (Hooks.pack hook));
-  Map.iteri merge.handlers ~f:(fun ~key:name ~data:(Event_handler.T { handler; _ }) ->
-    let f e =
-      Effect.Expert.handle e (handler e);
-      Js._true
-    in
-    Raw.Attrs.set_property
-      attrs_obj
-      (Js.string ("on" ^ name))
-      (Js.Unsafe.inject (Dom.handler f)));
+  Map.iteri merge.handlers ~f:(fun ~key:name ~data:handler ->
+    let f = Event_handler.get_function handler in
+    Raw.Attrs.set_property attrs_obj (Js.string ("on" ^ name)) f);
   let () =
     if not (Css_gen.is_empty merge.styles)
     then (
@@ -378,7 +444,7 @@ let to_raw attr =
 
 let to_raw attr =
   match attr with
-  | Many [] | Many_without_merge [] -> Raw.Attrs.create ()
+  | Many [] | Many_without_merge { attrs = []; here = _ } -> Raw.Attrs.create ()
   | attr -> to_raw attr
 ;;
 
@@ -386,49 +452,57 @@ let style css = Style css
 let class_ classname = Class [ classname ]
 let classes' classes = Class (Set.to_list classes)
 let classes classnames = Class classnames
-let id s = create "id" s
-let name s = create "name" s
-let href r = create "href" r
-let rel r = create "rel" r
-let label r = create "label" r
-let target s = create "target" s
-let checked = create "checked" ""
-let checked_prop b = bool_property "checked" b
-let selected = create "selected" ""
-let hidden = create "hidden" ""
-let readonly = create "readonly" ""
-let disabled = create "disabled" ""
+let id ~(here : [%call_pos]) s = create ~here "id" s
+let name ~(here : [%call_pos]) s = create ~here "name" s
+let href ~(here : [%call_pos]) r = create ~here "href" r
+let rel ~(here : [%call_pos]) r = create ~here "rel" r
+let label ~(here : [%call_pos]) r = create ~here "label" r
+let target ~(here : [%call_pos]) s = create ~here "target" s
+let checked = create ~here:[%here] "checked" ""
+let checked_prop ~(here : [%call_pos]) b = bool_property ~here "checked" b
+let selected = create ~here:[%here] "selected" ""
+let hidden = create ~here:[%here] "hidden" ""
+let readonly = create ~here:[%here] "readonly" ""
+let disabled = create ~here:[%here] "disabled" ""
 let disabled' b = if b then disabled else empty
-let placeholder x = create "placeholder" x
-let role r = create "role" r
+let inert = create ~here:[%here] "inert" ""
+let placeholder ~(here : [%call_pos]) x = create ~here "placeholder" x
+let role ~(here : [%call_pos]) r = create ~here "role" r
 
-let autofocus = function
-  | true -> create "autofocus" ""
+let autofocus ~(here : [%call_pos]) = function
+  | true -> create ~here "autofocus" ""
   | false -> empty
 ;;
 
-let allow x = create "allow" x
-let for_ x = create "for" x
-let type_ x = create "type" x
-let value x = create "value" x
-let value_prop x = string_property "value" x
-let tabindex x = create "tabindex" (Int.to_string x)
-let title x = create "title" x
-let alt x = create "alt" x
-let src x = create "src" x
-let open_ = create "open" ""
-let start x = create "start" (Int.to_string x)
-let min x = create_float "min" x
-let max x = create_float "max" x
-let min_date x = create "min" (Date.to_string x)
-let max_date x = create "max" (Date.to_string x)
-let min_date_time x = create "min" (Date.to_string x ^ "T00:00")
-let max_date_time x = create "max" (Date.to_string x ^ "T23:59")
-let colspan x = create "colspan" (Int.to_string x)
-let rowspan x = create "rowspan" (Int.to_string x)
-let rows x = create "rows" (Int.to_string x)
-let cols x = create "cols" (Int.to_string x)
-let draggable b = create "draggable" (Bool.to_string b)
+let allow ~(here : [%call_pos]) x = create ~here "allow" x
+let for_ ~(here : [%call_pos]) x = create ~here "for" x
+let type_ ~(here : [%call_pos]) x = create ~here "type" x
+let value ~(here : [%call_pos]) x = create ~here "value" x
+let value_prop ~(here : [%call_pos]) x = string_property ~here "value" x
+let tabindex ~(here : [%call_pos]) x = create ~here "tabindex" (Int.to_string x)
+let title ~(here : [%call_pos]) x = create ~here "title" x
+let alt ~(here : [%call_pos]) x = create ~here "alt" x
+let src ~(here : [%call_pos]) x = create ~here "src" x
+let open_ = create ~here:[%here] "open" ""
+let start ~(here : [%call_pos]) x = create ~here "start" (Int.to_string x)
+let min ~(here : [%call_pos]) x = create_float ~here "min" x
+let max ~(here : [%call_pos]) x = create_float ~here "max" x
+let min_date ~(here : [%call_pos]) x = create ~here "min" (Date.to_string x)
+let max_date ~(here : [%call_pos]) x = create ~here "max" (Date.to_string x)
+
+let min_date_time ~(here : [%call_pos]) x =
+  create ~here "min" (Date.to_string x ^ "T00:00")
+;;
+
+let max_date_time ~(here : [%call_pos]) x =
+  create ~here "max" (Date.to_string x ^ "T23:59")
+;;
+
+let colspan ~(here : [%call_pos]) x = create ~here "colspan" (Int.to_string x)
+let rowspan ~(here : [%call_pos]) x = create ~here "rowspan" (Int.to_string x)
+let rows ~(here : [%call_pos]) x = create ~here "rows" (Int.to_string x)
+let cols ~(here : [%call_pos]) x = create ~here "cols" (Int.to_string x)
+let draggable ~(here : [%call_pos]) b = create ~here "draggable" (Bool.to_string b)
 
 module Type_id = struct
   (* We provide a trivial [to_sexp] function since we only want
@@ -440,23 +514,16 @@ module Type_id = struct
   let (keyboard : Dom_html.keyboardEvent Type_equal.Id.t) = create "keyboardEvent"
   let (submit : Dom_html.submitEvent Type_equal.Id.t) = create "submitEvent"
   let (mousewheel : Dom_html.mousewheelEvent Type_equal.Id.t) = create "mousewheelEvent"
-
-  let (wheel : Js_of_ocaml_patches.Dom_html.wheelEvent Type_equal.Id.t) =
-    create "wheelwheelEvent"
-  ;;
-
+  let (wheel : Dom_html.wheelEvent Type_equal.Id.t) = create "wheelwheelEvent"
   let (clipboard : Dom_html.clipboardEvent Type_equal.Id.t) = create "clipboardEvent"
   let (drag : Dom_html.dragEvent Type_equal.Id.t) = create "dragEvent"
-
-  let (pointer : Js_of_ocaml_patches.Dom_html.pointerEvent Type_equal.Id.t) =
-    create "pointerEvent"
-  ;;
-
+  let (pointer : Dom_html.pointerEvent Type_equal.Id.t) = create "pointerEvent"
   let (animation : Dom_html.animationEvent Type_equal.Id.t) = create "animationEvent"
 end
 
 let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
-  Handler { name; handler = T { handler; type_id } }
+  let handler = Event_handler.create ~handler ~type_id in
+  Handler { name; handler }
 ;;
 
 let on_focus = on Type_id.focus "focus"
@@ -491,6 +558,8 @@ let on_toggle = on Type_id.event "toggle"
 let on_pointerdown = on Type_id.pointer "pointerdown"
 let on_pointerup = on Type_id.pointer "pointerup"
 let on_pointermove = on Type_id.pointer "pointermove"
+let on_pointerenter = on Type_id.pointer "pointerenter"
+let on_pointerleave = on Type_id.pointer "pointerleave"
 let on_mousewheel = on Type_id.mousewheel "mousewheel"
 let on_wheel = on Type_id.wheel "wheel"
 let on_copy = on Type_id.clipboard "copy"
@@ -540,7 +609,7 @@ let on_file_input handler =
   on Type_id.event "input" (fun ev ->
     Js.Opt.case ev##.target const_ignore (fun target ->
       Js.Opt.case (Dom_html.CoerceTo.input target) const_ignore (fun target ->
-        Js.Optdef.case target##.files const_ignore (fun files -> handler ev files))))
+        handler ev target##.files)))
 ;;
 
 module Always_focus_hook = struct
@@ -628,12 +697,24 @@ end
 module Multi = struct
   type nonrec t = t list
 
-  let map_style t ~f = [ Many_only_merge_classes_and_styles (t, f, Fn.id) ]
-  let add_class t c = [ Many_only_merge_classes_and_styles (t, Fn.id, fun cs -> c :: cs) ]
+  let map_style ~(here : [%call_pos]) t ~f =
+    [ Many_only_merge_classes_and_styles
+        { attrs = t; map_styles = f; map_classes = Fn.id; here }
+    ]
+  ;;
+
+  let add_class ~(here : [%call_pos]) t c =
+    [ Many_only_merge_classes_and_styles
+        { attrs = t; map_styles = Fn.id; map_classes = (fun cs -> c :: cs); here }
+    ]
+  ;;
+
   let add_style t s = map_style t ~f:(fun ss -> Css_gen.combine ss s)
 
-  let merge_classes_and_styles t =
-    [ Many_only_merge_classes_and_styles (t, Fn.id, Fn.id) ]
+  let merge_classes_and_styles ~(here : [%call_pos]) t =
+    [ Many_only_merge_classes_and_styles
+        { attrs = t; map_styles = Fn.id; map_classes = Fn.id; here }
+    ]
   ;;
 end
 
@@ -685,10 +766,12 @@ module Expert = struct
     | Class _ -> if f `Class then t else empty
     | Lazy (lazy t) -> filter_by_kind t ~f
     | Many attrs -> Many (List.map attrs ~f:(filter_by_kind ~f))
-    | Many_only_merge_classes_and_styles (attrs, a, b) ->
-      Many_only_merge_classes_and_styles (List.map attrs ~f:(filter_by_kind ~f), a, b)
-    | Many_without_merge attrs ->
-      Many_without_merge (List.map attrs ~f:(filter_by_kind ~f))
+    | Many_only_merge_classes_and_styles { attrs; map_styles; map_classes; here } ->
+      let attrs = List.map attrs ~f:(filter_by_kind ~f) in
+      Many_only_merge_classes_and_styles { attrs; map_styles; map_classes; here }
+    | Many_without_merge { attrs; here } ->
+      let attrs = List.map attrs ~f:(filter_by_kind ~f) in
+      Many_without_merge { attrs; here }
   ;;
 
   let rec contains_name looking_for = function
@@ -699,7 +782,16 @@ module Expert = struct
     | Class _ -> String.equal looking_for "class"
     | Lazy (lazy t) -> contains_name looking_for t
     | Many attrs
-    | Many_only_merge_classes_and_styles (attrs, _, _)
-    | Many_without_merge attrs -> List.exists ~f:(contains_name looking_for) attrs
+    | Many_only_merge_classes_and_styles { attrs; _ }
+    | Many_without_merge { attrs; here = _ } ->
+      List.exists ~f:(contains_name looking_for) attrs
   ;;
+
+  let set_explicitly_print_locations bool = explicitly_print_locations := bool
 end
+
+let create ~(here : [%call_pos]) name value = create ~here name value
+let create_float ~(here : [%call_pos]) name value = create_float ~here name value
+let property ~(here : [%call_pos]) name value = property ~here name value
+let string_property ~(here : [%call_pos]) name value = string_property ~here name value
+let bool_property ~(here : [%call_pos]) name value = bool_property ~here name value

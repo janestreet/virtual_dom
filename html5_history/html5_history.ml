@@ -118,7 +118,6 @@ module T = struct
     in
     let popstate_bus =
       Bus.create_exn
-        [%here]
         Arity1
         ~on_subscription_after_first_write:Allow
         ~on_callback_raise:Error.raise
@@ -291,7 +290,6 @@ module Opinionated = struct
       ; current_state
       ; changes_bus =
           Bus.create_exn
-            [%here]
             Arity1
             ~on_subscription_after_first_write:Allow
             ~on_callback_raise:Error.raise
@@ -299,7 +297,7 @@ module Opinionated = struct
     in
     let (_ : _ Bus.Subscriber.t) =
       let bus = Html5_history.popstate_bus html5_history in
-      Bus.subscribe_exn bus [%here] ~f:(fun state ->
+      Bus.subscribe_exn bus ~f:(fun state ->
         match state.payload with
         | None -> log_s t [%message "Html5_history" "ignored popstate due to no payload"]
         | Some payload ->
@@ -355,10 +353,10 @@ module Opinionated = struct
 
   let sync_to_bonsai t ~extra_bus ~get_state ~schedule_navigate_to =
     let (_ : _ Bus.Subscriber.t) =
-      Bus.subscribe_exn (changes_bus t) [%here] ~f:schedule_navigate_to
+      Bus.subscribe_exn (changes_bus t) ~f:schedule_navigate_to
     in
     let (_ : _ Bus.Subscriber.t) =
-      Bus.subscribe_exn extra_bus [%here] ~f:(fun next ->
+      Bus.subscribe_exn extra_bus ~f:(fun next ->
         match get_state next with
         | Error `Uninitialised -> ()
         | Ok next -> update t next)

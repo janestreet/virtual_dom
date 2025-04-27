@@ -1,8 +1,8 @@
 open! Core
 open! Js_of_ocaml
 
-(** Hooks to set events listeners on [window]. This is needed as if we only set
-    them on individual elements we will miss ones that happen outside of the viewport
+(** Hooks to set events listeners on [window]. This is needed as if we only set them on
+    individual elements we will miss ones that happen outside of the viewport
 
     https://coderwall.com/p/79hkbw/js-mouse-events-that-work-even-when-mouse-is-moved-outside-the-window *)
 
@@ -12,9 +12,9 @@ module Phase : sig
 
       If ran on capture, it will run before any element-specific listeners.
 
-      If ran on bubbling, it will run after all element-specific listeners,
-      and it won't run if [stopPropagation] was called during the handlers of the event
-      target or any of its ancestors.
+      If ran on bubbling, it will run after all element-specific listeners, and it won't
+      run if [stopPropagation] was called during the handlers of the event target or any
+      of its ancestors.
 
       When in doubt, default to [Bubbling]. *)
   type t =
@@ -37,6 +37,7 @@ val mousemove
   -> Attr.t
 
 val click : phase:Phase.t -> f:(Dom_html.mouseEvent Js.t -> unit Ui_effect.t) -> Attr.t
+val blur : phase:Phase.t -> f:(Dom_html.focusEvent Js.t -> unit Ui_effect.t) -> Attr.t
 
 val contextmenu
   :  phase:Phase.t
@@ -49,6 +50,8 @@ val keydown
   :  phase:Phase.t
   -> f:(Dom_html.keyboardEvent Js.t -> unit Ui_effect.t)
   -> Attr.t
+
+val keyup : phase:Phase.t -> f:(Dom_html.keyboardEvent Js.t -> unit Ui_effect.t) -> Attr.t
 
 (** Other event handlers *)
 val visibilitychange
@@ -72,9 +75,9 @@ module For_testing : sig
     ; bubbling : 'a option
     }
 
-  (** In tests, you might just want to run all global listeners.
-      This helper will run the `combine` and `bubbling` handlers in parallel.
-      If your tests include running other handlers, you probably don't want this.*)
+  (** In tests, you might just want to run all global listeners. This helper will run the
+      `combine` and `bubbling` handlers in parallel. If your tests include running other
+      handlers, you probably don't want this. *)
   val combine_capture_and_bubbling
     :  ('a -> unit Ui_effect.t) t
     -> ('a -> unit Ui_effect.t)

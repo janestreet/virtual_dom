@@ -1,6 +1,6 @@
-(** A set of functions to generate css declaration lists.  This library can be used
-    to programmatically produce strings suitable for the HTML style attribute,
-    e.g. style="display:flex;background-color:red". *)
+(** A set of functions to generate css declaration lists. This library can be used to
+    programmatically produce strings suitable for the HTML style attribute, e.g.
+    style="display:flex;background-color:red". *)
 
 open Core
 
@@ -18,8 +18,7 @@ module Color : sig
 
     (** [create ~r ~g ~b ~a] creates a color that corresponds to rgba([r],[g],[b],[a])
 
-        If [a] is omitted then it creates a color that corresponds to rgb([r],[g],[b])
-    *)
+        If [a] is omitted then it creates a color that corresponds to rgb([r],[g],[b]) *)
     val create : r:int -> g:int -> b:int -> ?a:Percent.t -> unit -> t
   end
 
@@ -28,8 +27,7 @@ module Color : sig
 
     (** [create ~h ~s ~l ~a] creates a color that corresponds to hsla([h],[s],[l],[a])
 
-        If [a] is omitted then it creates a color that corresponds to hsl([h],[s],[l])
-    *)
+        If [a] is omitted then it creates a color that corresponds to hsl([h],[s],[l]) *)
 
     val create : h:int -> s:Percent.t -> l:Percent.t -> ?a:Percent.t -> unit -> t
   end
@@ -39,8 +37,7 @@ module Color : sig
 
     (** [create ~l ~c ~h ~a] creates a color that corresponds to lch([l], [c], [h], [a]).
 
-        If [a] is omitted then it creates a color that corresponds to lch([l],[c],[h]).
-    *)
+        If [a] is omitted then it creates a color that corresponds to lch([l],[c],[h]). *)
     val create : l:Percent.t -> c:Percent.t -> h:float -> ?a:Percent.t -> unit -> t
   end
 
@@ -92,22 +89,21 @@ end
 
 type t [@@deriving sexp, compare, equal, bin_io]
 
-(** Create a single property, value pair (a declaration in CSS parlance).
-    The value must be a valid CSS literal.  We do run a simple CSS parser on the value
-    to validate this and will throw an exception if that parser fails.  Note that
-    the parser is less forgiving than many browsers.  That is browsers will silently
-    accept or drop many illegal constructs.  We prefer to raise on them, so that
-    errors are detected earlier.
+(** Create a single property, value pair (a declaration in CSS parlance). The value must
+    be a valid CSS literal. We do run a simple CSS parser on the value to validate this
+    and will throw an exception if that parser fails. Note that the parser is less
+    forgiving than many browsers. That is browsers will silently accept or drop many
+    illegal constructs. We prefer to raise on them, so that errors are detected earlier.
 
-    It is recommended to use one of the other constructors instead if they are
-    available.  If they are not, consider adding them to this library. *)
+    It is recommended to use one of the other constructors instead if they are available.
+    If they are not, consider adding them to this library. *)
 val create : field:string -> value:string -> t
 
 val empty : t
 val is_empty : t -> bool
 
-(** Set the position attribute and optionally top, bottom,left,right
-    Note that left and top have no effect when position is `Static. *)
+(** Set the position attribute and optionally top, bottom,left,right Note that left and
+    top have no effect when position is `Static. *)
 val position
   :  ?top:Length.t
   -> ?bottom:Length.t
@@ -128,9 +124,9 @@ val left : Length.t -> t
 (** Add the right property alone. *)
 val right : Length.t -> t
 
-(** Neither [combine] nor [concat] validate that each [t] is unique.
-    For [combine x y], [y] will override [x] if they are the same attribute.
-    For [concat l], the greatest index of an attribute will prevail. *)
+(** Neither [combine] nor [concat] validate that each [t] is unique. For [combine x y],
+    [y] will override [x] if they are the same attribute. For [concat l], the greatest
+    index of an attribute will prevail. *)
 val combine : t -> t -> t
 
 val ( @> ) : t -> t -> t
@@ -138,9 +134,9 @@ val concat : t list -> t
 val to_string_list : t -> (string * string) list
 val to_string_css : t -> string
 
-(** The inverse of to_string_css.  Primarily useful if you want to reuse a css
-    literal from the web (aka copy paste web design). Raises if the string
-    fails validation.  See create for comments on the validation we do. *)
+(** The inverse of to_string_css. Primarily useful if you want to reuse a css literal from
+    the web (aka copy paste web design). Raises if the string fails validation. See create
+    for comments on the validation we do. *)
 val of_string_css_exn : string -> t
 
 type box_sizing =
@@ -475,7 +471,7 @@ type fill_mode =
   | fill_mode css_global_values
   ]
 
-(** Note: You must include the [name]s @keyframes in the stylesheet *)
+(** Note: You must include the [name]s \@keyframes in the stylesheet *)
 val animation
   :  name:string
   -> duration:Time_ns.Span.t
@@ -498,12 +494,12 @@ val user_select : user_select -> t
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving sexp, compare, equal, bin_io]
+    type nonrec t = t [@@deriving sexp, compare, equal, bin_io, stable_witness]
   end
 end
 
 module Expert : sig
-  (** By default, the Css_gen constructors validate that all values are well-formed.  This
+  (** By default, the Css_gen constructors validate that all values are well-formed. This
       can be useful for debugging, as it'll throw an exception when the programmer makes a
       mistake. However, it also incurs a heavy cost and should be avoided in tight loops.
       [should_validate] allows the programmer to disable css value validation when

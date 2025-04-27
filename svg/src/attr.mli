@@ -146,7 +146,7 @@ val r : float -> t
 
 (** {1 <ellipse>} *)
 
-(** shares cx and cy with circle*)
+(** shares cx and cy with circle *)
 
 val rx : float -> t
 val ry : float -> t
@@ -174,7 +174,7 @@ val x2 : float -> t
 val y1 : float -> t
 val y2 : float -> t
 
-(** {1 <linearGradient> } *)
+(** {1 <linearGradient>} *)
 
 (** shares href with <a>, x1, x2, y1, y2 with <line> *)
 
@@ -226,8 +226,7 @@ val fy : float -> t
 val fr : float -> t
 val spread_method : [ `Pad | `Reflect | `Repeat ] -> t
 
-(** Nothing to do for <rect> because shares x, y, rx and ry width,
-    height with <image> *)
+(** Nothing to do for <rect> because shares x, y, rx and ry width, height with <image> *)
 
 (** {1 <stop>} *)
 
@@ -237,9 +236,8 @@ val stop_opacity : Percent.t -> t
 
 (** nothing to do for <style> *)
 
-(** Nothing to do for <symbol> as refX and refY is shared with
-    <marker>, viewBox is shared with <svg>, x, y, width, and
-    height are shared with <image>, *)
+(** Nothing to do for <symbol> as refX and refY is shared with <marker>, viewBox is shared
+    with <svg>, x, y, width, and height are shared with <image>, *)
 
 (** {1 <text>} *)
 
@@ -264,10 +262,9 @@ module Text : sig
   val length_adjust : [ `Spacing | `Spacing_and_glyphs ] -> t
   val side : [ `Left | `Right ] -> t
 
-  (** Nothing to do for <title>
-      Nothing to do for <tspan> as it shares everything with text
-      Nothing to do for <use> as it shares href with <linearGradient>, x, y,
-      width, and height with <image> *)
+  (** Nothing to do for <title> Nothing to do for <tspan> as it shares everything with
+      text Nothing to do for <use> as it shares href with <linearGradient>, x, y, width,
+      and height with <image> *)
   val spacing : [ `Auto | `Exact ] -> t
 end
 

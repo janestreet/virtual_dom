@@ -1,6 +1,7 @@
 open Core
 
-(** A quick overview of HTML5-History.
+(** {v
+ A quick overview of HTML5-History.
 
     Primitives
     ----------
@@ -38,7 +39,8 @@ open Core
 
     For an example of why you might want to do (4), have a look at the comment by
     [History_state] below ("you may like to put more information in your [History_state.t]
-    ..."). *)
+    ...").
+    v} *)
 
 (** We let you store a "payload" in each of the history entries. This works by
     bin-protting your value, and storing it alongside the bin-shape hash. When a history
@@ -181,6 +183,6 @@ module Opinionated : sig
     -> unit
 end
 
-(** Strips all but path, query, and fragment. Ensures a leading / on empty path.
-    Mostly for testing but you can use it if you'd really like *)
+(** Strips all but path, query, and fragment. Ensures a leading / on empty path. Mostly
+    for testing but you can use it if you'd really like *)
 val uri_to_html5_history_string : Uri.t -> string

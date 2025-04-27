@@ -1,18 +1,16 @@
 open Virtual_dom
 
 (** A [Keyboard_event_handler.t] is a collections of actions (commands and disabled keys)
-    that can be used to handle keyboard events and to produce help text.
-*)
+    that can be used to handle keyboard events and to produce help text. *)
 
 module Condition : sig
   (** A [Condition.t] is a condition based on a keyboard event (which importantly includes
-      the event's focus).  This is intended to be used in keyboard event handlers that
-      look at the keyboard event to determine whether or not to take a certain action.
+      the event's focus). This is intended to be used in keyboard event handlers that look
+      at the keyboard event to determine whether or not to take a certain action.
 
       E.g. if a user presses 'j' while focused on a table, the event handler might handle
       this by moving the user's focus down by one row in the table, but if the user
-      presses 'j' while typing into a text box, the event handler would ignore the event.
-  *)
+      presses 'j' while typing into a text box, the event handler would ignore the event. *)
 
   type t = Keyboard_event.t -> bool
 
@@ -50,10 +48,9 @@ module Condition : sig
 end
 
 module Handler : sig
-  (** A [Handler.t] handles a keyboard event by returning a [unit Vdom.Effect.t]. These should
-      be used as building blocks for keyboard event handlers, for instance to handle a
-      specific set of keys.
-  *)
+  (** A [Handler.t] handles a keyboard event by returning a [unit Vdom.Effect.t]. These
+      should be used as building blocks for keyboard event handlers, for instance to
+      handle a specific set of keys. *)
 
   type t = Keyboard_event.t -> unit Vdom.Effect.t [@@deriving sexp]
 
@@ -80,6 +77,7 @@ module Command : sig
     ; group : Grouped_help_text.Group_name.t option
     ; handler : Handler.t
     }
+  [@@deriving sexp_of]
 
   val get_help_text : t -> Help_text.Command.t
 end
@@ -87,9 +85,9 @@ end
 module Action : sig
   type t =
     | Command of Command.t
-    (** A disabled key is essentially a command that prevents the default handler of
-        that key (by returning [Effect.Prevent_default]), and does nothing else.
-        Users can choose to omit disabled keys from the help menu. *)
+    (** A disabled key is essentially a command that prevents the default handler of that
+        key (by returning [Effect.Prevent_default]), and does nothing else. Users can
+        choose to omit disabled keys from the help menu. *)
     | Disabled_key of Keystroke.t
   [@@deriving sexp, variants]
 
@@ -101,11 +99,11 @@ type t [@@deriving sexp_of]
 val empty : t
 
 (** [of_action_list_exn] and [of_command_list_exn] create a keyboard event handler from a
-    list of actions. If the same key appears in multiple actions, an exception is
-    raised. *)
+    list of actions. If the same key appears in multiple actions, an exception is raised. *)
 val of_action_list_exn : Action.t list -> t
 
 val of_command_list_exn : Command.t list -> t
+val to_command_list : t -> Command.t list
 
 (** [add_action_exn] adds a new action to a keyboard event handler. If any key from the
     new action already exists in the handler, an exception is raised. *)

@@ -14,6 +14,13 @@ let%expect_test _ =
            (object%js
               val keyCode = key_code
               val location = location
+
+              (* We need to include [key] and [code], so that there's some value for
+                 our [of_event] function to read. But we want to use values that wouldn't show
+                 up in real events, because we're testing just the [key_code] (and
+                 [location]) property. *)
+              val key = Js.string "not a valid key"
+              val code = Js.string "not a valid code"
            end))
     in
     match keyboard_code with

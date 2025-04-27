@@ -22,7 +22,7 @@ let%expect_test "empty div with triggered callback (failing)" =
       (Node.div
          ~attrs:
            [ Attr.on_click (fun e ->
-               print_s [%message (e##.screenX : int)];
+               print_s [%message (Js_of_ocaml.Js.float_of_number e##.screenX : float)];
                Effect.Ignore)
            ]
          [])

@@ -180,6 +180,8 @@ let all_parallel xs =
       List.iteri xs ~f:(fun i e -> Expert.eval e ~f:(complete_one i)))
 ;;
 
+let all_parallel_unit xs = map (all_parallel xs) ~f:(ignore : unit list -> unit)
+
 module Par = struct
   include As_monad
 

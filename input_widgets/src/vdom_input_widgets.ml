@@ -159,9 +159,10 @@ end
 let maybe_disabled ~disabled attrs = if disabled then Attr.disabled :: attrs else attrs
 let add_attrs attrs' attrs = [ Attr.many (attrs @ attrs') ]
 
-let merge = function
-  | Merge_behavior.Merge -> Attr.many
-  | Legacy_dont_merge -> Attr.many_without_merge
+let merge ~(here : [%call_pos]) behavior l =
+  match behavior with
+  | Merge_behavior.Merge -> Attr.many l
+  | Legacy_dont_merge -> Attr.many_without_merge ~here l
 ;;
 
 let structural_list
@@ -786,7 +787,7 @@ module Entry = struct
   let input_node
     ?(extra_attrs = [])
     ?(disabled = false)
-    ?(placeholder = "")
+    ?placeholder
     ?(merge_behavior = Merge_behavior.Merge)
     ?key
     attrs
@@ -797,7 +798,9 @@ module Entry = struct
         [ (merge merge_behavior)
             (attrs
              |> add_attrs
-                  [ Attr.placeholder placeholder; Attr.create "spellcheck" "false" ]
+                  [ Option.value_map placeholder ~f:Attr.placeholder ~default:Attr.empty
+                  ; Attr.create "spellcheck" "false"
+                  ]
              |> maybe_disabled ~disabled
              |> add_attrs extra_attrs)
         ]
@@ -1083,7 +1086,7 @@ module Entry = struct
     ?placeholder
     ?utc_offset
     ?(merge_behavior = Merge_behavior.Merge)
-    ?(allow_updates_when_focused = `Always)
+    ?(allow_updates_when_focused = (`Never : [ `Never ]))
     ?key
     ~value
     ~on_input
@@ -1120,7 +1123,7 @@ module Entry = struct
       ~value
       ~on_input
       ~merge_behavior
-      ~allow_updates_when_focused
+      ~allow_updates_when_focused:(allow_updates_when_focused :> [ `Always | `Never ])
   ;;
 
   let text_area

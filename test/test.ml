@@ -11,12 +11,18 @@ let%test _ =
   true
 ;;
 
+let show node =
+  node |> Node_helpers.unsafe_convert_exn |> [%sexp_of: Node_helpers.t] |> print_s
+;;
+
 let%expect_test "Node.of_opt" =
-  let show node =
-    node |> Node_helpers.unsafe_convert_exn |> [%sexp_of: Node_helpers.t] |> print_s
-  in
   show (Some (Node.div []) |> Node.of_opt);
   [%expect {| (Element ((tag_name div))) |}];
   show (None |> Node.of_opt);
   [%expect {| (Element ((tag_name Vdom.Node.none-widget))) |}]
+;;
+
+let%expect_test "Node.dfn" =
+  show (Node.dfn [ Node.text "hi" ]);
+  [%expect {| (Element ((tag_name dfn) (children ((Text hi))))) |}]
 ;;

@@ -53,24 +53,24 @@ let%expect_test "basic failure" =
 let%expect_test "good tabindex" =
   test
     {%html|
-        <div>
-          <div tabindex=%{0}>Hello!</div>
-          <div tabindex=%{-1}>Hello!</div>
-        </div>
-      |};
+      <div>
+        <div tabindex=%{0}>Hello!</div>
+        <div tabindex=%{-1}>Hello!</div>
+      </div>
+    |};
   [%expect {| ok! |}]
 ;;
 
 let%expect_test "bad tabindex" =
   test
     {%html|
-        <div>
-          <div tabindex=%{0}>Hello!</div>
-          <div tabindex=%{1}>Hello!</div>
-          <div tabindex=%{-12}>Hello!</div>
-          <div tabindex=%{5}>Hello!</div>
-        </div>
-      |};
+      <div>
+        <div tabindex=%{0}>Hello!</div>
+        <div tabindex=%{1}>Hello!</div>
+        <div tabindex=%{-12}>Hello!</div>
+        <div tabindex=%{5}>Hello!</div>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -91,12 +91,12 @@ let%expect_test "bad tabindex" =
 let%expect_test "bad event listener attribute" =
   test
     {%html|
-        <div>
-          <div %{Vdom.Attr.create "onclick" ""}>Hello!</div>
-          <div %{Vdom.Attr.create "onbeforeunload" ""}>Hello!</div>
-          <div %{Vdom.Attr.create "ongfdgdsfgsdfgs" ""}>Hello!</div>
-        </div>
-      |};
+      <div>
+        <div %{Vdom.Attr.create "onclick" ""}>Hello!</div>
+        <div %{Vdom.Attr.create "onbeforeunload" ""}>Hello!</div>
+        <div %{Vdom.Attr.create "ongfdgdsfgsdfgs" ""}>Hello!</div>
+      </div>
+    |};
   [%expect
     {xxx|
     Linting Failures:
@@ -120,30 +120,30 @@ let%expect_test "bad event listener attribute" =
 let%expect_test "bad target blank" =
   test
     {%html|
-        <div>
-          <div class="unsafe">
-            <a href="https://example.com" target="_blank">Example</a>
-            <a href="mailto://example.com" target="_blank">Example</a>
-            <a href="https://example.com" target="_blank" rel="nofollow">Example</a>
-            <a href="https://example.com" target="_blank" rel="noopener opener"
-              >Example</a
-            >
-            <a href="https://example.com" target="_blank" rel="noreferrer">Example</a>
-            <a href="https://example.com" target="_blank" rel="noopener">Example</a>
-          </div>
-          <div class="safe">
-            <a href="https://example.com">Example</a>
-            <a href="https://example.com" target="_blank" rel="noopener noreferrer"
-              >Example</a
-            >
-            <a href="https://example.com" target="_blank" rel="noreferrer noopener"
-              >Example</a
-            >
-            <a href="/relative-path" target="_blank">Relative Safe 1</a>
-            <a href="/another-relative-path" target="_blank">Relative Safe 2</a>
-          </div>
+      <div>
+        <div class="unsafe">
+          <a href="https://example.com" target="_blank">Example</a>
+          <a href="mailto://example.com" target="_blank">Example</a>
+          <a href="https://example.com" target="_blank" rel="nofollow">Example</a>
+          <a href="https://example.com" target="_blank" rel="noopener opener"
+            >Example</a
+          >
+          <a href="https://example.com" target="_blank" rel="noreferrer">Example</a>
+          <a href="https://example.com" target="_blank" rel="noopener">Example</a>
         </div>
-      |};
+        <div class="safe">
+          <a href="https://example.com">Example</a>
+          <a href="https://example.com" target="_blank" rel="noopener noreferrer"
+            >Example</a
+          >
+          <a href="https://example.com" target="_blank" rel="noreferrer noopener"
+            >Example</a
+          >
+          <a href="/relative-path" target="_blank">Relative Safe 1</a>
+          <a href="/another-relative-path" target="_blank">Relative Safe 2</a>
+        </div>
+      </div>
+    |};
   [%expect
     {xxx|
     Linting Failures:
@@ -173,12 +173,12 @@ let%expect_test "bad target blank" =
 let%expect_test "whitespace in id" =
   test
     {%html|
-        <div>
-          <div id=" some_id">Hello!</div>
-          <div id="some_id ">Hello!</div>
-          <div id="id1 id2 id3 id4">Hello!</div>
-        </div>
-      |};
+      <div>
+        <div id=" some_id">Hello!</div>
+        <div id="some_id ">Hello!</div>
+        <div id="id1 id2 id3 id4">Hello!</div>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -198,14 +198,14 @@ let%expect_test "whitespace in id" =
 let%expect_test "duplicate ids" =
   test
     {%html|
-        <div>
-          <div id="id">
-            Hello!
-            <div id="id">Hello!</div>
-          </div>
+      <div>
+        <div id="id">
+          Hello!
           <div id="id">Hello!</div>
         </div>
-      |};
+        <div id="id">Hello!</div>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -227,13 +227,13 @@ let%expect_test "duplicate ids" =
 let%expect_test "duplicate keys" =
   test
     {%html|
-        <div>
-          <%{Vdom.Node.div ~key:"key1"}>#1</>
-          <%{Vdom.Node.div ~key:"key2"}>#2</>
-          <%{Vdom.Node.div ~key:"key3"}>#3</>
-          <%{Vdom.Node.div ~key:"key1"}>#1</>
-        </div>
-      |};
+      <div>
+        <%{Vdom.Node.div ~key:"key1"}>#1</>
+        <%{Vdom.Node.div ~key:"key2"}>#2</>
+        <%{Vdom.Node.div ~key:"key3"}>#3</>
+        <%{Vdom.Node.div ~key:"key1"}>#1</>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -253,11 +253,11 @@ let%expect_test "duplicate keys" =
 let%expect_test "button without type or invalid type" =
   test
     {%html|
-        <div>
-          <button type="butno" on_click=%{on_click}>Hello!</button>
-          <button on_click=%{on_click}>Hello!</button>
-        </div>
-      |};
+      <div>
+        <button type="butno" on_click=%{on_click}>Hello!</button>
+        <button on_click=%{on_click}>Hello!</button>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -280,11 +280,11 @@ let%expect_test "button without type or invalid type" =
 let%expect_test "clickable role without tabindex" =
   test
     {%html|
-        <div>
-          <div role="button">Hello!</div>
-          <div role="button" tabindex=%{0}>Hello!</div>
-        </div>
-      |};
+      <div>
+        <div role="button">Hello!</div>
+        <div role="button" tabindex=%{0}>Hello!</div>
+      </div>
+    |};
   [%expect
     {|
     Linting Failures:
@@ -307,36 +307,36 @@ let%expect_test "clickable role without tabindex" =
 let%expect_test "bunch of errors" =
   let bad_code =
     {%html|
+      <div>
         <div>
-          <div>
-            Hi!
-            <div on_click=%{on_click} id="best_id">
-              Hello!
-              <div id="best_id">Hello!</div>
-            </div>
-            <a href="http://example.com">Link</a>
-            More text
-            <div on_click=%{on_click}>Hello!</div>
-            Bye...
+          Hi!
+          <div on_click=%{on_click} id="best_id">
+            Hello!
+            <div id="best_id">Hello!</div>
           </div>
-          <div tabindex=%{2} %{Vdom.Attr.create "onclick" ""}></div>
-          <span id=" id1 id2 id3 id4">Hello!</span>
-          <a href="http://example.com" id="best_id">Link</a>
-          Wow, this is bad code...
-          <div>
-            <%{Vdom.Node.div ~key:"key1"}>#1</>
-            <%{Vdom.Node.div ~key:"key2"}>#2</>
-            <%{Vdom.Node.div ~key:"key3"}>#3</>
-            <%{Vdom.Node.div ~key:"key1"}>#1</>
-          </div>
-          <a href="mailto://example.com" target="_blank">Example</a>
-          <div>
-            <button type="butno" on_click=%{on_click}>Hello!</button>
-            <button on_click=%{on_click}>Hello!</button>
-            <div role="button">Hello!</div>
-          </div>
+          <a href="http://example.com">Link</a>
+          More text
+          <div on_click=%{on_click}>Hello!</div>
+          Bye...
         </div>
-      |}
+        <div tabindex=%{2} %{Vdom.Attr.create "onclick" ""}></div>
+        <span id=" id1 id2 id3 id4">Hello!</span>
+        <a href="http://example.com" id="best_id">Link</a>
+        Wow, this is bad code...
+        <div>
+          <%{Vdom.Node.div ~key:"key1"}>#1</>
+          <%{Vdom.Node.div ~key:"key2"}>#2</>
+          <%{Vdom.Node.div ~key:"key3"}>#3</>
+          <%{Vdom.Node.div ~key:"key1"}>#1</>
+        </div>
+        <a href="mailto://example.com" target="_blank">Example</a>
+        <div>
+          <button type="butno" on_click=%{on_click}>Hello!</button>
+          <button on_click=%{on_click}>Hello!</button>
+          <div role="button">Hello!</div>
+        </div>
+      </div>
+    |}
   in
   test bad_code;
   [%expect
