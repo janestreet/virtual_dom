@@ -167,6 +167,14 @@ let of_command_list_exn commands =
   of_action_list_exn (List.map commands ~f:Action.command)
 ;;
 
+let to_command_list t =
+  Map.to_alist t
+  |> List.filter_map ~f:(fun (_keystroke, (_uid, action)) ->
+    match action with
+    | Action.Disabled_key _ -> None
+    | Command command -> Some command)
+;;
+
 let add_action_core t action map_add =
   List.fold (new_entries action) ~init:t ~f:(fun t (key, data) -> map_add t ~key ~data)
 ;;

@@ -121,6 +121,12 @@ module Click = Make (struct
     let event_kind = Dom_html.Event.click
   end)
 
+module Blur = Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.blur
+  end)
+
 module Contextmenu = Make (struct
     type event = Dom_html.mouseEvent
 
@@ -131,6 +137,12 @@ module Keydown = Make (struct
     type event = Dom_html.keyboardEvent
 
     let event_kind = Dom_html.Event.keydown
+  end)
+
+module Keyup = Make (struct
+    type event = Dom_html.keyboardEvent
+
+    let event_kind = Dom_html.Event.keyup
   end)
 
 module Visibilitychange = Make (struct
@@ -158,6 +170,7 @@ let mousemove ~phase ~f =
 ;;
 
 let click ~phase ~f = Click.create phase ~f |> Attr.create_hook "global-click-listener"
+let blur ~phase ~f = Blur.create phase ~f |> Attr.create_hook "global-blur-listener"
 
 let contextmenu ~phase ~f =
   Contextmenu.create phase ~f |> Attr.create_hook "global-contextmenu-listener"
@@ -166,6 +179,8 @@ let contextmenu ~phase ~f =
 let keydown ~phase ~f =
   Keydown.create phase ~f |> Attr.create_hook "global-keydown-listener"
 ;;
+
+let keyup ~phase ~f = Keyup.create phase ~f |> Attr.create_hook "global-keyup-listener"
 
 class type event_with_string_return_value = object
   (* Events with [returnValue] are impossible to properly type, so we make one that

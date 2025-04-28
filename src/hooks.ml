@@ -78,12 +78,34 @@ module Make (S : S) = struct
 
   let init input element =
     let state = S.init input element in
+    let warn_if_disconnected () =
+      let element : < isConnected : bool Js.t Js.prop > Js.t = Js.Unsafe.coerce element in
+      if not (element##.isConnected |> Js.to_bool)
+      then
+        Console.console##warn_2
+          (Js.string "[on_mount] hook ran, but element was not connected.")
+          element
+    in
     let on_destroy =
       match S.on_mount with
       | `Do_nothing -> fun () -> ()
+      | `Schedule_immediately_after_this_dom_patch_completes on_mount ->
+        let should_run = ref true in
+        (* It is unlikely that a hook is destroyed immediately after being created, but it
+           can happen, if the creation and destruction happen in the [on_mount] of a different
+           hook. In this case, the element never gets displayed to the user, so we just
+           don't run its [on_mount]. *)
+        On_mount.Private_for_this_library_only.schedule (fun () ->
+          if !should_run
+          then (
+            warn_if_disconnected ();
+            on_mount input state element));
+        fun () -> should_run := false
       | `Schedule_animation_frame on_mount ->
         let animation_id =
-          request_animation_frame (fun _ -> on_mount input state element)
+          request_animation_frame (fun _ ->
+            warn_if_disconnected ();
+            on_mount input state element)
         in
         fun () -> cancel_animation_frame animation_id
     in

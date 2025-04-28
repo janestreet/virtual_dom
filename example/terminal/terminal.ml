@@ -23,7 +23,7 @@ let terminal =
     let completion term _command k =
       Js.Unsafe.global##.term := term;
       let command = term##get_command_ in
-      Firebug.console##log command;
+      Console.console##log command;
       let completions =
         match String.split ~on:' ' (Js.to_string command) with
         | [ prefix ] -> List.filter [ "get"; "set" ] ~f:(String.is_prefix ~prefix)

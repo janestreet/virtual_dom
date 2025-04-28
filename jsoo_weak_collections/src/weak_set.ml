@@ -19,7 +19,7 @@ let create : unit -> 'a t =
 
 let add : 'a t -> 'a -> unit =
   fun (x5 : 'a t) (x4 : 'a) ->
-  ignore (Ojs.call (t_to_js Obj.magic x5) "add" [| Obj.magic x4 |])
+  (ignore : _) (Ojs.call (t_to_js Obj.magic x5) "add" [| Obj.magic x4 |])
 ;;
 
 let has : 'a t -> 'a -> bool =
@@ -29,5 +29,5 @@ let has : 'a t -> 'a -> bool =
 
 let delete : 'a t -> 'a -> unit =
   fun (x11 : 'a t) (x10 : 'a) ->
-  ignore (Ojs.call (t_to_js Obj.magic x11) "delete" [| Obj.magic x10 |])
+  (ignore : _) (Ojs.call (t_to_js Obj.magic x11) "delete" [| Obj.magic x10 |])
 ;;

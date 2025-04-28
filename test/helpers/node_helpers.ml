@@ -85,7 +85,6 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
           (* We ignore [string_properties] / [bool_properties] as their names can overlap
            with attributes. Ignoring them here currently just means that people cannot
            select on them when triggering events.
-            
           *)
         ; string_properties = _
         ; bool_properties = _

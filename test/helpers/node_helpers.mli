@@ -29,10 +29,6 @@ val select : t -> selector:string -> t list
 val select_first : t -> selector:string -> t option
 val select_first_exn : t -> selector:string -> t
 
-(* This function currently stack overflows when compiled with Js_of_ocaml
-   JavaScript because of limitations in the tail-call optimizer.
-   INFO: https://github.com/aantron/markup.ml/issues/26
-   INFO: https://ocsigen.org/js_of_ocaml/3.1.0/manual/tailcall *)
 val to_string_html
   :  ?filter_printed_attributes:(key:string -> data:string -> bool)
   -> ?censor_paths:bool
@@ -65,8 +61,8 @@ val trigger_hook
 (** Given an element, this function attempts to retrieve a hook with the name [name], and
     the type-id from the hooks [For_testing] module.
 
-    Raises if called on a Widget or Text node, or if a hook matching [name] was found,
-    but the type id does not match. *)
+    Raises if called on a Widget or Text node, or if a hook matching [name] was found, but
+    the type id does not match. *)
 val get_hook_value_opt : t -> type_id:'a Type_equal.Id.t -> name:string -> 'a option
 
 (** Like [get_hook_value_opt], but also raises if the hook was not found. *)
@@ -162,9 +158,9 @@ module Linter : sig
   end
 
   module Severity : sig
-    (** Some errors, if not addressed, can unexpectedly crash your app at runtime.
-        For instance, if two sibling vdom nodes have the same key, vdom will throw an
-        unrecoverable exception.*)
+    (** Some errors, if not addressed, can unexpectedly crash your app at runtime. For
+        instance, if two sibling vdom nodes have the same key, vdom will throw an
+        unrecoverable exception. *)
     type t =
       | Only_report_app_crashing_errors
       | Report_all_errors

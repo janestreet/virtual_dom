@@ -12,8 +12,8 @@ val alt : t -> bool
 val shift : t -> bool
 val meta : t -> bool
 
-(** [match_modifiers] evaluates a [t]'s modifiers vs the function's
-    arguments. If an argument is not specified then that modifier is not evaluated. *)
+(** [match_modifiers] evaluates a [t]'s modifiers vs the function's arguments. If an
+    argument is not specified then that modifier is not evaluated. *)
 val match_modifiers : ?ctrl:bool -> ?alt:bool -> ?shift:bool -> ?meta:bool -> t -> bool
 
 val no_modifiers : t -> bool

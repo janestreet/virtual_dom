@@ -4,6 +4,7 @@ module Html_types = Html_types
 module Svg_f = Svg_f
 module Svg_sigs = Svg_sigs
 module Svg_types = Svg_types
+module Tyxml_f = Tyxml_f
 module Xml_iter = Xml_iter
 module Xml_print = Xml_print
 module Xml_sigs = Xml_sigs

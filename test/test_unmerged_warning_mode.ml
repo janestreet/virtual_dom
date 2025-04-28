@@ -6,6 +6,18 @@ let show node =
   t |> Node_helpers.to_string_html |> print_endline
 ;;
 
+module Expect_test_config = struct
+  include Expect_test_config
+
+  let sanitize s = Expect_test_helpers_core.hide_positions_in_string (sanitize s)
+
+  let run f =
+    Virtual_dom.Vdom.Attr.Expert.set_explicitly_print_locations true;
+    f ();
+    Virtual_dom.Vdom.Attr.Expert.set_explicitly_print_locations false
+  ;;
+end
+
 let%expect_test "stop warning after message quota" =
   Attr.Unmerged_warning_mode.For_testing.reset_warning_count ();
   Attr.Unmerged_warning_mode.current := Stop_after_quota 1;
@@ -16,7 +28,8 @@ let%expect_test "stop warning after message quota" =
        []);
   [%expect
     {|
-    ("WARNING: not combining classes" (first (a)) (second (b)))
+    ("WARNING: not combining classes" (first (a)) (second (b))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
     ("WARNING: reached warning message quota; no more messages will be printed"
      (quota 1))
     <div class="c"> </div>
@@ -44,8 +57,10 @@ let%expect_test "All_warnings prints warnings" =
        []);
   [%expect
     {|
-    ("WARNING: not combining classes" (first (a)) (second (b)))
-    ("WARNING: not combining classes" (first (b)) (second (c)))
+    ("WARNING: not combining classes" (first (a)) (second (b))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
+    ("WARNING: not combining classes" (first (b)) (second (c))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
     <div class="c"> </div>
     |}]
 ;;
@@ -64,7 +79,8 @@ let%expect_test "mode transitions are predictable" =
   show (node ());
   [%expect
     {|
-    ("WARNING: not combining classes" (first (a)) (second (b)))
+    ("WARNING: not combining classes" (first (a)) (second (b))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
     ("WARNING: reached warning message quota; no more messages will be printed"
      (quota 3))
     <div class="c"> </div>
@@ -73,7 +89,8 @@ let%expect_test "mode transitions are predictable" =
   show (node ());
   [%expect
     {|
-    ("WARNING: not combining classes" (first (a)) (second (b)))
+    ("WARNING: not combining classes" (first (a)) (second (b))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
     ("WARNING: reached warning message quota; no more messages will be printed"
      (quota 5))
     <div class="c"> </div>
@@ -82,8 +99,10 @@ let%expect_test "mode transitions are predictable" =
   show (node ());
   [%expect
     {|
-    ("WARNING: not combining classes" (first (a)) (second (b)))
-    ("WARNING: not combining classes" (first (b)) (second (c)))
+    ("WARNING: not combining classes" (first (a)) (second (b))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
+    ("WARNING: not combining classes" (first (b)) (second (c))
+     (here lib/virtual_dom/test/test_unmerged_warning_mode.ml:LINE:COL))
     <div class="c"> </div>
     |}]
 ;;

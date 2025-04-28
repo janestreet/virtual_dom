@@ -30,7 +30,7 @@ var GenericHook = function (init, update, destroy, id, extra) {
 
 var hook_state_key = "vdom_hook_state_key";
 
-if (this.Symbol) {
+if (globalThis.Symbol) {
     hook_state_key = Symbol(hook_state_key);
 }
 

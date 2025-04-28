@@ -2,9 +2,10 @@ module Stable = struct
   open Core.Core_stable
 
   module V1 = struct
-    (** (field * value) list.  Where value should be escaped / quoted
-        as necessary as per https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
-    type t = (string * string) list [@@deriving sexp, compare, equal, bin_io]
+    (** (field * value) list. Where value should be escaped / quoted as necessary as per
+        https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
+    type t = (string * string) list
+    [@@deriving sexp, compare, equal, bin_io, stable_witness]
   end
 end
 
@@ -177,10 +178,10 @@ let to_string_css t =
 
 let of_string_css_exn s = Css_parser.parse_declaration_list s |> Or_error.ok_exn
 
-(** create_raw creates a single field, value pair.  It assumes that the value is a valid
-    css value.  As such it is unsafe to use with arbitrary value strings.  But for the
-    vast majority of combinators in this module it is the right thing to use, as we know
-    by construction that the values do not need quoting / escaping. *)
+(** create_raw creates a single field, value pair. It assumes that the value is a valid
+    css value. As such it is unsafe to use with arbitrary value strings. But for the vast
+    majority of combinators in this module it is the right thing to use, as we know by
+    construction that the values do not need quoting / escaping. *)
 let create_raw ~field ~value = [ field, value ]
 
 module Expert = struct
@@ -559,8 +560,8 @@ type border_style =
   | border_style css_global_values
   ]
 
-(** Concat 2 values with a space in between.  If either is the empty string
-    don't put in unnecessary whitespace. *)
+(** Concat 2 values with a space in between. If either is the empty string don't put in
+    unnecessary whitespace. *)
 let concat2v v1 v2 =
   match v1, v2 with
   | "", x -> x

@@ -22,7 +22,7 @@ let create : unit -> ('a, 'b) t =
 
 let set : ('a, 'b) t -> 'a -> 'b -> unit =
   fun (x7 : ('a, 'b) t) (x5 : 'a) (x6 : 'b) ->
-  ignore
+  (ignore : _)
     (Ojs.call (t_to_js Obj.magic Obj.magic x7) "set" [| Obj.magic x5; Obj.magic x6 |])
 ;;
 
@@ -35,5 +35,5 @@ let get : ('a, 'b) t -> 'a -> 'b option =
 
 let delete : ('a, 'b) t -> 'a -> unit =
   fun (x16 : ('a, 'b) t) (x15 : 'a) ->
-  ignore (Ojs.call (t_to_js Obj.magic Obj.magic x16) "delete" [| Obj.magic x15 |])
+  (ignore : _) (Ojs.call (t_to_js Obj.magic Obj.magic x16) "delete" [| Obj.magic x15 |])
 ;;

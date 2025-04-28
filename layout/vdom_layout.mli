@@ -4,16 +4,16 @@ module Node := Virtual_dom.Vdom.Node
 
 type node_creator := ?key:string -> ?attrs:Attr.t list -> Node.t list -> Node.t
 
-(** If node is an Element, do nothing other than returning that Element.
-    Otherwise put a div around the node and return the div's Element. *)
+(** If node is an Element, do nothing other than returning that Element. Otherwise put a
+    div around the node and return the div's Element. *)
 val wrap_in_element_if_necessary : Node.t -> Node.Element.t
 
-(** Change the style attribute of a node.  Calls [wrap_in_element_if_necessary]. *)
+(** Change the style attribute of a node. Calls [wrap_in_element_if_necessary]. *)
 val add_style : Node.t -> style:Css_gen.t -> Node.t
 
-(** Turn a node_creator into a node_creator that sets the style information
-    on the node to be a flexbox.  We also set the flex attribute flex-shrink
-    to 0 if it isn't set (but we leave it alone if it happens to be set). *)
+(** Turn a node_creator into a node_creator that sets the style information on the node to
+    be a flexbox. We also set the flex attribute flex-shrink to 0 if it isn't set (but we
+    leave it alone if it happens to be set). *)
 val as_box
   :  [ `Row | `Column ]
   -> ?gap:Css_gen.Length.t
@@ -39,9 +39,8 @@ val grow : Node.t -> Node.t
 (** Set flex-grow and flex-shrink to 1 on the given Node. *)
 val grow_and_shrink : Node.t -> Node.t
 
-(** Make this a child of a flexbox that can scroll (e.g. if its content
-    is bigger than the size given to it by the parent container, scrollbars
-    will appear) *)
+(** Make this a child of a flexbox that can scroll (e.g. if its content is bigger than the
+    size given to it by the parent container, scrollbars will appear) *)
 val scrollable : Node.t -> Node.t
 
 (** Convenience wrapper same as [as_hbox Node.div]. *)

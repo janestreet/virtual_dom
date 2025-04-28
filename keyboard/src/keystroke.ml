@@ -134,6 +134,7 @@ module Keyboard_code = struct
   include T
   include Sexpable.To_stringable (T)
 
+  let to_code_string = to_string
   let unidentified = 100000
 
   let to_key_code_left = function
@@ -575,4 +576,32 @@ let%expect_test "" =
   [%expect {| Ctrl+, |}];
   print ~ctrl:() ~shift:() Comma;
   [%expect {| Ctrl+< |}]
+;;
+
+let%expect_test "to_code_string roundtrips" =
+  List.iter Keyboard_code.all ~f:(fun code ->
+    let roundtripped =
+      let code_string = Keyboard_code.to_code_string code in
+      let event =
+        object%js
+          val code = Js.string code_string
+
+          (* We need to include [keyCode] and [location], so that there's some value for
+             our [of_event] function to read. But we want to use values that wouldn't show
+             up in real events, because we're testing just the [code] property. *)
+          val location = Js.number_of_float 1000.0
+          val keyCode = Js.number_of_float 1000.0
+          val key = Js.string "not a valid key"
+        end
+      in
+      Keyboard_code.of_event (Js.Unsafe.coerce event)
+    in
+    if not (Keyboard_code.equal code roundtripped)
+    then
+      print_s
+        [%message
+          "roundtripping failed!"
+            (code : Keyboard_code.t)
+            (roundtripped : Keyboard_code.t)]);
+  [%expect {| |}]
 ;;

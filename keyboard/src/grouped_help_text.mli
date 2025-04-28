@@ -2,14 +2,12 @@ open Core
 open Import
 
 (** A [Grouped_help_text.t] is similar to a [Help_text.t], but allows the user to organize
-    the commands into groups.
-*)
+    the commands into groups. *)
 
 module Group_name : Identifiable
 
 (** [View_spec] is almost identical to [Help_text.View_spec], but additionally allows the
-    user to customize how to display group names.
-*)
+    user to customize how to display group names. *)
 module View_spec : sig
   type t =
     { core_spec : Help_text.View_spec.t
@@ -20,8 +18,7 @@ module View_spec : sig
 
   (** [with_classes] behaves the same as [Help_text.View_spec.with_classes] as far as the
       [core_spec], and additionally converts group names to text nodes and wraps them in
-      divs with the given group name class.
-  *)
+      divs with the given group name class. *)
   val with_classes
     :  group_name_class:string
     -> key_class:string
@@ -55,15 +52,14 @@ val groups : t -> (Group_name.t * Help_text.t) list
     Commands with the same group name are grouped together.
 
     By default, group order is determined by the order in which the groups first appear in
-    the command list.  However, if [custom_group_order] is given, it will be used to
+    the command list. However, if [custom_group_order] is given, it will be used to
     determine the group order instead. Any groups that appear in [custom_group_order] but
     not in the command list will be omitted. Any groups that appear in the command list
     but not in [custom_group_order] will be added to the end of [custom_group_order], in
     the order in which they first appear in the command list.
 
     [add_command] is linear in both the number of groups in the grouped help text and the
-    number of commands already in its group.
-*)
+    number of commands already in its group. *)
 val of_command_list
   :  ?custom_group_order:Group_name.t list
   -> (Group_name.t * Command.t) list
@@ -74,6 +70,5 @@ val commands : t -> (Group_name.t * Command.t) list
 
 (** [view] displays a help text table with one row per command, organized into groups.
     Each group has a row containing the group name preceding the rows corresponding to the
-    group's commands.
-*)
+    group's commands. *)
 val view : t -> View_spec.t -> Vdom.Node.t

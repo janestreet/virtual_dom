@@ -34,30 +34,27 @@ module type Effect = sig
   module type Handler = Handler
   module type S = S
 
-  (** ['a Effect.t] represents some computation of type ['a] that can be performed
-      outside of the typical computational/incremental structure of a Bonsai program
-      .
-      Examples of this computation might be:
+  (** ['a Effect.t] represents some computation of type ['a] that can be performed outside
+      of the typical computational/incremental structure of a Bonsai program . Examples of
+      this computation might be:
 
       - Calling an RPC and getting the result back
       - Running expensive computation on a web-worker thread
       - Requesting some information from the imperative "Start.Handle"-holding code
 
-      If you have a value of type ['a Effect.t], you can schedule it to be run
-      by calling [inject] and providing a function that will be called when
-      the callback completes. *)
+      If you have a value of type ['a Effect.t], you can schedule it to be run by calling
+      [inject] and providing a function that will be called when the callback completes. *)
   type 'a t = ..
 
   type 'a t += Ignore : unit t | Many : unit t list -> unit t
 
   include Monad.S with type 'a t := 'a t
 
-  (** The [Par] module contains a Let_syntax whose [both] function
-      executes the effects in parallel.
+  (** The [Par] module contains a Let_syntax whose [both] function executes the effects in
+      parallel.
 
-      This means that if you have a [let%map] or [let%bind], then
-      bindings separated by `and` will run at the same time instead of
-      being sequenced. *)
+      This means that if you have a [let%map] or [let%bind], then bindings separated by
+      `and` will run at the same time instead of being sequenced. *)
   module Par : Monad.S with type 'a t := 'a t
 
   (** An effect that never completes *)
@@ -67,28 +64,28 @@ module type Effect = sig
   val both_parallel : 'a t -> 'b t -> ('a * 'b) t
 
   (** evaluates all effects in the list in parallel and returns the list of results when
-      all of them complete.  The output list is always the same length as the input list. *)
+      all of them complete. The output list is always the same length as the input list. *)
   val all_parallel : 'a t list -> 'a list t
 
   (** like [all_parallel], but for [unit Effect.t]s. *)
   val all_parallel_unit : unit t list -> unit t
 
-  (** If creating an effect could be expensive, you can
-      wrap its construction in a lazy and pass it to this function so that
-      its construction will be deferred until it's about to be evaluated. *)
+  (** If creating an effect could be expensive, you can wrap its construction in a lazy
+      and pass it to this function so that its construction will be deferred until it's
+      about to be evaluated. *)
   val lazy_ : 'a t Lazy.t -> 'a t
 
   (** Prints the sexp when scheduled. *)
   val print_s : Sexp.t -> unit t
 
   (** [of_sync_fun] is similar to [of_deferred_fun] but with a synchronous function
-      instead of a deferred one.  This can be used for functions that are synchronous
-      but side-effecting, or as a mock-function in tests that replace the usages of
+      instead of a deferred one. This can be used for functions that are synchronous but
+      side-effecting, or as a mock-function in tests that replace the usages of
       [of_deferred_fun] in the actual app.
 
-      Note that, unlike [of_deferred_fun], the function must return immediately, so it's not
-      possible to test the behaviour of tour app between calling the function and the effect
-      becoming 'determined'. If you need to do this, see [of_svar] and
+      Note that, unlike [of_deferred_fun], the function must return immediately, so it's
+      not possible to test the behaviour of tour app between calling the function and the
+      effect becoming 'determined'. If you need to do this, see [of_svar] and
       [of_query_response_tracker] below. *)
   val of_sync_fun : ('query -> 'result) -> 'query -> 'result t
 
@@ -103,10 +100,9 @@ module type Effect = sig
     S1 with type 'a action := 'a Handler.Action.t and type 'a t := 'a t
 
   module Expert : sig
-    (** [eval t ~f] runs the given effect, and calls [f] when the effect
-        completes. This function should not be called while constructing
-        effects; it's intended for use by libraries that actually schedule
-        effects, such as Bonsai, or Virtual_dom. *)
+    (** [eval t ~f] runs the given effect, and calls [f] when the effect completes. This
+        function should not be called while constructing effects; it's intended for use by
+        libraries that actually schedule effects, such as Bonsai, or Virtual_dom. *)
     val eval : 'a t -> f:('a -> unit) -> unit
 
     (** [handle t] is the same as [eval t ~f:ignore] *)
@@ -137,12 +133,12 @@ module type Effect = sig
       (** You can think of an [Svar.t] as like an [Ivar.t] whose purpose is to allow us to
           implement [of_svar] below.
 
-          (The difference between [Svar] and [Ivar] is that the former is synchronous. That
-          is, when [fill_if_empty] is called, it will directly call all of the handlers rather
-          than scheduling that they be called later. This semantics can be confusing to work
-          with in large-scale programs, as it means the control flow of your application hops
-          around a lot more. However, it does mean that you don't need a scheduler, so it's
-          easier to implement.) *)
+          (The difference between [Svar] and [Ivar] is that the former is synchronous.
+          That is, when [fill_if_empty] is called, it will directly call all of the
+          handlers rather than scheduling that they be called later. This semantics can be
+          confusing to work with in large-scale programs, as it means the control flow of
+          your application hops around a lot more. However, it does mean that you don't
+          need a scheduler, so it's easier to implement.) *)
 
       type 'a t
 
@@ -152,17 +148,17 @@ module type Effect = sig
       val peek : 'a t -> 'a option
     end
 
-    (** Create an effect from a function that returns an [Svar.t]. This is mostly useful in
-        testing, to emulate a ['query -> 'result Deferred.t] function that does not return
-        immediately. You may find [Query_response_tracker] a more convenient interface than
-        using [of_svar] directly. *)
+    (** Create an effect from a function that returns an [Svar.t]. This is mostly useful
+        in testing, to emulate a ['query -> 'result Deferred.t] function that does not
+        return immediately. You may find [Query_response_tracker] a more convenient
+        interface than using [of_svar] directly. *)
     val of_svar_fun : ('query -> 'result Svar.t) -> 'query -> 'result t
 
     module Query_response_tracker : sig
       (** [Query_response_tracker] is an interface designed to make [of_svar] more
-          convenient to use. When the function returned by [of_query_response_tracker t] is
-          called (typically by your bonsai app), the query passed is stored within [t]. Your
-          test code can then call [maybe_respond] to cause those effects to 'become
+          convenient to use. When the function returned by [of_query_response_tracker t]
+          is called (typically by your bonsai app), the query passed is stored within [t].
+          Your test code can then call [maybe_respond] to cause those effects to 'become
           determined'. *)
       type ('q, 'r) t
 
