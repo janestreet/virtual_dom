@@ -484,7 +484,7 @@ module%test [@name "destroy"] _ = struct
       {|
       <html>
         <head>
-          <meta charset="UTF-8"> </meta>
+          <meta charset="UTF-8"/>
         </head>
         <body>
           <div tabindex="0" style="outline: none;"> oof </div>

@@ -37,7 +37,7 @@ let%expect_test "basic failure" =
     {|
     Linting Failures:
 
-    <div @on_click/> <- [ERRORS]: Undetectable clickable element
+    <div @on_click></div> <- [ERRORS]: Undetectable clickable element
 
     [High] Undetectable clickable element (failure expected)
     --------------------------------------------------------
@@ -77,9 +77,9 @@ let%expect_test "bad tabindex" =
 
     <div>
       ...
-      <div tabindex="1"/> <- [ERRORS]: Invalid tabindex
-      <div tabindex="-12"/> <- [ERRORS]: Invalid tabindex
-      <div tabindex="5"/> <- [ERRORS]: Invalid tabindex
+      <div tabindex="1"></div> <- [ERRORS]: Invalid tabindex
+      <div tabindex="-12"></div> <- [ERRORS]: Invalid tabindex
+      <div tabindex="5"></div> <- [ERRORS]: Invalid tabindex
     </div>
 
     [High] Invalid tabindex (failure expected)
@@ -102,9 +102,9 @@ let%expect_test "bad event listener attribute" =
     Linting Failures:
 
     <div>
-      <div onclick=""/> <- [ERRORS]: Event handler html attribute
-      <div onbeforeunload=""/> <- [ERRORS]: Event handler html attribute
-      <div ongfdgdsfgsdfgs=""/> <- [ERRORS]: Event handler html attribute
+      <div onclick=""></div> <- [ERRORS]: Event handler html attribute
+      <div onbeforeunload=""></div> <- [ERRORS]: Event handler html attribute
+      <div ongfdgdsfgsdfgs=""></div> <- [ERRORS]: Event handler html attribute
     </div>
 
     [High] Event handler html attribute (failure expected)
@@ -150,12 +150,12 @@ let%expect_test "bad target blank" =
 
     <div>
       <div>
-        <a href="https://example.com" target="_blank"/> <- [ERRORS]: Unsafe target blank
-        <a href="mailto://example.com" target="_blank"/> <- [ERRORS]: Unsafe target blank
-        <a href="https://example.com" target="_blank" rel="nofollow"/> <- [ERRORS]: Unsafe target blank
-        <a href="https://example.com" target="_blank" rel="noopener opener"/> <- [ERRORS]: Unsafe target blank
-        <a href="https://example.com" target="_blank" rel="noreferrer"/> <- [ERRORS]: Unsafe target blank
-        <a href="https://example.com" target="_blank" rel="noopener"/> <- [ERRORS]: Unsafe target blank
+        <a href="https://example.com" target="_blank"></a> <- [ERRORS]: Unsafe target blank
+        <a href="mailto://example.com" target="_blank"></a> <- [ERRORS]: Unsafe target blank
+        <a href="https://example.com" target="_blank" rel="nofollow"></a> <- [ERRORS]: Unsafe target blank
+        <a href="https://example.com" target="_blank" rel="noopener opener"></a> <- [ERRORS]: Unsafe target blank
+        <a href="https://example.com" target="_blank" rel="noreferrer"></a> <- [ERRORS]: Unsafe target blank
+        <a href="https://example.com" target="_blank" rel="noopener"></a> <- [ERRORS]: Unsafe target blank
       </div>
       ...
     </div>
@@ -184,9 +184,9 @@ let%expect_test "whitespace in id" =
     Linting Failures:
 
     <div>
-      <div id=" some_id"/> <- [ERRORS]: Whitespace in id
-      <div id="some_id "/> <- [ERRORS]: Whitespace in id
-      <div id="id1 id2 id3 id4"/> <- [ERRORS]: Whitespace in id
+      <div id=" some_id"></div> <- [ERRORS]: Whitespace in id
+      <div id="some_id "></div> <- [ERRORS]: Whitespace in id
+      <div id="id1 id2 id3 id4"></div> <- [ERRORS]: Whitespace in id
     </div>
 
     [High] Whitespace in id (failure expected)
@@ -211,11 +211,11 @@ let%expect_test "duplicate ids" =
     Linting Failures:
 
     <div>
-      <div id="id"> <- [ERRORS]: Duplicate ids
+      <div id="id"></div> <- [ERRORS]: Duplicate ids
         ...
-        <div id="id"/> <- [ERRORS]: Duplicate ids
+        <div id="id"></div> <- [ERRORS]: Duplicate ids
       </div>
-      <div id="id"/> <- [ERRORS]: Duplicate ids
+      <div id="id"></div> <- [ERRORS]: Duplicate ids
     </div>
 
     [High] Duplicate ids (failure expected)
@@ -239,9 +239,9 @@ let%expect_test "duplicate keys" =
     Linting Failures:
 
     <div>
-      <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+      <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
       ...
-      <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+      <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
     </div>
 
     [Fatal] Siblings have same vdom key (failure expected)
@@ -263,8 +263,8 @@ let%expect_test "button without type or invalid type" =
     Linting Failures:
 
     <div>
-      <button type="butno" @on_click/> <- [ERRORS]: Button without valid type
-      <button @on_click/> <- [ERRORS]: Button without valid type
+      <button type="butno" @on_click></button> <- [ERRORS]: Button without valid type
+      <button @on_click></button> <- [ERRORS]: Button without valid type
     </div>
 
     [High] Button without valid type (failure expected)
@@ -290,7 +290,7 @@ let%expect_test "clickable role without tabindex" =
     Linting Failures:
 
     <div>
-      <div role="button"/> <- [ERRORS]: Clickable role but no tabindex
+      <div role="button"></div> <- [ERRORS]: Clickable role but no tabindex
       ...
     </div>
 
@@ -346,28 +346,28 @@ let%expect_test "bunch of errors" =
     <div>
       <div>
         ...
-        <div id="best_id" @on_click> <- [ERRORS]: Duplicate ids, Undetectable clickable element
+        <div id="best_id" @on_click></div> <- [ERRORS]: Duplicate ids, Undetectable clickable element
           ...
-          <div id="best_id"/> <- [ERRORS]: Duplicate ids
+          <div id="best_id"></div> <- [ERRORS]: Duplicate ids
         </div>
         ...
-        <div @on_click/> <- [ERRORS]: Undetectable clickable element
+        <div @on_click></div> <- [ERRORS]: Undetectable clickable element
         ...
       </div>
-      <div tabindex="2" onclick=""/> <- [ERRORS]: Event handler html attribute, Invalid tabindex
-      <span id=" id1 id2 id3 id4"/> <- [ERRORS]: Whitespace in id
-      <a href="http://example.com" id="best_id"/> <- [ERRORS]: Duplicate ids
+      <div tabindex="2" onclick=""></div> <- [ERRORS]: Event handler html attribute, Invalid tabindex
+      <span id=" id1 id2 id3 id4"></span> <- [ERRORS]: Whitespace in id
+      <a href="http://example.com" id="best_id"></a> <- [ERRORS]: Duplicate ids
       ...
       <div>
-        <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+        <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
         ...
-        <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+        <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
       </div>
-      <a href="mailto://example.com" target="_blank"/> <- [ERRORS]: Unsafe target blank
+      <a href="mailto://example.com" target="_blank"></a> <- [ERRORS]: Unsafe target blank
       <div>
-        <button type="butno" @on_click/> <- [ERRORS]: Button without valid type
-        <button @on_click/> <- [ERRORS]: Button without valid type
-        <div role="button"/> <- [ERRORS]: Clickable role but no tabindex
+        <button type="butno" @on_click></button> <- [ERRORS]: Button without valid type
+        <button @on_click></button> <- [ERRORS]: Button without valid type
+        <div role="button"></div> <- [ERRORS]: Clickable role but no tabindex
       </div>
     </div>
 
@@ -436,9 +436,9 @@ let%expect_test "bunch of errors" =
     <div>
       ...
       <div>
-        <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+        <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
         ...
-        <div @key=key1/> <- [ERRORS]: Siblings have same vdom key
+        <div @key=key1></div> <- [ERRORS]: Siblings have same vdom key
       </div>
       ...
     </div>

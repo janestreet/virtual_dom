@@ -150,6 +150,17 @@ module Length = struct
 
   let to_string_css t = to_string_css (t :> t)
   let percent100 = `Percent (Percent.of_percentage 100.)
+  let raw s = `Raw s
+  let ch f = `Ch f
+  let rem f = `Rem f
+  let em i = `Em i
+  let em_float f = `Em_float f
+  let percent p = `Percent p
+  let pt f = `Pt f
+  let px i = `Px i
+  let px_float f = `Px_float f
+  let vh p = `Vh p
+  let vw p = `Vw p
 end
 
 module Auto_or_length = struct
@@ -302,6 +313,21 @@ let overflow_x = make_overflow "overflow-x"
 let overflow_y = make_overflow "overflow-y"
 let z_index i = create_raw ~field:"z-index" ~value:(Int.to_string i)
 let opacity i = create_raw ~field:"opacity" ~value:(f2s 6 i)
+
+type text_overflow =
+  [ `Clip
+  | `Ellipsis
+  | text_overflow css_global_values
+  ]
+
+let text_overflow v =
+  let rec to_string_css = function
+    | `Clip -> "clip"
+    | `Ellipsis -> "ellipsis"
+    | #css_global_values as global -> global_to_string_css global ~to_string_css
+  in
+  create_raw ~field:"text-overflow" ~value:(to_string_css v)
+;;
 
 let create_length_field field l =
   create_raw ~field ~value:(Auto_or_length.to_string_css l)

@@ -575,7 +575,11 @@ let%expect_test "" =
   print ~ctrl:() Comma;
   [%expect {| Ctrl+, |}];
   print ~ctrl:() ~shift:() Comma;
-  [%expect {| Ctrl+< |}]
+  [%expect {| Ctrl+< |}];
+  print ~shift:() Equal;
+  [%expect {| + |}];
+  print ~shift:() ~alt:() Equal;
+  [%expect {| Alt++ |}]
 ;;
 
 let%expect_test "to_code_string roundtrips" =

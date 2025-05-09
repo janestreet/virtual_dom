@@ -131,13 +131,19 @@ module Time_compat = struct
     (module struct
       type t = Time_ns.t
 
-      (* Format from the browser: yyyy-MM-ddThh:mm *)
+      (* Format from the browser: yyyy-MM-ddThh:mm. It allows trailing ":ss" or ":ss.SSS". *)
       let of_string s =
-        let parts = String.split_on_chars s ~on:[ 'T'; ':' ] in
-        let date = List.nth_exn parts 0 |> Date.of_string in
-        let hr = List.nth_exn parts 1 |> Int.of_string in
-        let min = List.nth_exn parts 2 |> Int.of_string in
-        let ofday = Time_ns.Ofday.create ~hr ~min () in
+        let date, time = String.lsplit2_exn ~on:'T' s in
+        let hr, min, sec, ms =
+          let time_parts = String.split_on_chars ~on:[ ':'; '.' ] time in
+          match List.map ~f:Int.of_string time_parts with
+          | [ hr; min ] -> hr, min, None, None
+          | [ hr; min; sec ] -> hr, min, Some sec, None
+          | [ hr; min; sec; ms ] -> hr, min, Some sec, Some ms
+          | _ -> failwith "Invalid time format. Expected hh:mm[:ss[.ms]]"
+        in
+        let date = Date.of_string date in
+        let ofday = Time_ns.Ofday.create ~hr ~min ?sec ?ms () in
         Time_ns.of_date_ofday ~zone date ofday
       ;;
 
