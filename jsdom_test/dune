@@ -1,10 +1,10 @@
 (library
  (name virtual_dom_jsdom_test)
  (libraries async_js async_kernel bonsai_web bonsai_web_test
-   bonsai_web_components.web_ui_toplayer capitalization core
-   default_vdom_spec ppx_expect.config_types expect_test_helpers_core
-   patdiff.expect_test_patdiff virtual_dom_toplayer.floating_positioning
-   js_of_ocaml jsdom testable_timeout vdom_keyboard
-   virtual_dom_toplayer.popover virtual_dom_test_helpers with)
+   bonsai_web_components.web_ui_toplayer bonsai_web_components.byo_toplayer
+   capitalization core default_vdom_spec ppx_expect.config_types
+   expect_test_helpers_core patdiff.expect_test_patdiff js_of_ocaml
+   bonsai_web_test.jsdom testable_timeout vdom_keyboard
+   virtual_dom_test_helpers with)
  (preprocess
   (pps ppx_jane bonsai.ppx_bonsai js_of_ocaml-ppx ppx_html)))

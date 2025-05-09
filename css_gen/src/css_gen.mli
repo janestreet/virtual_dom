@@ -71,10 +71,22 @@ module Length : sig
     ]
   [@@deriving sexp, compare]
 
+  val to_string_css : [< t ] -> string
+
   (** Convenience around `Percent (Percent.of_percentage 100.) *)
   val percent100 : t
 
-  val to_string_css : [< t ] -> string
+  val raw : string -> t
+  val ch : float -> t
+  val rem : float -> t
+  val em : int -> t
+  val em_float : float -> t
+  val percent : Percent.t -> t
+  val pt : float -> t
+  val px : int -> t
+  val px_float : float -> t
+  val vh : Percent.t -> t
+  val vw : Percent.t -> t
 end
 
 module Auto_or_length : sig
@@ -183,6 +195,14 @@ val overflow_x : overflow -> t
 val overflow_y : overflow -> t
 val z_index : int -> t
 val opacity : float -> t
+
+type text_overflow =
+  [ `Clip
+  | `Ellipsis
+  | text_overflow css_global_values
+  ]
+
+val text_overflow : text_overflow -> t
 
 type font_style =
   [ `Normal

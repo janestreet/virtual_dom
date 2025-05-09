@@ -138,6 +138,25 @@ let _to_string_html t =
   Soup.to_string soup
 ;;
 
+(* https://developer.mozilla.org/en-US/docs/Glossary/Void_element *)
+let is_void_element = function
+  | "area"
+  | "base"
+  | "br"
+  | "col"
+  | "embed"
+  | "hr"
+  | "img"
+  | "input"
+  | "link"
+  | "meta"
+  | "param"
+  | "source"
+  | "track"
+  | "wbr" -> true
+  | _ -> false
+;;
+
 (* Printing elements in single-line and multiline formats is essentially the
    same. The main difference is what attributes are separated by: in
    single-line, they are separated just by spaces, but in multiline they are
@@ -148,7 +167,6 @@ let bprint_element
   ~sep
   ~before_styles
   ~filter_printed_attributes
-  ~self_closing
   { tag_name
   ; attributes
   ; string_properties
@@ -214,8 +232,13 @@ let bprint_element
       bprintf buffer "%s%s: %s;" before_styles k v);
     bprint_aligned_indent ();
     bprintf buffer "}");
-  if self_closing then bprintf buffer "/";
-  bprintf buffer ">"
+  match is_void_element tag_name with
+  | true ->
+    bprintf buffer "/>";
+    fun _buffer -> ()
+  | false ->
+    bprintf buffer ">";
+    fun buffer -> bprintf buffer "</%s>" tag_name
 ;;
 
 let bprint_element_single_line buffer element =
@@ -279,20 +302,16 @@ let to_string_html
     | Element element ->
       bprintf buffer "%s" indent;
       Buffer.reset single_line_buffer;
-      bprint_element_single_line
-        ~self_closing:false
-        ~filter_printed_attributes
-        single_line_buffer
-        element;
-      if Buffer.length single_line_buffer < 100 - String.length indent
-      then Buffer.add_buffer buffer single_line_buffer
-      else
-        bprint_element_multi_line
-          ~self_closing:false
-          ~filter_printed_attributes
-          buffer
-          ~indent
-          element;
+      let single_line_close =
+        bprint_element_single_line ~filter_printed_attributes single_line_buffer element
+      in
+      let close =
+        if Buffer.length single_line_buffer < 100 - String.length indent
+        then (
+          Buffer.add_buffer buffer single_line_buffer;
+          single_line_close)
+        else bprint_element_multi_line ~filter_printed_attributes buffer ~indent element
+      in
       let children_should_collapse =
         List.for_all element.children ~f:(function
           | Text _ -> true
@@ -312,7 +331,7 @@ let to_string_html
       else (
         bprintf buffer "\n";
         bprintf buffer "%s" indent);
-      bprintf buffer "</%s>" element.tag_name
+      close buffer
     | Widget -> bprintf buffer "%s<widget/>" indent
   in
   let buffer = Buffer.create 100 in
@@ -1323,21 +1342,17 @@ Likely fix: add a `type="button"` attribute. |}
       | Node { rules_broken; children = []; _ } when Hash_set.is_empty rules_broken ->
         bprintf buf "ERROR_IN_LINTER"
       | Node { element; rules_broken; children = [] } ->
-        bprint_element_single_line
-          ~self_closing:true
-          ~filter_printed_attributes
-          buf
-          element;
+        let close = bprint_element_single_line ~filter_printed_attributes buf element in
+        close buf;
         print_error rules_broken
       | Node { element; rules_broken; children } ->
         (match Hash_set.to_list rules_broken with
          | [] -> bprintf buf "<%s>" element.tag_name
          | _ ->
-           bprint_element_single_line
-             ~self_closing:false
-             ~filter_printed_attributes
-             buf
-             element;
+           let close =
+             bprint_element_single_line ~filter_printed_attributes buf element
+           in
+           close buf;
            print_error rules_broken);
         List.iter children ~f:recurse;
         pad ();
