@@ -99,7 +99,7 @@ module Auto_or_length : sig
   val to_string_css : t -> string
 end
 
-type t [@@deriving sexp, compare, equal, bin_io]
+type t : immutable_data [@@deriving sexp, compare, equal, bin_io]
 
 (** Create a single property, value pair (a declaration in CSS parlance). The value must
     be a valid CSS literal. We do run a simple CSS parser on the value to validate this
@@ -514,7 +514,8 @@ val user_select : user_select -> t
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving sexp, compare, equal, bin_io, stable_witness]
+    type nonrec t : immutable_data = t
+    [@@deriving sexp, compare, equal, bin_io, stable_witness]
   end
 end
 
