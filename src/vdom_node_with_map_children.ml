@@ -244,7 +244,7 @@ end = struct
   let get (type k cmp) ~(map : (k, Node.t, cmp) Map.t) : (k, cmp) Input.t -> Node.t =
     let key = (Obj.repr : _ Core.Comparator.t -> Obj.t) (Map.comparator map) in
     match Weak_map.get instances key with
-    | Some i -> (Obj.obj : Obj.t -> (k, cmp) Input.t -> Node.t) i
+    | Some i -> (Obj.Expert.obj : Obj.t -> (k, cmp) Input.t -> Node.t) i
     | None ->
       let module M =
         Widget (struct
