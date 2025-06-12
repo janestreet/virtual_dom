@@ -20,9 +20,9 @@ depends: [
   "stdio"
   "base64"          {>= "3.4.0"}
   "dune"            {>= "3.17.0"}
-  "gen_js_api"      {= "1.1.2+jst"}
-  "js_of_ocaml"     {= "6.0.1+jst"}
-  "js_of_ocaml-ppx" {= "6.0.1+jst"}
+  "gen_js_api"      {= "1.1.2+ox"}
+  "js_of_ocaml"     {= "6.0.1+ox"}
+  "js_of_ocaml-ppx" {= "6.0.1+ox"}
   "lambdasoup"      {>= "0.6.3"}
   "tyxml"           {>= "4.3.0"}
   "uri"             {>= "3.0.0"}
