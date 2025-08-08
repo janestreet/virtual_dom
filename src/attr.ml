@@ -50,7 +50,8 @@ end = struct
     let lowered =
       lazy
         (Dom.handler (fun e ->
-           Effect.Expert.handle e (handler e);
+           Effect.Expert.handle e (handler e) ~on_exn:(fun exn ->
+             Exn.reraise exn "Unhandled exception raised in effect");
            Js._true))
     in
     T { handler; lowered; type_id }

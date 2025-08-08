@@ -11,22 +11,23 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
+  "async"
   "async_kernel"
   "base"
   "core"
   "core_kernel"
-  "js_of_ocaml_patches"
+  "expect_test_helpers_async"
   "ppx_jane"
   "sexplib"
   "stdio"
-  "base64"              {>= "3.4.0"}
-  "dune"                {>= "3.17.0"}
-  "gen_js_api"          {>= "1.0.8"}
-  "js_of_ocaml"         {>= "6.0.0"}
-  "js_of_ocaml-ppx"     {>= "6.0.0"}
-  "lambdasoup"          {>= "0.6.3"}
-  "tyxml"               {>= "4.3.0"}
-  "uri"                 {>= "3.0.0"}
+  "base64"                    {>= "3.4.0"}
+  "dune"                      {>= "3.17.0"}
+  "gen_js_api"                {>= "1.0.8"}
+  "js_of_ocaml"               {>= "6.0.0"}
+  "js_of_ocaml-ppx"           {>= "6.0.0"}
+  "lambdasoup"                {>= "0.6.3"}
+  "tyxml"                     {>= "4.3.0"}
+  "uri"                       {>= "3.0.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "OCaml bindings for the virtual-dom library"

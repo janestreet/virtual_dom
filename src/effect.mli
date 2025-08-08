@@ -80,7 +80,12 @@ module Expert : sig
       functions, unwraps the [Effect.t] back into its underlying [Action.t], and applies
       the two. This is only intended for internal use by this library, specifically by the
       attribute code. *)
-  val handle : #Dom_html.event Js.t -> unit t -> unit
+  val handle
+    :  on_exn:(exn -> unit)
+    -> ?on_further_exns:(exn -> unit)
+    -> #Dom_html.event Js.t
+    -> unit t
+    -> unit
 
   (** [handle_non_dom_event_exn] is the same as [handle] except that it raises in any case
       that would have required the [#Dom_html.event Js.t]. In particular, this can be to

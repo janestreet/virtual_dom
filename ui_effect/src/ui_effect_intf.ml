@@ -5,7 +5,7 @@ module type Handler = sig
     type t
   end
 
-  val handle : Action.t -> unit
+  val handle : Action.t -> on_exn:(Exn.t -> unit) -> unit
 end
 
 module type Handler1 = sig
@@ -13,7 +13,7 @@ module type Handler1 = sig
     type 'a t
   end
 
-  val handle : 'a Action.t -> on_response:('a -> unit) -> unit
+  val handle : 'a Action.t -> on_response:('a -> unit) -> on_exn:(Exn.t -> unit) -> unit
 end
 
 module type S = sig
@@ -60,6 +60,65 @@ module type Effect = sig
   (** An effect that never completes *)
   val never : 'a t
 
+  (** Produces an effect that raises an exception when the effect is performed.
+
+      Note: As long as this is handled by either [try_with]/[try_with_or_error] or
+      [Expert.handle]/[Expert.eval] (with a non-raising [on_exn]), no exceptions will ever
+      actually be raised. This should be safe to use in environments where raising
+      exceptions is costly (or at the very least, better than raising directly). *)
+  val raise : exn -> 'a t
+
+  val raise_s : Sexp.t -> 'a t
+  val raise_error : Error.t -> 'a t
+
+  (** Like [Result.ok_exn], except with the performance-friendly properties of [raise]. *)
+  val lower_result : ('a, Exn.t) Result.t t -> 'a t
+
+  (** Like [Or_error.ok_exn], except with the performance-friendly properties of
+      [raise_error]. *)
+  val lower_or_error : 'a Or_error.t t -> 'a t
+
+  (** If evaluating the given effect produces an exception before producing a value,
+      [try_with] will return the first exn in the error side of the [Result.t].
+
+      If [rest] is [`Call f], [try_with] will use [f] to handle any further exns produced.
+      Otherwise, they will be raised further (i.e. visible to [iter_errors], [try_with],
+      and eventual [Expert.handle]/[Expert.eval] calls), although they cannot cause the
+      effect itself to raise (i.e. further [try_with]s will result in Ok and handle them
+      via its [rest] parameter). *)
+  val try_with
+    :  ?rest:[ `Raise | `Call of Exn.t -> unit ] (** default is [`Raise] *)
+    -> 'a t
+    -> ('a, Exn.t) Result.t t
+
+  (** Like [try_with], but returns the exn as an [Error.t]. *)
+  val try_with_or_error
+    :  ?rest:[ `Raise | `Call of Exn.t -> unit ] (** default is [`Raise] *)
+    -> 'a t
+    -> 'a Or_error.t t
+
+  (** If exceptions are produced in the course of evaluating the input effect, the
+      function passed to [iter_errors] will be invoked with those errors. Multiple errors
+      can be produced from functions such as [both_parallel], [all_parallel], and
+      [protect]. This doesn't _handle_ the errors, but you can record or print the error.
+      Throwing an exception inside of [f] will not recursively invoke [f] on the new error
+      that is produced.
+
+      Note that [iter_errors] only calls [f] on exns as they are produced; it does not
+      wait for more exns before letting an exn continue to raise. For example,
+      [iter_errors (both_parallel (raise a) (raise b)) ~f] will evaluate [f a], raise [a]
+      to its next handler, evaluate [f b], and then raise [b] to its next handler. *)
+  val iter_errors : 'a t -> f:(Exn.t -> unit t) -> 'a t
+
+  (** [protect] runs an effect, and after the effect completes (including if it fails with
+      an exception), it also runs the [finally] effect.
+
+      If the given effect raises an exception, [protect] will output an effect that also
+      raises that exception after executing [finally] (even if [finally] also raises). If
+      [finally] raises (but not the given effect), the output of [protect] will raise with
+      that exception. *)
+  val protect : 'a t -> finally:unit t -> 'a t
+
   (** evaluates both effects in parallel and returns their product when both complete *)
   val both_parallel : 'a t -> 'b t -> ('a * 'b) t
 
@@ -93,6 +152,14 @@ module type Effect = sig
       will be run every time that the resulting effect is scheduled *)
   val of_thunk : (unit -> 'result) -> 'result t
 
+  (** Like [of_sync_fun] but with an extra [on_exn] parameter that can be passed into
+      calls to [Expert.handle]. *)
+  val of_sync_fun' : ('query -> on_exn:(Exn.t -> unit) -> 'result) -> 'query -> 'result t
+
+  (** Like [of_thunk] but with an extra [on_exn] parameter that can be passed into calls
+      to [Expert.handle]. *)
+  val of_thunk' : (unit -> on_exn:(Exn.t -> unit) -> 'result) -> 'result t
+
   module Define (Handler : Handler) :
     S with type action := Handler.Action.t and type 'a t := 'a t
 
@@ -100,19 +167,42 @@ module type Effect = sig
     S1 with type 'a action := 'a Handler.Action.t and type 'a t := 'a t
 
   module Expert : sig
-    (** [eval t ~f] runs the given effect, and calls [f] when the effect completes. This
-        function should not be called while constructing effects; it's intended for use by
-        libraries that actually schedule effects, such as Bonsai, or Virtual_dom. *)
-    val eval : 'a t -> f:('a -> unit) -> unit
+    (** [eval t ~f] runs the given effect, and calls [f] when the effect completes, or
+        [on_exn] if the effect does not return a result due to an exception. This function
+        should not be called while constructing effects; it's intended for use by
+        libraries that actually schedule effects, such as Bonsai, or Virtual_dom.
 
-    (** [handle t] is the same as [eval t ~f:ignore] *)
-    val handle : unit t -> unit
+        [on_further_exns] is called on exceptions that occur after the effect has gotten a
+        result/exn. For example, if every branch of an [all_parallel] call raises an
+        exception, [on_exn] would be called on the first exn, while [on_further_exns]
+        would be called on the rest. There is no guarantee that the callbacks will be
+        called in any particular order. *)
+    val eval
+      :  on_exn:(Exn.t -> unit)
+      -> ?on_further_exns:(Exn.t -> unit) (** defaults to [on_exn] *)
+      -> 'a t
+      -> f:('a -> unit)
+      -> unit
+
+    (** [handle ~on_exn ?on_further_exns t] is the same as
+        [eval ~on_exn ?on_further_exns t ~f:ignore]. *)
+    val handle
+      :  on_exn:(Exn.t -> unit)
+      -> ?on_further_exns:(Exn.t -> unit) (** defaults to [on_exn] *)
+      -> unit t
+      -> unit
 
     (* We use this table for dispatching to the appropriate handler in an efficient way.  *)
-    type hide = T : ('a t * ('a -> unit)) -> hide
+    type hide =
+      | T :
+          { value : 'a t
+          ; callback : 'a -> unit
+          ; on_exn : Exn.t -> unit
+          }
+          -> hide
 
     val handlers : (hide -> unit) Hashtbl.M(Int).t
-    val of_fun : f:(callback:('a -> unit) -> unit) -> 'a t
+    val of_fun : f:(callback:('a -> unit) -> on_exn:(Exn.t -> unit) -> unit) -> 'a t
   end
 
   module Private : sig
@@ -120,9 +210,15 @@ module type Effect = sig
       type 'a effect := 'a t
       type ('a, 'b) t
 
-      val make : request:'a -> on_response:('b -> unit effect) -> ('a, 'b) t
+      val make
+        :  request:'a
+        -> on_response:('b -> unit effect)
+        -> on_exn:(Exn.t -> unit)
+        -> ('a, 'b) t
+
       val request : ('a, 'b) t -> 'a
       val respond_to : ('a, 'b) t -> 'b -> unit effect
+      val on_exn : _ t -> Exn.t -> unit
     end
 
     val make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit) -> 'b t

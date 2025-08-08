@@ -56,7 +56,8 @@ struct
       let use_capture = if use_capture then Js._true else Js._false in
       let handler =
         Dom.handler (fun ev ->
-          Effect.Expert.handle ev (f ev);
+          Effect.Expert.handle ev (f ev) ~on_exn:(fun exn ->
+            Exn.reraise exn "Unhandled exception raised in effect");
           Js._true)
       in
       Dom_html.addEventListener Dom_html.window X.event_kind handler use_capture

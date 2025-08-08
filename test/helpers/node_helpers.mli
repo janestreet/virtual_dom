@@ -111,6 +111,15 @@ module User_actions : sig
     -> key:Dom_html.Keyboard_code.t
     -> unit
 
+  val global_keydown
+    :  ?shift_key_down:bool
+    -> ?ctrl_key_down:bool
+    -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
+    -> t
+    -> key:Dom_html.Keyboard_code.t
+    -> unit
+
   val set_checkbox
     :  ?extra_event_fields:(string * Js.Unsafe.any) list
     -> ?shift_key_down:bool
