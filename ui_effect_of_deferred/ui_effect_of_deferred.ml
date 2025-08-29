@@ -23,3 +23,9 @@ let of_deferred_fun' f a = Deferred_fun.inject (T (a, f))
 let of_deferred_thunk' f = of_deferred_fun' f ()
 let of_deferred_fun f a = Deferred_fun.inject (T (a, fun a ~on_exn:_ -> f a))
 let of_deferred_thunk f = of_deferred_fun f ()
+
+let expert_handle_as_deferred e =
+  let result_ivar = Ivar.create () in
+  Ui_effect.Expert.eval e ~on_exn:raise ~f:(Ivar.fill_if_empty result_ivar);
+  Ivar.read result_ivar
+;;

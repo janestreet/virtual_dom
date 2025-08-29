@@ -224,6 +224,36 @@ module type Effect = sig
     val make : request:'a -> evaluator:(('a, 'b) Callback.t -> unit) -> 'b t
   end
 
+  (** [Result] is extremely similar to [Deferred.Result] *)
+  module Result : sig
+    type nonrec ('a, 'b) t = ('a, 'b) Result.t t
+
+    include Monad.S2 with type ('a, 'b) t := ('a, 'b) t
+
+    val fail : 'err -> (_, 'err) t
+
+    val combine
+      :  ('ok1, 'err) t
+      -> ('ok2, 'err) t
+      -> ok:('ok1 -> 'ok2 -> 'ok3)
+      -> err:('err -> 'err -> 'err)
+      -> ('ok3, 'err) t
+  end
+
+  (** Like [Result] above, this is extremely similar to [Deferred.Or_error]. A lot of the
+      additional functions are missing, but can be added as needed *)
+  module Or_error : sig
+    type nonrec 'a t = 'a Or_error.t t
+
+    include Applicative.S with type 'a t := 'a t
+    include Monad.S with type 'a t := 'a t
+
+    val fail : Error.t -> _ t
+    val error : string -> 'a -> ('a -> Sexp.t) -> _ t
+    val error_s : Sexp.t -> _ t
+    val error_string : string -> _ t
+  end
+
   module For_testing : sig
     module Svar : sig
       (** You can think of an [Svar.t] as like an [Ivar.t] whose purpose is to allow us to

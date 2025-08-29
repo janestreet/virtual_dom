@@ -195,6 +195,60 @@ module As_monad = Base.Monad.Make (struct
 
 include As_monad
 
+module Result = struct
+  type nonrec ('a, 'b) t = ('a, 'b) Result.t t
+
+  let fail err = As_monad.return (Error err)
+
+  let combine t1 t2 ~ok ~err =
+    let open As_monad.Let_syntax in
+    let%map t1 and t2 in
+    Result.combine t1 t2 ~ok ~err
+  ;;
+
+  include Base.Monad.Make2 (struct
+      type nonrec ('a, 'b) t = ('a, 'b) t
+
+      let return a = As_monad.return (Result.return a)
+
+      let bind t ~f =
+        As_monad.bind t ~f:(function
+          | Ok a -> f a
+          | Error _ as error -> As_monad.return error)
+      ;;
+
+      let map t ~f = As_monad.map t ~f:(fun r -> Result.map r ~f)
+      let map = `Custom map
+    end)
+end
+
+module Or_error = struct
+  include (Result : Monad.S2 with type ('a, 'b) t := ('a, 'b) Result.t)
+
+  type nonrec 'a t = 'a Or_error.t t
+
+  include Applicative.Make (struct
+      type nonrec 'a t = 'a t
+
+      let return = return
+
+      let apply f x =
+        Result.combine
+          f
+          x
+          ~ok:(fun f x -> f x)
+          ~err:(fun e1 e2 -> Error.of_list [ e1; e2 ])
+      ;;
+
+      let map = `Custom map
+    end)
+
+  let fail err = As_monad.return (Base.Result.fail err)
+  let error msg v sexp_of = As_monad.return (Or_error.error msg v sexp_of)
+  let error_s sexp = As_monad.return (Or_error.error_s sexp)
+  let error_string msg = As_monad.return (Or_error.error_string msg)
+end
+
 let rec eval
   : type a.
     a t

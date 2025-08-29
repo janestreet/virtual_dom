@@ -120,14 +120,19 @@ let group_consecutive_commands (commands : Command.t list) =
 
 let view_rows ?(sep = " or ") t (view_spec : View_spec.t) =
   let open Vdom in
-  let align how = Css_gen.(text_align how) |> Attr.style in
   let commands = group_consecutive_commands (commands t) in
   List.map commands ~f:(fun command ->
     Node.tr
       [ Node.td
-          ~attrs:[ align `Right ]
+          ~attrs:
+            (Css_gen.[ text_align `Right; vertical_align `Middle; line_height (`Raw "1") ]
+             |> List.map ~f:Attr.style)
           (Command.view_keys command view_spec ~sep @ [ view_spec.plain_text " : " ])
-      ; Node.td ~attrs:[ align `Left ] [ Command.view_description command view_spec ]
+      ; Node.td
+          ~attrs:
+            (Css_gen.[ text_align `Left; vertical_align `Middle; line_height (`Raw "1") ]
+             |> List.map ~f:Attr.style)
+          [ Command.view_description command view_spec ]
       ])
 ;;
 

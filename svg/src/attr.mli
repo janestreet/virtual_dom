@@ -126,6 +126,11 @@ type transform_op =
   | Skew_x of float
   | Skew_y of float
 
+type text_anchor =
+  | Start
+  | Middle
+  | End
+
 val viewbox : min_x:float -> min_y:float -> width:float -> height:float -> t
 
 (** {1 <a>} *)
@@ -134,6 +139,7 @@ val href : string -> t
 
 (** {1 many things} *)
 
+val id : ?here:Stdlib.Lexing.position -> string -> t
 val transform : transform_op list -> t
 
 (** {1 <circle>} *)
@@ -268,4 +274,6 @@ module Text : sig
   val spacing : [ `Auto | `Exact ] -> t
 end
 
+val font_size : ?here:Stdlib.Lexing.position -> Css_gen.Length.t -> t
+val text_anchor : ?here:Stdlib.Lexing.position -> text_anchor -> t
 val ( @ ) : t -> t -> t

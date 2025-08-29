@@ -21,3 +21,7 @@ val of_deferred_fun'
 val of_deferred_thunk'
   :  (unit -> on_exn:(Exn.t -> unit) -> 'response Deferred.t)
   -> 'response Ui_effect.t
+
+(** [expert_handle_as_deferred] will return a function that schedules the effect, and
+    returns the result as a [Deferred.t]. *)
+val expert_handle_as_deferred : 'a Ui_effect.t -> 'a Deferred.t

@@ -110,28 +110,28 @@ end
 
 module%test [@name "Effect.lower_result and Effect.lower_or_error"] _ = struct
   let%expect_test "Effect.lower_result (non-raising)" =
-    let result_effect = Effect.return (Result.return ()) in
+    let result_effect = Effect.Result.return () in
     let normal_effect = Effect.lower_result result_effect in
     Effect.Expert.handle normal_effect ~on_exn ~on_further_exns;
     [%expect {| |}]
   ;;
 
   let%expect_test "Effect.lower_result (raising)" =
-    let result_effect = Effect.return (Error test_exn) in
+    let result_effect = Effect.Result.fail test_exn in
     let raise_effect = Effect.lower_result result_effect in
     Effect.Expert.handle raise_effect ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn "this is an exn!")) |}]
   ;;
 
   let%expect_test "Effect.lower_or_error (non-raising)" =
-    let or_error_effect = Effect.return (Or_error.return ()) in
+    let or_error_effect = Effect.Or_error.return () in
     let normal_effect = Effect.lower_or_error or_error_effect in
     Effect.Expert.handle normal_effect ~on_exn ~on_further_exns;
     [%expect {| |}]
   ;;
 
   let%expect_test "Effect.lower_or_error (raising)" =
-    let or_error_effect = Effect.return (Error test_error) in
+    let or_error_effect = Effect.Or_error.fail test_error in
     let raise_effect = Effect.lower_or_error or_error_effect in
     Effect.Expert.handle raise_effect ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn "this is an error!")) |}]
