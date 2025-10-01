@@ -683,6 +683,28 @@ module User_actions = struct
            [])
   ;;
 
+  let mousedown
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    node
+    =
+    trigger
+      ~event_name:"onmousedown"
+      node
+      ~extra_fields:
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ?meta_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [])
+  ;;
+
   let focus ?extra_event_fields node =
     trigger
       ~event_name:"onfocus"

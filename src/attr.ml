@@ -137,6 +137,11 @@ let create_float ~here name value =
     }
 ;;
 
+let create_js_string ~here name value =
+  Attribute
+    { suppress_merge_warnings = false; name; value = Js.Unsafe.inject value; here }
+;;
+
 let property ~here name value =
   Property { suppress_merge_warnings = false; name; value; here }
 ;;
@@ -540,6 +545,8 @@ let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
 
 let on_focus = on Type_id.focus "focus"
 let on_blur = on Type_id.focus "blur"
+let on_focusin = on Type_id.focus "focusin"
+let on_focusout = on Type_id.focus "focusout"
 let on_cancel = on Type_id.event "cancel"
 let on_click = on Type_id.mouse "click"
 let on_close = on Type_id.event "close"
@@ -579,6 +586,7 @@ let on_cut = on Type_id.clipboard "cut"
 let on_paste = on Type_id.clipboard "paste"
 let on_reset = on Type_id.event "reset"
 let on_animationend = on Type_id.animation "animationend"
+let on_auxclick = on Type_id.mouse "auxclick"
 let const_ignore _ = Effect.Ignore
 
 class type value_element = object
@@ -806,6 +814,10 @@ let create ?(here = Stdlib.Lexing.dummy_pos) name value = create ~here name valu
 
 let create_float ?(here = Stdlib.Lexing.dummy_pos) name value =
   create_float ~here name value
+;;
+
+let create_js_string ?(here = Stdlib.Lexing.dummy_pos) name value =
+  create_js_string ~here name value
 ;;
 
 let property ?(here = Stdlib.Lexing.dummy_pos) name value = property ~here name value

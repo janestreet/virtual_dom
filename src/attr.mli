@@ -10,6 +10,9 @@ val create : ?here:Stdlib.Lexing.position -> string -> string -> t
 (** [create_float name float] creates a simple float-only attribute *)
 val create_float : ?here:Stdlib.Lexing.position -> string -> float -> t
 
+(** [create_js_string name value] creates a simple attribute using a js_string *)
+val create_js_string : ?here:Stdlib.Lexing.position -> string -> Js.js_string Js.t -> t
+
 (** [string_property name value] creates a simple string-only property *)
 val string_property : ?here:Stdlib.Lexing.position -> string -> string -> t
 
@@ -122,6 +125,8 @@ val open_ : t
 val start : ?here:Stdlib.Lexing.position -> int -> t
 val on_focus : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 val on_blur : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
+val on_focusin : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
+val on_focusout : (Dom_html.focusEvent Js.t -> unit Effect.t) -> t
 
 module Unmerged_warning_mode : sig
   (** Controls whether [to_raw] should print warning messages when one attribute overrides
@@ -202,6 +207,7 @@ val on_cut : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
 val on_paste : (Dom_html.clipboardEvent Js.t -> unit Effect.t) -> t
 val on_reset : (Dom_html.event Js.t -> unit Effect.t) -> t
 val on_animationend : (Dom_html.animationEvent Js.t -> unit Effect.t) -> t
+val on_auxclick : (Dom_html.mouseEvent Js.t -> unit Effect.t) -> t
 
 (** Sets a css named variable on the element. The "--" prefix is added by this function:
     [css_var ~name:"foo" "red"] is equivalent to the css [--foo: red]. *)

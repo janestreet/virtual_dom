@@ -37,7 +37,11 @@ val mousemove
   -> Attr.t
 
 val click : phase:Phase.t -> f:(Dom_html.mouseEvent Js.t -> unit Ui_effect.t) -> Attr.t
+
+(* Focus event handlers *)
 val blur : phase:Phase.t -> f:(Dom_html.focusEvent Js.t -> unit Ui_effect.t) -> Attr.t
+val focusin : phase:Phase.t -> f:(Dom_html.focusEvent Js.t -> unit Ui_effect.t) -> Attr.t
+val focusout : phase:Phase.t -> f:(Dom_html.focusEvent Js.t -> unit Ui_effect.t) -> Attr.t
 
 val contextmenu
   :  phase:Phase.t

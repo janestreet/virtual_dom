@@ -128,6 +128,18 @@ module Blur = Make (struct
     let event_kind = Dom_html.Event.blur
   end)
 
+module Focusin = Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusin"
+  end)
+
+module Focusout = Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusout"
+  end)
+
 module Contextmenu = Make (struct
     type event = Dom_html.mouseEvent
 
@@ -172,6 +184,14 @@ let mousemove ~phase ~f =
 
 let click ~phase ~f = Click.create phase ~f |> Attr.create_hook "global-click-listener"
 let blur ~phase ~f = Blur.create phase ~f |> Attr.create_hook "global-blur-listener"
+
+let focusin ~phase ~f =
+  Focusin.create phase ~f |> Attr.create_hook "global-focusin-listener"
+;;
+
+let focusout ~phase ~f =
+  Focusout.create phase ~f |> Attr.create_hook "global-focusout-listener"
+;;
 
 let contextmenu ~phase ~f =
   Contextmenu.create phase ~f |> Attr.create_hook "global-contextmenu-listener"
