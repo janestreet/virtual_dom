@@ -5,7 +5,7 @@ module Stable = struct
     (** (field * value) list. Where value should be escaped / quoted as necessary as per
         https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
     type t = (string * string) list
-    [@@deriving sexp, compare, equal, bin_io, stable_witness]
+    [@@deriving sexp, compare, equal, bin_io, stable_witness, sexp_grammar]
   end
 end
 
@@ -43,7 +43,7 @@ module Color = struct
         ; b : int
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
 
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
@@ -55,7 +55,7 @@ module Color = struct
         ; l : Percent.t
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
 
       let create ~h ~s ~l ?a () = { h; s; l; a }
     end
@@ -67,7 +67,19 @@ module Color = struct
         ; h : float
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
+
+      let create ~l ~c ~h ?a () = { l; c; h; a }
+    end
+
+    module OKLCHA = struct
+      type t =
+        { l : Percent.t
+        ; c : Percent.t
+        ; h : float
+        ; a : Percent.t option
+        }
+      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
 
       let create ~l ~c ~h ?a () = { l; c; h; a }
     end
@@ -76,6 +88,7 @@ module Color = struct
       [ `RGBA of RGBA.t
       | `HSLA of HSLA.t
       | `LCHA of LCHA.t
+      | `OKLCHA of OKLCHA.t
       | `Name of string
       | `Hex of string
       | t css_global_values
@@ -86,6 +99,7 @@ module Color = struct
   include T
   include Sexpable.To_stringable (T)
 
+  let clamp_percent = Percent.clamp_exn ~min:Percent.zero ~max:Percent.one_hundred_percent
   let alpha_to_string a = f2s 2 (Percent.to_mult a)
   let percent_to_string percent = f2s 0 (Percent.to_percentage percent)
   let angle_to_string angle = f2s 2 angle
@@ -106,14 +120,126 @@ module Color = struct
       let c = percent_to_string c in
       let h = angle_to_string h in
       (match a with
-       | None -> [%string "lch(%{l}% %{c} %{h})"]
-       | Some a -> [%string "lch(%{l}% %{c} %{h} / %{alpha_to_string a})"])
+       | None -> [%string "lch(%{l}% %{c}% %{h})"]
+       | Some a -> [%string "lch(%{l}% %{c}% %{h} / %{alpha_to_string a})"])
+    | `OKLCHA { OKLCHA.l; c; h; a } ->
+      let l = percent_to_string l in
+      let c = percent_to_string c in
+      let h = angle_to_string h in
+      (match a with
+       | None -> [%string "oklch(%{l}% %{c}% %{h})"]
+       | Some a -> [%string "oklch(%{l}% %{c}% %{h} / %{alpha_to_string a})"])
     | `Name name -> name
     | `Hex hex -> hex
     | #css_global_values as global -> global_to_string_css global ~to_string_css
   ;;
 
   let to_string_css t = to_string_css (t :> t)
+
+  module Hue_interpolation_method = struct
+    type t =
+      | Shorter
+      | Longer
+      | Increasing
+      | Decreasing
+
+    let to_string = function
+      | Shorter -> "shorter"
+      | Longer -> "longer"
+      | Increasing -> "increasing"
+      | Decreasing -> "decreasing"
+    ;;
+  end
+
+  module Xyz_space = struct
+    type t =
+      | Xyz
+      | Xyz_d50
+      | Xyz_d65
+
+    let to_string = function
+      | Xyz -> "xyz"
+      | Xyz_d50 -> "xyz-d50"
+      | Xyz_d65 -> "xyz-d65"
+    ;;
+  end
+
+  module Rectangular_color_space = struct
+    type t =
+      | Srgb
+      | Srgb_linear
+      | Display_p3
+      | A98_rgb
+      | Prophoto_rgb
+      | Rec2020
+      | Lab
+      | Oklab
+
+    let to_string = function
+      | Srgb -> "srgb"
+      | Srgb_linear -> "srgb-linear"
+      | Display_p3 -> "display-p3"
+      | A98_rgb -> "a98-rgb"
+      | Prophoto_rgb -> "prophoto-rgb"
+      | Rec2020 -> "rec2020"
+      | Lab -> "lab"
+      | Oklab -> "oklab"
+    ;;
+  end
+
+  module Polar_color_space = struct
+    type t =
+      | Hsl
+      | Hwb
+      | Lch
+      | Oklch
+
+    let to_string = function
+      | Hsl -> "hsl"
+      | Hwb -> "hwb"
+      | Lch -> "lch"
+      | Oklch -> "oklch"
+    ;;
+  end
+
+  module Color_interpolation_method = struct
+    type t =
+      | Rectangular_color_space of Rectangular_color_space.t
+      | Xyz_space of Xyz_space.t
+      | Polar_color_space of
+          { color_space : Polar_color_space.t
+          ; hue_interpolation_method : Hue_interpolation_method.t option
+          }
+
+    let to_string = function
+      | Rectangular_color_space color_space ->
+        [%string "in %{Rectangular_color_space.to_string color_space}"]
+      | Xyz_space xyz_space -> [%string "in %{Xyz_space.to_string xyz_space}"]
+      | Polar_color_space { color_space; hue_interpolation_method } ->
+        let interpolation_method =
+          match hue_interpolation_method with
+          | None -> ""
+          | Some hue_interpolation_method ->
+            [%string " %{hue_interpolation_method#Hue_interpolation_method} hue"]
+        in
+        [%string "in %{color_space#Polar_color_space}%{interpolation_method}"]
+    ;;
+  end
+
+  let mix
+    ?(color_interpolation_method =
+      Color_interpolation_method.Polar_color_space
+        { color_space = Oklch; hue_interpolation_method = None })
+    ~from
+    ~to_
+    percent
+    =
+    let percent_str = f2s 2 (clamp_percent percent |> Percent.to_percentage) in
+    `Name
+      [%string
+        "color-mix(%{color_interpolation_method#Color_interpolation_method}, \
+         %{to_string_css from}, %{to_string_css to_} %{percent_str}%)"]
+  ;;
 end
 
 module Length = struct

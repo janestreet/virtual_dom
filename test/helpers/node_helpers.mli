@@ -80,6 +80,15 @@ module User_actions : sig
     -> t
     -> unit
 
+  val mousedown
+    :  ?extra_event_fields:(string * Js.Unsafe.any) list
+    -> ?shift_key_down:bool
+    -> ?ctrl_key_down:bool
+    -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
+    -> t
+    -> unit
+
   val submit_form : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
   val focus : ?extra_event_fields:(string * Js.Unsafe.any) list -> t -> unit
 
@@ -104,6 +113,15 @@ module User_actions : sig
   val keydown
     :  ?extra_event_fields:(string * Js.Unsafe.any) list
     -> ?shift_key_down:bool
+    -> ?ctrl_key_down:bool
+    -> ?alt_key_down:bool
+    -> ?meta_key_down:bool
+    -> t
+    -> key:Dom_html.Keyboard_code.t
+    -> unit
+
+  val global_keydown
+    :  ?shift_key_down:bool
     -> ?ctrl_key_down:bool
     -> ?alt_key_down:bool
     -> ?meta_key_down:bool

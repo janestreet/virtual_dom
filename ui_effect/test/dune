@@ -1,0 +1,7 @@
+(library
+ (name ui_effect_test)
+ (public_name virtual_dom.ui_effect_test)
+ (libraries async async_kernel core expect_test_helpers_async ui_effect
+   ui_effect_of_deferred)
+ (preprocess
+  (pps ppx_jane)))

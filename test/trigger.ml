@@ -107,13 +107,13 @@ let%expect_test "fake event handler" =
 module Print_int_event = Ui_effect.Define (struct
     module Action = Int
 
-    let handle = printf "%d "
+    let handle value ~on_exn:_ = printf "%d " value
   end)
 
 module Print_string_event = Ui_effect.Define (struct
     module Action = String
 
-    let handle = printf "%s "
+    let handle value ~on_exn:_ = printf "%s " value
   end)
 
 module H = Attr.Hooks.Make (struct

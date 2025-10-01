@@ -56,7 +56,8 @@ struct
       let use_capture = if use_capture then Js._true else Js._false in
       let handler =
         Dom.handler (fun ev ->
-          Effect.Expert.handle ev (f ev);
+          Effect.Expert.handle ev (f ev) ~on_exn:(fun exn ->
+            Exn.reraise exn "Unhandled exception raised in effect");
           Js._true)
       in
       Dom_html.addEventListener Dom_html.window X.event_kind handler use_capture
@@ -127,6 +128,18 @@ module Blur = Make (struct
     let event_kind = Dom_html.Event.blur
   end)
 
+module Focusin = Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusin"
+  end)
+
+module Focusout = Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusout"
+  end)
+
 module Contextmenu = Make (struct
     type event = Dom_html.mouseEvent
 
@@ -171,6 +184,14 @@ let mousemove ~phase ~f =
 
 let click ~phase ~f = Click.create phase ~f |> Attr.create_hook "global-click-listener"
 let blur ~phase ~f = Blur.create phase ~f |> Attr.create_hook "global-blur-listener"
+
+let focusin ~phase ~f =
+  Focusin.create phase ~f |> Attr.create_hook "global-focusin-listener"
+;;
+
+let focusout ~phase ~f =
+  Focusout.create phase ~f |> Attr.create_hook "global-focusout-listener"
+;;
 
 let contextmenu ~phase ~f =
   Contextmenu.create phase ~f |> Attr.create_hook "global-contextmenu-listener"

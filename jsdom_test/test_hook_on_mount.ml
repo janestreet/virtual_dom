@@ -569,7 +569,7 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       {|
       WARNING: no requestAnimationFrame tasks queued!
       init
-      -6,2 +6,3
+      === DIFF HUNK ===
             <div tabindex="0" style="outline: none;">
       +|      hi
               <div> Has hook </div>
@@ -582,7 +582,7 @@ module%test [@name "via requestAnimationFrame"] _ = struct
     [%expect
       {|
       on_mount
-      -6,3 +6,2
+      === DIFF HUNK ===
             <div tabindex="0" style="outline: none;">
       -|      hi
               <div> Has hook </div>
@@ -603,7 +603,7 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       {|
       on_mount
       init
-      -6,4 +6,6
+      === DIFF HUNK ===
             <div tabindex="0" style="outline: none;">
       +|      <div>
                 <div> Has hook </div>
@@ -620,7 +620,7 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       {|
       on_mount
       init
-      -6,2 +6,3
+      === DIFF HUNK ===
             <div tabindex="0" style="outline: none;">
       +|      hi
               <div>

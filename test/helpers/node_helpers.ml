@@ -628,7 +628,9 @@ let get_hook_value t ~type_id ~name =
 ;;
 
 let trigger_hook t ~type_id ~name ~f ~arg =
-  Ui_effect.Expert.handle (f (get_hook_value t ~type_id ~name) arg)
+  Ui_effect.Expert.handle
+    (f (get_hook_value t ~type_id ~name) arg)
+    ~on_exn:(fun exn -> Exn.reraise exn "Unhandled exception raised in effect")
 ;;
 
 module User_actions = struct
@@ -669,6 +671,28 @@ module User_actions = struct
     =
     trigger
       ~event_name:"onclick"
+      node
+      ~extra_fields:
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ?meta_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           [])
+  ;;
+
+  let mousedown
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    node
+    =
+    trigger
+      ~event_name:"onmousedown"
       node
       ~extra_fields:
         (build_event_object
@@ -819,7 +843,7 @@ module User_actions = struct
       ~extra_fields:([ "target", target ] @ extra_event_fields)
   ;;
 
-  let keydown
+  let keydown'
     ?extra_event_fields
     ?shift_key_down
     ?ctrl_key_down
@@ -839,29 +863,69 @@ module User_actions = struct
         end)
     in
     let int_to_any x = Js.Unsafe.coerce (Js.number_of_float (Int.to_float x)) in
-    let event_names = [ "onkeydown" ] in
     let default_prevented _ =
       print_s [%message "default prevented" (key : Keystroke.Keyboard_code.t)]
     in
-    trigger_many
+    build_event_object
+      ?shift_key_down
+      ?ctrl_key_down
+      ?alt_key_down
+      ?meta_key_down
+      ~extra_event_fields
+      ~include_modifier_keys:true
+      [ "location", int_to_any location
+      ; "keyCode", int_to_any key_code
+      ; "code", Js.Unsafe.coerce (Js.string "")
+      ; "key", Js.Unsafe.coerce (Js.string "")
+      ; "preventDefault", Js.Unsafe.inject (Js.wrap_callback default_prevented)
+      ; "target", target
+      ; "getModifierState", Js.Unsafe.inject (Js.wrap_callback (fun _ -> Js._false))
+      ]
+  ;;
+
+  let keydown
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    element
+    ~key
+    =
+    let extra_fields =
+      keydown'
+        ?extra_event_fields
+        ?shift_key_down
+        ?ctrl_key_down
+        ?alt_key_down
+        ?meta_key_down
+        element
+        ~key
+    in
+    let event_names = [ "onkeydown" ] in
+    trigger_many element ~event_names ~extra_fields
+  ;;
+
+  let global_keydown
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    element
+    ~key
+    =
+    let event =
+      keydown' ?shift_key_down ?ctrl_key_down ?alt_key_down ?meta_key_down element ~key
+      |> Array.of_list
+      |> Js.Unsafe.obj
+    in
+    trigger_hook
       element
-      ~event_names
-      ~extra_fields:
-        (build_event_object
-           ?shift_key_down
-           ?ctrl_key_down
-           ?alt_key_down
-           ?meta_key_down
-           ~extra_event_fields
-           ~include_modifier_keys:true
-           [ "location", int_to_any location
-           ; "keyCode", int_to_any key_code
-           ; "code", Js.Unsafe.coerce (Js.string "")
-           ; "key", Js.Unsafe.coerce (Js.string "")
-           ; "preventDefault", Js.Unsafe.inject (Js.wrap_callback default_prevented)
-           ; "target", target
-           ; "getModifierState", Js.Unsafe.inject (Js.wrap_callback (fun _ -> Js._false))
-           ])
+      ~type_id:Vdom.Attr.Global_listeners.For_testing.keydown_type_id
+      ~name:"global-keydown-listener"
+      ~arg:event
+      ~f:(fun input event ->
+        (Vdom.Attr.Global_listeners.For_testing.combine_capture_and_bubbling input) event)
   ;;
 
   let enter ?extra_event_fields element =

@@ -617,7 +617,7 @@ let%expect_test "hash censoring" =
   Expect_test_patdiff.print_patdiff before after;
   [%expect
     {|
-    -1,3 +1,3
+    === DIFF HUNK ===
       (Element ((tag_name div) (attributes ((class foo_hash_abc123)))))
       ----------------------
     -|<div class="foo_hash_replaced_in_test"> </div>
@@ -634,7 +634,7 @@ let%expect_test "path censoring" =
   Expect_test_patdiff.print_patdiff before after;
   [%expect
     {|
-    -1,3 +1,3
+    === DIFF HUNK ===
       (Element ((tag_name div) (attributes ((class bonsai_path_abcdefg)))))
       ----------------------
     -|<div class="bonsai_path_replaced_in_test"> </div>
