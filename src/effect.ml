@@ -84,7 +84,7 @@ let () =
     ~key:(Stdlib.Obj.Extension_constructor.id [%extension_constructor Open])
     ~data:(fun hidden ->
       match hidden with
-      | T (Open { url; target }, callback) ->
+      | T { value = Open { url; target }; callback; on_exn = _ } ->
         let (_ : Dom_html.window Js.t Js.Opt.t) =
           Dom_html.window##open_
             (Js.string url)
@@ -96,12 +96,15 @@ let () =
 ;;
 
 module Expert = struct
-  let handle_non_dom_event_exn = Expert.handle
+  let handle_non_dom_event_exn t =
+    Expert.handle t ~on_exn:(fun exn ->
+      Exn.reraise exn "Unhandled exception raised in effect")
+  ;;
 
-  let handle dom_event event =
+  let handle ~on_exn ?on_further_exns dom_event event =
     let old = !current_dom_event in
     current_dom_event := Some (dom_event :> Dom_html.element Dom.event Js.t);
-    Expert.handle event;
+    Expert.handle ~on_exn ?on_further_exns event;
     current_dom_event := old
   ;;
 end

@@ -1,0 +1,1 @@
+module Test_vdom_hook_add_class = Test_vdom_hook_add_class

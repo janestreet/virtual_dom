@@ -127,12 +127,19 @@ type transform_op =
   | Skew_x of float
   | Skew_y of float
 
+type text_anchor =
+  | Start
+  | Middle
+  | End
+[@@deriving string ~capitalize:"kebab-case"]
+
 let viewbox =
   let c = create "viewBox" in
   fun ~min_x ~min_y ~width ~height ->
     c (sprintf !"%{Number} %{Number} %{Number} %{Number}" min_x min_y width height)
 ;;
 
+let id = id
 let href = create "href"
 let cx = create_float "cx"
 let cy = create_float "cy"
@@ -426,5 +433,13 @@ module Text = struct
     length_helper c
   ;;
 end
+
+let font_size ~(here : [%call_pos]) size =
+  create ~here "font-size" (Css_gen.Length.to_string_css size)
+;;
+
+let text_anchor ~(here : [%call_pos]) anchor =
+  create ~here "text-anchor" (string_of_text_anchor anchor)
+;;
 
 let ( @ ) = ( @ )
