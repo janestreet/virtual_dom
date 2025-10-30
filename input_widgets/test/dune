@@ -1,5 +1,5 @@
 (library
  (name vdom_input_widgets_test)
- (libraries core virtual_dom vdom_input_widgets virtual_dom_test_helpers)
+ (libraries core vdom_input_widgets virtual_dom virtual_dom_test_helpers)
  (preprocess
   (pps ppx_jane)))

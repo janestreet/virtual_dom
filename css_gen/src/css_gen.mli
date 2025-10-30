@@ -106,6 +106,7 @@ module Color : sig
     | `OKLCHA of OKLCHA.t
     | `Name of string
     | `Hex of string
+    | `Light_dark of t * t
     | t css_global_values
     ]
   [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
@@ -174,6 +175,11 @@ module Color : sig
     -> to_:t
     -> Percent.t
     -> t
+
+  (** [light_dark light dark] creates a color that will use [light] in light mode and
+      [dark] in dark mode, based on the color-scheme property. This corresponds to the CSS
+      light-dark() function. *)
+  val light_dark : t -> t -> t
 
   val to_string_css : [< t ] -> string
 end
@@ -417,6 +423,16 @@ type white_space =
   | white_space css_global_values
   ]
 
+type color_scheme =
+  [ `Normal
+  | `Light
+  | `Dark
+  | `Light_dark
+  | `Only_light
+  | `Only_dark
+  | `Ident of string
+  ]
+
 val create_with_color : field:string -> color:[< Color.t ] -> t
 val color : [< Color.t ] -> t
 val background_color : [< Color.t ] -> t
@@ -426,6 +442,7 @@ val text_align : text_align -> t
 val horizontal_align : horizontal_align -> t
 val vertical_align : vertical_align -> t
 val white_space : white_space -> t
+val color_scheme : color_scheme -> t
 val float : ([ `None | `Left | `Right | 'float css_global_values ] as 'float) -> t
 val line_height : Length.t -> t
 val width : Length.t -> t

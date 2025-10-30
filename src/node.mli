@@ -125,7 +125,6 @@ val dt : node_creator
 val em : node_creator
 
 (* [embed] is omitted, because we don't use it. *)
-
 val fieldset : node_creator
 val figcaption : node_creator
 val figure : node_creator
@@ -142,9 +141,7 @@ val header : node_creator
 val hgroup : node_creator
 val hr : node_creator_childless
 val html : node_creator
-
-(* [i] is omitted because we should either use CSS, or the semantic [em]. *)
-
+val i : node_creator
 val iframe : node_creator
 val img : node_creator_childless
 val input : node_creator_childless
@@ -213,9 +210,7 @@ val time : node_creator
 
 val tr : node_creator
 val track : node_creator_childless
-
-(* [u] is omitted, use CSS instead. *)
-
+val u : node_creator
 val ul : node_creator
 val var : node_creator
 val video : node_creator

@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names terminal)
- (libraries virtual_dom core js_of_ocaml sexplib)
+ (libraries core js_of_ocaml sexplib virtual_dom)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

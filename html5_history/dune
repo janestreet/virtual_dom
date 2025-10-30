@@ -3,4 +3,4 @@
  (public_name virtual_dom.html5_history)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries core js_of_ocaml core_kernel.bus base64 uri))
+ (libraries base64 core_kernel.bus core js_of_ocaml uri))
