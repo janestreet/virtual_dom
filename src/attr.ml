@@ -527,6 +527,30 @@ module Type_id = struct
   let (animation : Dom_html.animationEvent Type_equal.Id.t) = create "animationEvent"
 end
 
+(* addEventListener based handlers *)
+module Focusin = Event_listener.Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusin"
+    let target = Event_listener.Target.Window
+  end)
+
+module Focusout = Event_listener.Make (struct
+    type event = Dom_html.focusEvent
+
+    let event_kind = Dom_html.Event.make "focusout"
+    let target = Event_listener.Target.Window
+  end)
+
+let on_focusin handler =
+  Focusin.create Bubbling ~f:handler |> create_hook "element-focusin-listener"
+;;
+
+let on_focusout handler =
+  Focusout.create Bubbling ~f:handler |> create_hook "element-focusout-listener"
+;;
+
+(* property based handlers *)
 let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
   let handler = Event_handler.create ~handler ~type_id in
   Handler { name; handler }
@@ -534,8 +558,6 @@ let on type_id name (handler : #Dom_html.event Js.t -> unit Ui_effect.t) : t =
 
 let on_focus = on Type_id.focus "focus"
 let on_blur = on Type_id.focus "blur"
-let on_focusin = on Type_id.focus "focusin"
-let on_focusout = on Type_id.focus "focusout"
 let on_cancel = on Type_id.event "cancel"
 let on_click = on Type_id.mouse "click"
 let on_close = on Type_id.event "close"

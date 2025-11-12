@@ -6,7 +6,7 @@
  (js_of_ocaml
   (javascript_files ../lib/virtualdom.compiled.pretty.js ./thunk.js
     ./hooks.js))
- (libraries ui_effect js_of_ocaml css_gen core sexplib jsoo_weak_collections)
+ (libraries core css_gen js_of_ocaml jsoo_weak_collections sexplib ui_effect)
  (wasm_of_ocaml
   (javascript_files ../lib/virtualdom.compiled.pretty.js ./thunk.js
     ./hooks.js)))

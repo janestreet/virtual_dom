@@ -91,6 +91,7 @@ module Color = struct
       | `OKLCHA of OKLCHA.t
       | `Name of string
       | `Hex of string
+      | `Light_dark of t * t
       | t css_global_values
       ]
     [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
@@ -131,6 +132,8 @@ module Color = struct
        | Some a -> [%string "oklch(%{l}% %{c}% %{h} / %{alpha_to_string a})"])
     | `Name name -> name
     | `Hex hex -> hex
+    | `Light_dark (light, dark) ->
+      [%string "light-dark(%{to_string_css light}, %{to_string_css dark})"]
     | #css_global_values as global -> global_to_string_css global ~to_string_css
   ;;
 
@@ -240,6 +243,8 @@ module Color = struct
         "color-mix(%{color_interpolation_method#Color_interpolation_method}, \
          %{to_string_css from}, %{to_string_css to_} %{percent_str}%)"]
   ;;
+
+  let light_dark light dark = `Light_dark (light, dark)
 end
 
 module Length = struct
@@ -471,6 +476,19 @@ let white_space v =
   create ~field:"white-space" ~value:(to_string_css v)
 ;;
 
+let color_scheme v =
+  let to_string_css = function
+    | `Normal -> "normal"
+    | `Light -> "light"
+    | `Dark -> "dark"
+    | `Light_dark -> "light dark"
+    | `Only_light -> "only light"
+    | `Only_dark -> "only dark"
+    | `Ident ident -> ident
+  in
+  create ~field:"color-scheme" ~value:(to_string_css v)
+;;
+
 type font_style =
   [ `Normal
   | `Italic
@@ -591,6 +609,16 @@ type white_space =
   | `Pre_line
   | `Pre_wrap
   | white_space css_global_values
+  ]
+
+type color_scheme =
+  [ `Normal
+  | `Light
+  | `Dark
+  | `Light_dark
+  | `Only_light
+  | `Only_dark
+  | `Ident of string
   ]
 
 let stops_to_string stops =

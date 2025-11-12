@@ -3,4 +3,4 @@
  (public_name virtual_dom.tyxml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane gen_js_api.ppx))
- (libraries virtual_dom ui_effect tyxml.functor js_of_ocaml css_gen base))
+ (libraries base css_gen js_of_ocaml tyxml.functor ui_effect virtual_dom))
