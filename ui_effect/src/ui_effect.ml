@@ -4,7 +4,7 @@ include Ui_effect_intf
 type 'a t = ..
 type 'a t += Ignore : unit t | Many : unit t list -> unit t
 
-(* We use this table for dispatching to the appropriate handler in an efficient way.  *)
+(* We use this table for dispatching to the appropriate handler in an efficient way. *)
 type hidden =
   | T :
       { value : 'a t
@@ -16,8 +16,8 @@ type hidden =
 let handlers : (hidden -> unit) Hashtbl.M(Int).t = Hashtbl.create (module Int) ~size:8
 
 (* Runs [f] while ensuring that the number of calls to [callback] and [on_exn] is at
-   most 1. If [on_exn] is called multiple times or after a call to [callback], these
-   exns are diverted to [on_further_exns]. *)
+   most 1. If [on_exn] is called multiple times or after a call to [callback], these exns
+   are diverted to [on_further_exns]. *)
 let ensure_single_callback_is_called f ~callback ~on_exn ~on_further_exns =
   let primary_cb_filled = ref false in
   let callback v =
@@ -37,18 +37,17 @@ let ensure_single_callback_is_called f ~callback ~on_exn ~on_further_exns =
   f ~callback ~on_exn ~on_further_exns
 ;;
 
-(* Runs [f] while ensuring that (a) raised exceptions are caught, (b) exception
-   handlers are only called once for each exn, and (c) ensures of
+(* Runs [f] while ensuring that (a) raised exceptions are caught, (b) exception handlers
+   are only called once for each exn, and (c) ensures of
    [ensure_single_callback_is_called]. *)
 let run_custom_function f ~callback ~on_exn ~on_further_exns =
   let f =
     ensure_single_callback_is_called (fun ~callback ~on_exn ~on_further_exns:_ ->
       f ~callback ~on_exn)
   in
-  (* True if any of {callback,on_exn,on_further_exns} have raised yet.
-     If one of them raises and is synchronous, it can cause [f ...] to raise
-     as well. In this case, we've already called [on_exn], so we shouldn't call it
-     again. *)
+  (* True if any of [{callback,on_exn,on_further_exns}] have raised yet. If one of them
+     raises and is synchronous, it can cause [f ...] to raise as well. In this case, we've
+     already called [on_exn], so we shouldn't call it again. *)
   let raised_from_callback = ref false in
   let wrap_callback f v =
     try f v with

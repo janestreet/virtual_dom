@@ -83,8 +83,8 @@ let to_lambda_soup (type a) t (breadcrumb_preference : a breadcrumb_preference)
         { tag_name
         ; attributes
           (* We ignore [string_properties] / [bool_properties] as their names can overlap
-           with attributes. Ignoring them here currently just means that people cannot
-           select on them when triggering events.
+             with attributes. Ignoring them here currently just means that people cannot
+             select on them when triggering events.
           *)
         ; string_properties = _
         ; bool_properties = _
@@ -157,10 +157,9 @@ let is_void_element = function
   | _ -> false
 ;;
 
-(* Printing elements in single-line and multiline formats is essentially the
-   same. The main difference is what attributes are separated by: in
-   single-line, they are separated just by spaces, but in multiline they are
-   separated by a newline and some indentation.
+(* Printing elements in single-line and multiline formats is essentially the same. The
+   main difference is what attributes are separated by: in single-line, they are separated
+   just by spaces, but in multiline they are separated by a newline and some indentation.
 *)
 let bprint_element
   buffer
@@ -747,18 +746,17 @@ module User_actions = struct
   ;;
 
   let build_target ~element ~value =
-    (* When an [on_input] event is fired, in order to pull the value of
-       the element, [Virtual_dom.Vdom.Attr.on_input_event] looks at the
-       "target" property on the event and tries to coerce that value to one
-       of [input element, select element, textarea element].  This coercion
-       function is implemented in [Js_of_ocaml.Dom_html.CoerceTo], and the
-       way that the coercion function works is by comparing the value of
-       the [tagName] property on the event target to the string of the tag
-       name that the coercion is targeting.
+    (* When an [on_input] event is fired, in order to pull the value of the element,
+       [Virtual_dom.Vdom.Attr.on_input_event] looks at the "target" property on the event
+       and tries to coerce that value to one of
+       [input element, select element, textarea element]. This coercion function is
+       implemented in [Js_of_ocaml.Dom_html.CoerceTo], and the way that the coercion
+       function works is by comparing the value of the [tagName] property on the event
+       target to the string of the tag name that the coercion is targeting.
 
-       By mocking out the [tagName] and [value] properties on the target of
-       the event, we can trick the virtual_dom code into handling our event
-       as though there was a real DOM element! *)
+       By mocking out the [tagName] and [value] properties on the target of the event, we
+       can trick the virtual_dom code into handling our event as though there was a real
+       DOM element! *)
     Js.Unsafe.inject
       (object%js
          val tagName = Js.string (tag_name_exn element)
@@ -797,10 +795,9 @@ module User_actions = struct
         ~include_modifier_keys:true
         [ "target", target ]
     in
-    (* [Vdom_input_widgets] uses [on_click] and [Multi_select] uses
-       [on_change], so we trigger both.  This is safe, as both of these
-       events are actually triggered in the dom, so it's a realistic
-       simulation of what's actually going on in the browser. *)
+    (* [Vdom_input_widgets] uses [on_click] and [Multi_select] uses [on_change], so we
+       trigger both. This is safe, as both of these events are actually triggered in the
+       dom, so it's a realistic simulation of what's actually going on in the browser. *)
     trigger_many element ~event_names:[ "onclick"; "onchange" ] ~extra_fields:event_object
   ;;
 
@@ -1347,8 +1344,8 @@ Likely fix: add a `type="button"` attribute. |}
       | Node of
           { element : element
           ; children : t list
-              (* [rules_broken] is mutable because we might only know that a rule is broken
-                 after the [Tree.t] has been built. *)
+              (* [rules_broken] is mutable because we might only know that a rule is
+                 broken after the [Tree.t] has been built. *)
           ; rules_broken : Rule.t Hash_set.t
           }
       | Empty

@@ -122,8 +122,8 @@ let keydown ~phase ~f =
 let keyup ~phase ~f = Keyup.create phase ~f |> Attr.create_hook "global-keyup-listener"
 
 class type event_with_string_return_value = object
-  (* Events with [returnValue] are impossible to properly type, so we make one that
-     is specialized for string, and cast our before_unload type to it. *)
+  (* Events with [returnValue] are impossible to properly type, so we make one that is
+     specialized for string, and cast our before_unload type to it. *)
   method returnValue : Js.js_string Js.t Js.writeonly_prop
 end
 

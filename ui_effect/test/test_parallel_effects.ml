@@ -253,9 +253,8 @@ let%expect_test "Effect.both_parallel out of order" =
     in
     Effect.Expert.handle effect ~on_exn:Base.raise;
     fill_eff2 ();
-    (* NOTE: This test shows that the effects in [all] are
-       only filled in order, while both_parallel allows out-of-order
-       effects to be filled earlier. *)
+    (* NOTE: This test shows that the effects in [all] are only filled in order, while
+       both_parallel allows out-of-order effects to be filled earlier. *)
     expect_diff
       ~parallel:(fun () -> [%expect {| eff2 done |}])
       ~normal:(fun () -> [%expect {| |}]);
@@ -427,8 +426,8 @@ let%expect_test "Effect.all_parallel out of order" =
       ~parallel:(fun () -> [%expect {| eff3 done |}])
       ~normal:(fun () -> [%expect {| |}]);
     fill_eff1 ();
-    (* NOTE: In the "normal"/non-parallel case, none of the events occurs unless they
-       its previous effect in the list has occurred. *)
+    (* NOTE: In the "normal"/non-parallel case, none of the events occurs unless they its
+       previous effect in the list has occurred. *)
     expect_diff
       ~parallel:(fun () ->
         [%expect
@@ -477,8 +476,8 @@ let%expect_test "Effect.all_parallel_unit sanity check" =
       ~parallel:(fun () -> [%expect {| "eff3 done" |}])
       ~normal:(fun () -> [%expect {| |}]);
     fill_eff1 ();
-    (* NOTE: In the "normal"/non-parallel case, none of the events occurs unless they
-   its previous effect in the list has occurred. *)
+    (* NOTE: In the "normal"/non-parallel case, none of the events occurs unless they its
+       previous effect in the list has occurred. *)
     expect_diff
       ~parallel:(fun () ->
         [%expect

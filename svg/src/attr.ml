@@ -351,10 +351,8 @@ let stroke style =
   c (Css_gen.Color.to_string_css style)
 ;;
 
-(*
-   val stroke_width: float -> t
-   val stroke_linecap: [`Butt | `Round | `Square] -> t
-   val stroke_dasharray: float list -> t
+(* val stroke_width: float -> t val stroke_linecap: [`Butt | `Round | `Square] -> t val
+   stroke_dasharray: float list -> t
 *)
 let stroke_width = create_float "stroke-width"
 let stroke_dashoffset = create_float "stroke-dashoffset"

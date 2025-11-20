@@ -83,8 +83,8 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
       node
       ~extra_fields:[ "target", value_element ]
       ~event_name:"onchange");
-  (* Check it out!  The error message knew about the whole path that the js_of_ocaml runtime
-     took in order to find tagName.  The power of Proxies! *)
+  (* Check it out! The error message knew about the whole path that the js_of_ocaml
+     runtime took in order to find tagName. The power of Proxies! *)
   [%expect
     {|
     ((missing_field_path target.tagName)
@@ -93,7 +93,7 @@ let%expect_test "empty input with on_change (failing: forgot tagName!)" =
 ;;
 
 (* [Node_helpers.unsafe_convert_exn] only treats an attribute as a handler if it is named
-   like a handler and it is a function.  *)
+   like a handler and it is a function. *)
 let%expect_test "fake event handler" =
   let node =
     Node_helpers.unsafe_convert_exn

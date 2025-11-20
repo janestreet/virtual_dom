@@ -69,8 +69,8 @@ let rec t_to_js = function
   | None ->
     (* We normally filter these out, but if [to_js] is called directly on a [None] node,
        we use this hack. Aside from having a [Text] node without any text present in the
-       Dom, there should be no unwanted side-effects.  In an Incr_dom application, this
-       can only happen when the root view Incremental is inhabited by a [None]. *)
+       Dom, there should be no unwanted side-effects. In an Incr_dom application, this can
+       only happen when the root view Incremental is inhabited by a [None]. *)
     Raw.Node.text ""
   | Fragment children ->
     if not (Core.am_running_test || !has_emitted_fragment_warning)
@@ -225,7 +225,7 @@ let none =
     ~init:(fun () ->
       let comment = Js_of_ocaml.Dom_html.document##createComment comment_content in
       (* The widget signature wants to produce an element node (which almost always makes
-         sense), but here we have a coment node.  The underlying virtual dom library is ok
+         sense), but here we have a coment node. The underlying virtual dom library is ok
          with all node types, so it's safe to lie here. *)
       let element = Stdlib.Obj.magic comment in
       (), element)
@@ -256,8 +256,8 @@ module Inner_html = struct
     ~element
     =
     let element =
-      (* if the tag or the attributes are different, do a diff/patch cycle to
-                 get it up to date *)
+      (* if the tag or the attributes are different, do a diff/patch cycle to get it up to
+         date *)
       if (not (String.equal prev_tag tag)) || not (phys_equal prev_attr attrs)
       then
         Raw.Patch.create
@@ -267,8 +267,8 @@ module Inner_html = struct
       else element
     in
     (* if the tag changed, then [element] will be empty, so we need to update the
-       innerHTML.  If the content changed, then we need to set the innerHTML for
-       obvious reasons. *)
+       innerHTML. If the content changed, then we need to set the innerHTML for obvious
+       reasons. *)
     if (not (String.equal prev_tag tag)) || not (String.equal prev_content content)
     then element##.innerHTML := Js.string content;
     (content, tag, attrs), element
@@ -305,9 +305,9 @@ module Inner_html = struct
            | None -> lazy (create tag ~attrs [ text content ])
            | Some v -> v
          in
-         (* We use the [widget] function directly, rather than through the
-            easier-to-use [widget_of_module] function because we want to explicitly create
-            the id such that it is distinct between [inner_html] and [inner_html_svg]. *)
+         (* We use the [widget] function directly, rather than through the easier-to-use
+            [widget_of_module] function because we want to explicitly create the id such
+            that it is distinct between [inner_html] and [inner_html_svg]. *)
          widget ~id ~vdom_for_testing ~init ~update ~destroy ())
   ;;
 end

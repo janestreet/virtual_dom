@@ -31,7 +31,7 @@ val property : here:[%call_pos] -> string -> Js.Unsafe.any -> t
     [suppress_merge_warning (href input)] attribute to the node will not trigger a
     warning. However, adding another [href] which does not use [suppress_merge_warnings]
     to the node will again emit a warning. In other words, this function only suppresses
-    warnings for an instance of an attribute, not all attributes of the same type. **)
+    warnings for an instance of an attribute, not all attributes of the same type. *)
 val suppress_merge_warnings : t -> t
 
 (** Hooks with the same [name] will be merged (via [Input.combine]) if they come from the
@@ -243,34 +243,32 @@ end
 module Always_focus_hook : sig
   (* CONSIDER USING [Bonsai_web.Effect.Focus.*] functions *)
 
-  (* This hook always causes the element to which it is attached to become
-     focused when the element is attached to the DOM. This may behave
-     unpredictably, since elements which are moved from one part of a page
-     may be removed and re-inserted from the DOM, thus causing this attribute
-     to steal back focus *)
+  (* This hook always causes the element to which it is attached to become focused when
+     the element is attached to the DOM. This may behave unpredictably, since elements
+     which are moved from one part of a page may be removed and re-inserted from the DOM,
+     thus causing this attribute to steal back focus *)
   val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> t
 end
 
 module Single_focus_hook () : sig
   (* CONSIDER USING [Bonsai_web.Effect.Focus.*] functions *)
 
-  (* A hook that makes the element it is attached to become focused immediately
-     after the attribute is applied. Afterward, the attribute has no effect on
-     the element or any other element.
+  (* A hook that makes the element it is attached to become focused immediately after the
+     attribute is applied. Afterward, the attribute has no effect on the element or any
+     other element.
 
-     Since an element in the virtual dom can be removed and re-inserted into
-     the DOM, a hook which focuses an element every time its [on_mount]
-     function is called will not have the right behavior. Elements which move
-     from one part of the tree to another may unexpectedly gain focus.
+     Since an element in the virtual dom can be removed and re-inserted into the DOM, a
+     hook which focuses an element every time its [on_mount] function is called will not
+     have the right behavior. Elements which move from one part of the tree to another may
+     unexpectedly gain focus.
 
-     To avoid this problem, we treat each instance of the attribute as
-     distinct from all the other instances. Each individual focus attribute
-     can only be used once before it is deactivated which prevents it
-     from causing any elements from being focused again.
+     To avoid this problem, we treat each instance of the attribute as distinct from all
+     the other instances. Each individual focus attribute can only be used once before it
+     is deactivated which prevents it from causing any elements from being focused again.
 
-     This functor creates a new instance of a focus attribute. Since each
-     functor instantiation is distinct, avoid calling this from within an
-     Incremental graph, or you will not get the desired effect. *)
+     This functor creates a new instance of a focus attribute. Since each functor
+     instantiation is distinct, avoid calling this from within an Incremental graph, or
+     you will not get the desired effect. *)
 
   val attr : [ `Read_the_docs__this_hook_is_unpredictable ] -> after:unit Ui_effect.t -> t
 end

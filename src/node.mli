@@ -151,8 +151,8 @@ val label : node_creator
 val legend : node_creator
 val li : node_creator
 
-(* [link] is omitted because it could be confusing to new web devs, and Bonsai apps
-   almost never need to render the <head />. *)
+(* [link] is omitted because it could be confusing to new web devs, and Bonsai apps almost
+   never need to render the <head />. *)
 
 val map : node_creator
 val mark : node_creator
@@ -182,7 +182,7 @@ val ruby : node_creator
 val samp : node_creator
 
 (* [script] is omitted, because Bonsai apps shouldn't be dynamically generating script
-   tags.*)
+   tags. *)
 
 val search : node_creator
 val section : node_creator
@@ -222,10 +222,10 @@ val sexp_for_debugging : ?indent:int -> Sexp.t -> t
 (** [of_opt node] returns the underlying Node.t for a Some, and Node.none for a None *)
 val of_opt : t option -> t
 
-(* [lazy_] allows you to defer the computation of a virtual-dom node until
-   the node is actually necessary for rendering.  This can be _very_ valuable
-   in situations where a node might be computed multiple-times per frame - but
-   only used once (at the end, for rendering) *)
+(* [lazy_] allows you to defer the computation of a virtual-dom node until the node is
+   actually necessary for rendering. This can be _very_ valuable in situations where a
+   node might be computed multiple-times per frame - but only used once (at the end, for
+   rendering) *)
 val lazy_ : ?key:string -> t Lazy.t -> t
 
 (** This function can be used to build a node with the tag and html content of that node

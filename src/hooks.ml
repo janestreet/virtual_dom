@@ -92,9 +92,9 @@ module Make (S : S) = struct
       | `Schedule_immediately_after_this_dom_patch_completes on_mount ->
         let should_run = ref true in
         (* It is unlikely that a hook is destroyed immediately after being created, but it
-           can happen, if the creation and destruction happen in the [on_mount] of a different
-           hook. In this case, the element never gets displayed to the user, so we just
-           don't run its [on_mount]. *)
+           can happen, if the creation and destruction happen in the [on_mount] of a
+           different hook. In this case, the element never gets displayed to the user, so
+           we just don't run its [on_mount]. *)
         On_mount.Private_for_this_library_only.schedule (fun () ->
           if !should_run
           then (

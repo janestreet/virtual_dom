@@ -506,8 +506,8 @@ module%test [@name "Effect.protect"] _ = struct
     (* Note that the outer raise exn handler is called before the inner raise. We could
        call [on_further_exns] on the inner exn before the outer one to prevent this, but
        it would change the order of other things in unintuitive ways (e.g. [iter_errors]
-       would see the exn from [finally] before [main_effect], and effects could raise
-       with on_further_exns' exns rather than the first exn that's actually raised). *)
+       would see the exn from [finally] before [main_effect], and effects could raise with
+       on_further_exns' exns rather than the first exn that's actually raised). *)
     [%expect
       {|
       ("handled by on_exn" (exn "main raised"))

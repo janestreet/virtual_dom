@@ -63,11 +63,10 @@ end = struct
     (T { type_id = ltid; handler = lhandler; lowered = _ })
     (T { type_id = rtid; handler = rhandler; lowered = _ } as right)
     =
-    (* If they are not the same witness, then it is a bug in virtual_dom, since
-       we do not expose [on] anymore which means this library can determined the
-       [Type_equal.Id] corresponding to each event. virtual_dom maintains the
-       invariant that any two events with the same name will produce handlers
-       that have the same [Type_equal.Id]. *)
+    (* If they are not the same witness, then it is a bug in virtual_dom, since we do not
+       expose [on] anymore which means this library can determined the [Type_equal.Id]
+       corresponding to each event. virtual_dom maintains the invariant that any two
+       events with the same name will produce handlers that have the same [Type_equal.Id]. *)
     match Type_equal.Id.same_witness ltid rtid with
     | Some T ->
       create ~type_id:ltid ~handler:(fun value ->
@@ -259,20 +258,19 @@ let empty_merge =
 
 let to_raw attr =
   let attrs = [ attr ] in
-  (* When input elements have their value set to what it already is
-     the cursor gets moved to the end of the field even when the user
-     is editing in the middle. SoftSetHook (from ./soft-set-hook.js)
-     compares before setting, avoiding the problem just like in
+  (* When input elements have their value set to what it already is the cursor gets moved
+     to the end of the field even when the user is editing in the middle. SoftSetHook
+     (from ./soft-set-hook.js) compares before setting, avoiding the problem just like in
      https://github.com/Matt-Esch/virtual-dom/blob/947ecf92b67d25bb693a0f625fa8e90c099887d5/virtual-hyperscript/index.js#L43-L51
 
-     note that Elm's virtual-dom includes a workaround for this so
-     if we switch to that the workaround here will be unnecessary.
+     note that Elm's virtual-dom includes a workaround for this so if we switch to that
+     the workaround here will be unnecessary.
      https://github.com/elm-lang/virtual-dom/blob/17b30fb7de48672565d6227d33c0176f075786db/src/Native/VirtualDom.js#L434-L439
   *)
   let attrs_obj : Vdom_raw.Attrs.t = Vdom_raw.Attrs.create () in
-  (* [take_second_*] is the trivial merge function (i.e. no merge at all); it
-     takes two attributes of the same kind, ignores a first, and emits
-     a warning if [warn_about_unmerged_attributes] is enabled. *)
+  (* [take_second_*] is the trivial merge function (i.e. no merge at all); it takes two
+     attributes of the same kind, ignores a first, and emits a warning if
+     [warn_about_unmerged_attributes] is enabled. *)
   let take_second_styles ~here first second =
     if not (Css_gen.is_empty first)
     then
@@ -305,28 +303,25 @@ let to_raw attr =
       [%message "WARNING: not combining hooks" (name : string)];
     second
   in
-  (* We merge attributes when they are written to the raw attribute object,
-     rather than when the user-facing merge functions ([many], [combine], and
-     [@]) are called. This strategy is better in both speed and memory usage,
-     since it means we do not need to concatenate the list of "unmergeable"
-     attributes (Property and Attribute); instead, we can iterate through the
-     tree of attributes and eagerly write unmergeable attributes to the
-     attribute object as we find them. If two unmergeable attributes have the
-     same name, the second will simply overwrite the first, as desired.
+  (* We merge attributes when they are written to the raw attribute object, rather than
+     when the user-facing merge functions ([many], [combine], and [@]) are called. This
+     strategy is better in both speed and memory usage, since it means we do not need to
+     concatenate the list of "unmergeable" attributes (Property and Attribute); instead,
+     we can iterate through the tree of attributes and eagerly write unmergeable
+     attributes to the attribute object as we find them. If two unmergeable attributes
+     have the same name, the second will simply overwrite the first, as desired.
 
-     In order to preserve the existing behavior of the [Multi] module (that is,
-     it must be possible to merge classes and styles, but not hooks and
-     handlers), we introduce the workaround constructor
-     [Many_only_merge_classes_and_styles].
+     In order to preserve the existing behavior of the [Multi] module (that is, it must be
+     possible to merge classes and styles, but not hooks and handlers), we introduce the
+     workaround constructor [Many_only_merge_classes_and_styles].
 
      There are thus three cases that each have different merge behaviors:
      - Simple lists - no merging
      - Lists wrapped in a [Many] - merges classes, styles, hooks, and handlers
      - Lists wrapped in a [Many_only_merge_classes_and_styles] - merges classes and styles
 
-     To avoid duplicating the match expression logic, we paremeterize it by the
-     merging behavior, since "no merge" really means "merge by taking the
-     second one". *)
+     To avoid duplicating the match expression logic, we paremeterize it by the merging
+     behavior, since "no merge" really means "merge by taking the second one". *)
   let rec merge ~combine_hook ~combine_handler ~combine_styles ~combine_classes acc =
     List.fold ~init:acc ~f:(fun acc attr ->
       match attr with
@@ -511,8 +506,8 @@ let cols ~(here : [%call_pos]) x = create ~here "cols" (Int.to_string x)
 let draggable ~(here : [%call_pos]) b = create ~here "draggable" (Bool.to_string b)
 
 module Type_id = struct
-  (* We provide a trivial [to_sexp] function since we only want
-     to unify type ids and not convert types to ids *)
+  (* We provide a trivial [to_sexp] function since we only want to unify type ids and not
+     convert types to ids *)
   let create name = Type_equal.Id.create ~name (fun _ -> Sexplib.Sexp.List [])
   let (event : Dom_html.event Type_equal.Id.t) = create "event"
   let (focus : Dom_html.focusEvent Type_equal.Id.t) = create "focusEvent"
@@ -663,8 +658,8 @@ module Always_focus_hook = struct
   module Hook = Hooks.Make (T)
 
   let attr `Read_the_docs__this_hook_is_unpredictable =
-    (* Append the id to the name of the hook to ensure that it is distinct
-       from all other focus hooks. *)
+    (* Append the id to the name of the hook to ensure that it is distinct from all other
+       focus hooks. *)
     create_hook "always-focus-hook" (Hook.create ())
   ;;
 end
@@ -699,8 +694,8 @@ module Single_focus_hook () = struct
   module Hook = Hooks.Make (T)
 
   let attr `Read_the_docs__this_hook_is_unpredictable ~after =
-    (* Append the id to the name of the hook to ensure that it is distinct
-       from all other focus hooks. *)
+    (* Append the id to the name of the hook to ensure that it is distinct from all other
+       focus hooks. *)
     create_hook "single-focus-hook" (Hook.create after)
   ;;
 end
