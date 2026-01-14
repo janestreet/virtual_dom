@@ -167,7 +167,7 @@ let quoted_string' t ~quote =
              {v
                 unicode: \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?
                 escape : {unicode}|\\[^\n\r\f0-9a-f]
-              v}
+             v}
           *)
           consume_1 t;
           loop ())
@@ -215,13 +215,12 @@ let exponential_part t =
     else if accept t Char.is_digit
     then many t Char.is_digit
     else
-      (* Backtrack if there are no digits or signs after the 'e' because
-         it is possible that the 'e' was actually a part of something else. For
-         example, the 'e' could be part of an 'em' or 'en' dimension instead
-         of beginning the exponential part of a scientific notation number.
+      (* Backtrack if there are no digits or signs after the 'e' because it is possible
+         that the 'e' was actually a part of something else. For example, the 'e' could be
+         part of an 'em' or 'en' dimension instead of beginning the exponential part of a
+         scientific notation number.
 
-         Example: 1.2e3 is scientific notation, but 1.2em is a number with a
-         dimension. *)
+         Example: 1.2e3 is scientific notation, but 1.2em is a number with a dimension. *)
       reset t mark
 ;;
 

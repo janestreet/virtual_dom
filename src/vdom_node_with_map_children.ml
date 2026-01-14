@@ -35,7 +35,7 @@ module Widget (K : Comparator.S) = struct
 
   let name = "vdom-node-with-map-children"
 
-  (* This function diffs two vdom nodes.  It is notable for being happy to diff nodes that
+  (* This function diffs two vdom nodes. It is notable for being happy to diff nodes that
      have different keys. *)
   let do_change ~key_before ~key_after ~elements current_vdom =
     let old_vdom, old_element = Map.find_exn elements key_before in
@@ -48,8 +48,8 @@ module Widget (K : Comparator.S) = struct
     in
     let elements =
       let elements =
-        (* This branch potentially saves a second tree traversal on the common
-           case where both the before and after key are equal. *)
+        (* This branch potentially saves a second tree traversal on the common case where
+           both the before and after key are equal. *)
         match phys_equal key_before key_after with
         | true -> elements
         | false -> Map.remove elements key_before
@@ -60,10 +60,10 @@ module Widget (K : Comparator.S) = struct
   ;;
 
   module Acc = struct
-    (* On every frame, we build an Acc.t, and keep track of which
-       rows were added and removed ("changes" are just immediately diffed/patched without
-       winding up in this structure).  After all added and removed nodes are visited,
-       we "finalize" the structure by attempting to pair up rows to diff and re-insert. *)
+    (* On every frame, we build an Acc.t, and keep track of which rows were added and
+       removed ("changes" are just immediately diffed/patched without winding up in this
+       structure). After all added and removed nodes are visited, we "finalize" the
+       structure by attempting to pair up rows to diff and re-insert. *)
     type t =
       { added : (K.t * Node.t) list
       ; removed : (K.t * Node.t * Dom_html.element Js.t) list
@@ -83,8 +83,8 @@ module Widget (K : Comparator.S) = struct
       { t with removed }
     ;;
 
-    (* perform a reconciliation here becuase these vdom nodes share a key,
-       so it's likely that they have similar vdom contents *)
+    (* perform a reconciliation here becuase these vdom nodes share a key, so it's likely
+       that they have similar vdom contents *)
     let change t ~key ~current_vdom =
       let elements, _new_element =
         do_change ~key_before:key ~key_after:key ~elements:t.state.elements current_vdom
@@ -92,10 +92,10 @@ module Widget (K : Comparator.S) = struct
       { t with state = { t.state with elements } }
     ;;
 
-    (* This empty div with a key is used to delete nodes by diffing/patching them against it.
-       Because no other node will have this specific key, they'll always be removed.  The reason
-       we do this instead of just deleting the node out of the dom is so that their widget and hook
-       "destroy" functions are called.
+    (* This empty div with a key is used to delete nodes by diffing/patching them against
+       it. Because no other node will have this specific key, they'll always be removed.
+       The reason we do this instead of just deleting the node out of the dom is so that
+       their widget and hook "destroy" functions are called.
 
        The "key" is a random guid to avoid collisions. *)
     let empty_node = Node.div ~key:"4b75966c-60a2-46f5-a2bb-4939e2cb4c52" []
@@ -131,8 +131,8 @@ module Widget (K : Comparator.S) = struct
     ;;
 
     let prepend (element : Dom.element Js.t) (node : Dom.node Js.t) : unit =
-      (* NOTE: This is done because Js_of_ocaml does not have bindings
-         to the prepend method yet.
+      (* NOTE: This is done because Js_of_ocaml does not have bindings to the prepend
+         method yet.
 
          https://developer.mozilla.org/en-US/docs/Web/API/Element/prepend *)
       Js.Unsafe.meth_call element "prepend" [| Js.Unsafe.inject node |]
@@ -169,8 +169,8 @@ module Widget (K : Comparator.S) = struct
   ;;
 
   let destroy ~prev_input ~state ~element =
-    (* destroying this widget is accomplished by running through the whole
-       map and removing each child individually. *)
+    (* destroying this widget is accomplished by running through the whole map and
+       removing each child individually. *)
     let acc =
       Map.fold
         prev_input.Input.children
@@ -178,8 +178,8 @@ module Widget (K : Comparator.S) = struct
         ~f:(fun ~key ~data:_ acc -> Acc.remove acc ~key)
     in
     let _state = Acc.finalize acc in
-    (* If our previous input had a hook in its attr, then we need to patch in
-       a version without the attrs in order to run the hook destruction logic. *)
+    (* If our previous input had a hook in its attr, then we need to patch in a version
+       without the attrs in order to run the hook destruction logic. *)
     if Option.is_some prev_input.attr
     then
       diff_patch
@@ -192,8 +192,8 @@ module Widget (K : Comparator.S) = struct
     if (not (String.equal prev_input.Input.tag input.Input.tag))
        || not (Bool.equal prev_input.Input.is_svg input.Input.is_svg)
     then (
-      (* we can't do an in-place diff / patch on two elements that have different
-         tags, so let's just obliterate the previous one and re-create *)
+      (* we can't do an in-place diff / patch on two elements that have different tags, so
+         let's just obliterate the previous one and re-create *)
       destroy ~prev_input ~state ~element;
       create input)
     else (
@@ -267,9 +267,9 @@ let create tag ?(attrs = []) children =
   make ~is_svg:false ~tag ~attr children
 ;;
 
-(* NOTE: Sadly, I _think_ that due to the value restriction the unknown params in the
-   (_, Node.t,  _) Map.t do not let us make these partially applied functions. Maybe there
-   is some other way of not turning these into functions. *)
+(* NOTE: Sadly, I _think_ that due to the value restriction the unknown params in the (_,
+   Node.t, _) Map.t do not let us make these partially applied functions. Maybe there is
+   some other way of not turning these into functions. *)
 let div ?attrs m = create "div" ?attrs m
 let span ?attrs m = create "span" ?attrs m
 let ul ?attrs m = create "ul" ?attrs m

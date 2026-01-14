@@ -1,15 +1,14 @@
-(* Recursive descent parsers.  A parser returns false if based on a
-   single token lookahead it decides that the given text can not be
-   parsed.  Any other parse errors are handled by raising exceptions.
+(* Recursive descent parsers. A parser returns false if based on a single token lookahead
+   it decides that the given text can not be parsed. Any other parse errors are handled by
+   raising exceptions.
 
-   Some parsers return unit because we only call them when a failure
-   to parse implies a parse error (and not that some parser higher up
-   in the call chain should try to parse something else).
+   Some parsers return unit because we only call them when a failure to parse implies a
+   parse error (and not that some parser higher up in the call chain should try to parse
+   something else).
 
-   For simplicity the parsers themselves just validate and don't
-   produce any values.  That leads to a few unelegant constructs
-   (primarily in declaration), but means we otherwise have rather
-   simple code that also allocates very little.
+   For simplicity the parsers themselves just validate and don't produce any values. That
+   leads to a few unelegant constructs (primarily in declaration), but means we otherwise
+   have rather simple code that also allocates very little.
 *)
 
 open Core
@@ -146,10 +145,8 @@ let expect_declaration ct =
   | None -> raise_s [%message "Expected <declaration>"]
 ;;
 
-(* As per: https://www.w3.org/TR/css-style-attr/
-   declaration-list
-   : S* declaration? [ ';' S* declaration? ]*
-   ;
+(* As per: https://www.w3.org/TR/css-style-attr/ declaration-list : S* declaration?
+   [ ';' S* declaration? ]* ;
 *)
 let expect_declaration_list ct =
   let res = ref [] in

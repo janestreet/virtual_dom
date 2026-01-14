@@ -63,8 +63,8 @@ val visibilitychange
   -> f:(Dom_html.event Js.t -> unit Ui_effect.t)
   -> Attr.t
 
-(* Chrome may not allow Javascript to run after a user requests a tab close, so an
-   effect passed into `Custom_best_effort may or may not execute to completion *)
+(* Chrome may not allow Javascript to run after a user requests a tab close, so an effect
+   passed into `Custom_best_effort may or may not execute to completion *)
 val beforeunload
   :  phase:Phase.t
   -> f:

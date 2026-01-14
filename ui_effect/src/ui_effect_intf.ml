@@ -192,7 +192,7 @@ module type Effect = sig
       -> unit t
       -> unit
 
-    (* We use this table for dispatching to the appropriate handler in an efficient way.  *)
+    (* We use this table for dispatching to the appropriate handler in an efficient way. *)
     type hide =
       | T :
           { value : 'a t

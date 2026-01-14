@@ -2,7 +2,7 @@ open Base
 open Js_of_ocaml
 include Ui_effect
 
-(* All visibility handlers see all events, so a simple list is enough.  *)
+(* All visibility handlers see all events, so a simple list is enough. *)
 let visibility_handlers : (unit -> unit) list ref = ref []
 
 module type Visibility_handler = sig
@@ -51,9 +51,8 @@ let sequence_as_sibling left ~unless_stopped =
 
 let open_url ?(in_ = Open_url_target.This_tab) url = Open { url; target = in_ }
 
-(* We need to keep track of the current dom event here so that
-   movement between [Vdom.Effect.Expert.handle] and
-   [Ui_concrete.Effect.Expert.handle] keeps the original
+(* We need to keep track of the current dom event here so that movement between
+   [Vdom.Effect.Expert.handle] and [Ui_concrete.Effect.Expert.handle] keeps the original
    dom event around. *)
 let current_dom_event = ref None
 

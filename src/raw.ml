@@ -159,7 +159,7 @@ module Widget = struct
     constraint 'element = #Dom_html.element Js.t
     method type_ : Js.js_string Js.t Js.writeonly_prop
 
-    (* virtual-dom considers two widgets of being of the same "kind" if either
+    (*=virtual-dom considers two widgets of being of the same "kind" if either
        of the following holds:
 
        1. They both have a "name" attribute and their "id" fields are equal.
@@ -188,15 +188,13 @@ module Widget = struct
   end
 
   (* We model JS level objects here so there is a lot of throwing away of type
-     information.  We could possibly try to rediscover more of it.  Or maybe we
-     should see if we can get rid Widget completely.
-     the unit type parameters here are not actually unit, but part of
-     the type info we have thrown away into our dance
-     with JS *)
+     information. We could possibly try to rediscover more of it. Or maybe we should see
+     if we can get rid Widget completely. the unit type parameters here are not actually
+     unit, but part of the type info we have thrown away into our dance with JS *)
   type t = Node.t
 
-  (* here is how we throw away type information.  Our good old friend Obj.magic,
-     but constrained a little bit *)
+  (* here is how we throw away type information. Our good old friend Obj.magic, but
+     constrained a little bit *)
   let node_of_widget : (_, _) widget Js.t -> Node.t = Stdlib.Obj.magic
 
   module State_keeper = struct
@@ -241,7 +239,7 @@ module Widget = struct
          dom_node);
     obj##.update
     := Js.wrap_callback (fun prev dom_node ->
-         (* The [update] method of [obj] is only called by virtual-dom after it has checked
+         (*=The [update] method of [obj] is only called by virtual-dom after it has checked
          that the [id]s of [prev] and [obj] are "===" equal. Thus [same_witness_exn] will
          never raise. *)
          match Type_equal.Id.same_witness_exn prev##.id id with

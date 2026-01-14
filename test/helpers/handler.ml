@@ -22,16 +22,16 @@ let throwing_proxy =
            that was not provided to [~extra_fields]."]
   in
   let create_proxy : Js.Unsafe.any -> Js.Unsafe.any -> Js.Unsafe.any -> Js.Unsafe.any =
-    (* Given a base-object, a function that raises an ocaml exception,
-       and an optional "path" to the base-object, return a proxy object
-       that behaves exactly like a read-only [base], but any accesses into
-       that object which aren't present instead call [raise_missing_field_path]
-       instead of returning [undefined].  The objects returned via successful
-       indexes into [base] are also wrapped in a proxy of the same design.
+    (* Given a base-object, a function that raises an ocaml exception, and an optional
+       "path" to the base-object, return a proxy object that behaves exactly like a
+       read-only [base], but any accesses into that object which aren't present instead
+       call [raise_missing_field_path] instead of returning [undefined]. The objects
+       returned via successful indexes into [base] are also wrapped in a proxy of the same
+       design.
 
-       Because these proxies yield more proxies, the [path] parameter keeps track
-       of the field names that were accessed in order to get to the current proxy.
-       This enhances the error message that is thrown back to OCaml. *)
+       Because these proxies yield more proxies, the [path] parameter keeps track of the
+       field names that were accessed in order to get to the current proxy. This enhances
+       the error message that is thrown back to OCaml. *)
     Js.Unsafe.pure_js_expr
       {js|
         (function create_proxy (base, raise_missing_field_path, path) {

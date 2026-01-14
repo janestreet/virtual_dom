@@ -31,8 +31,8 @@ end
 module Validated = struct
   type 'a t =
     | Initial
-    (* This is used to avoid marking as invalid a field that hasn't ever been
-       touched by the user, to improve UX. *)
+    (* This is used to avoid marking as invalid a field that hasn't ever been touched by
+       the user, to improve UX. *)
     | Valid of
         { input : string option
         ; value : 'a
@@ -149,7 +149,7 @@ module Time_compat = struct
 
       let to_string t =
         let s = Time_ns.to_string_iso8601_basic ~zone t in
-        (* The browser expect a yyyy-MM-ddThh:mm format and it allows
+        (*=The browser expect a yyyy-MM-ddThh:mm format and it allows
            trailing ":ss" or ":ss.SSS".
 
            to_string_iso8601_basic format: 2019-01-30T01:00:00.000000000+01:00
@@ -282,9 +282,9 @@ module Value_normalizing_hook = struct
         | `Always ->
           (* This condition looks complex, but it's mostly interacting with JSOO. We
              SHOULD NOT set the value property of the element only if either:
-              1. The element's current value already matches the value being set.
-              2. The element is a number input and
-                 [parseFloat(element.value) !== parseFloat(new_value)]
+             1. The element's current value already matches the value being set.
+             2. The element is a number input and
+                [parseFloat(element.value) !== parseFloat(new_value)]
 
              The first condition ensures that typing an invalid state into the input
              doesn't cause the input to be cleared.
@@ -693,9 +693,9 @@ module Multi_select = struct
         let is_selected = Set.mem selected value in
         Node.option
         (* [Attr.bool_property] keeps the state of the option in sync by setting the JS
-             property. [Attr.selected] modifies the DOM attribute so that selected options
-             can be styled with CSS. [Attr.selected] alone does not update the state
-             properly if the model changes, so both are needed. *)
+           property. [Attr.selected] modifies the DOM attribute so that selected options
+           can be styled with CSS. [Attr.selected] alone does not update the state
+           properly if the model changes, so both are needed. *)
           ~attrs:
             ([ Some (Attr.bool_property "selected" is_selected)
              ; Some
@@ -1163,8 +1163,8 @@ module Entry = struct
   ;;
 
   (* According to
-     https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color#Value the
-     value must be set in hex format and will always comes back in hex format. *)
+     https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color#Value the value
+     must be set in hex format and will always comes back in hex format. *)
   let color_picker
     ?(extra_attr = Attr.empty)
     ?(call_on_input_when = Call_on_input_when.Text_changed)

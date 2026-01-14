@@ -3,9 +3,9 @@ module Dom = Js_of_ocaml.Dom
 module Dom_html = Js_of_ocaml.Dom_html
 module Js = Js_of_ocaml.Js
 
-(* History api only cares about path, query, and fragment and the browser doesn't
-   have access to userinfo to be able to fully recreate the uri correctly. Before
-   sending to history api we strip all the parts of the URI that are not necessary *)
+(* History api only cares about path, query, and fragment and the browser doesn't have
+   access to userinfo to be able to fully recreate the uri correctly. Before sending to
+   history api we strip all the parts of the URI that are not necessary *)
 let uri_to_html5_history_string uri =
   Uri.make
     ~scheme:"https"
@@ -118,9 +118,9 @@ module T = struct
     in
     let popstate_bus =
       Bus.create_exn
-        Arity1
         ~on_subscription_after_first_write:Allow
         ~on_callback_raise:Error.raise
+        ()
     in
     let t = { payload_module; payload_bin_shape; popstate_bus; log_s } in
     let (_ : Dom_html.event_listener_id) =
@@ -281,8 +281,8 @@ module Opinionated = struct
               Html5_history.log_s html5_history message;
               s))
     in
-    (* this effectively canonicalises the address bar, and sets the state object
-       such that we can just un-bin-prot it on navigation rather than use the URI. *)
+    (* this effectively canonicalises the address bar, and sets the state object such that
+       we can just un-bin-prot it on navigation rather than use the URI. *)
     push_or_replace (module Arg_modules) html5_history `Replace current_state;
     let t =
       { html5_history
@@ -290,9 +290,9 @@ module Opinionated = struct
       ; current_state
       ; changes_bus =
           Bus.create_exn
-            Arity1
             ~on_subscription_after_first_write:Allow
             ~on_callback_raise:Error.raise
+            ()
       }
     in
     let (_ : _ Bus.Subscriber.t) =

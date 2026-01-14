@@ -140,7 +140,7 @@ module%test [@name "patch + diff"] _ = struct
       print_s [%message (For_testing.num_queued_on_mount_tasks () : int)];
       [%expect {| ("For_testing.num_queued_on_mount_tasks ()" 0) |}];
       Vdom.Node.Patch.apply patch Js_of_ocaml.Dom_html.document##.body |> Fn.ignore);
-    (* If tasks trigger other tasks, we run them in BFS order.*)
+    (* If tasks trigger other tasks, we run them in BFS order. *)
     [%expect
       {|
       init
@@ -574,8 +574,8 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       +|      hi
               <div> Has hook </div>
       |}];
-    (* We don't change any previous siblings, so a new batch of [init] -> [on_mount] doesn't
-     run again. *)
+    (* We don't change any previous siblings, so a new batch of [init] -> [on_mount]
+       doesn't run again. *)
     inject Has_prev_none;
     one_frame_with_raf handle;
     Handle.print_dom_diff ~context:1 handle;
@@ -611,8 +611,8 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       +|    </div>
           </body>
       |}];
-    (* This is particularly sad; if any ancestor gets a new previous sibling, hook [on_mounts]
-     will run again.*)
+    (* This is particularly sad; if any ancestor gets a new previous sibling, hook
+       [on_mounts] will run again. *)
     inject Parent_has_prev_sibling;
     one_frame_with_raf handle;
     Handle.print_dom_diff ~context:1 handle;

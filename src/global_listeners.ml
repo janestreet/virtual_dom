@@ -1,173 +1,91 @@
 open Core
 open Js_of_ocaml
+module Phase = Event_listener.Phase
+module Capture_and_bubbling = Event_listener.Capture_and_bubbling
+module Target = Event_listener.Target
 
-module Phase = struct
-  type t =
-    | Capture
-    | Bubbling
-end
-
-module Capture_and_bubbling = struct
-  type 'a t =
-    { capture : 'a option [@sexp.option]
-    ; bubbling : 'a option [@sexp.option]
-    }
-  [@@deriving sexp_of]
-end
-
-module Make (X : sig
-    type event = private #Dom_html.event
-
-    val event_kind : event Js.t Dom.Event.typ
-  end) =
-struct
-  module Impl = struct
-    module Input = struct
-      module Listener = struct
-        type t = X.event Js.t -> unit Ui_effect.t [@@deriving sexp_of]
-
-        let combine f g =
-          match f, g with
-          | None, None -> None
-          | Some f, None -> Some f
-          | None, Some g -> Some g
-          | Some f, Some g -> Some (fun event -> Ui_effect.Many [ f event; g event ])
-        ;;
-      end
-
-      type t = Listener.t Capture_and_bubbling.t [@@deriving sexp_of]
-
-      let combine
-        { Capture_and_bubbling.capture = capture1; bubbling = bubbling1 }
-        { Capture_and_bubbling.capture = capture2; bubbling = bubbling2 }
-        =
-        { Capture_and_bubbling.capture = Listener.combine capture1 capture2
-        ; bubbling = Listener.combine bubbling1 bubbling2
-        }
-      ;;
-    end
-
-    module State = struct
-      type t = { mutable listeners : (Dom_html.event_listener_id list[@sexp.opaque]) }
-      [@@deriving sexp_of]
-    end
-
-    let set ~use_capture f =
-      let use_capture = if use_capture then Js._true else Js._false in
-      let handler =
-        Dom.handler (fun ev ->
-          Effect.Expert.handle ev (f ev) ~on_exn:(fun exn ->
-            Exn.reraise exn "Unhandled exception raised in effect");
-          Js._true)
-      in
-      Dom_html.addEventListener Dom_html.window X.event_kind handler use_capture
-    ;;
-
-    let init { Capture_and_bubbling.capture; bubbling } _element =
-      { State.listeners =
-          [ Option.map capture ~f:(set ~use_capture:true)
-          ; Option.map bubbling ~f:(set ~use_capture:false)
-          ]
-          |> List.filter_opt
-      }
-    ;;
-
-    let destroy _input state _element =
-      List.iter state.State.listeners ~f:Dom_html.removeEventListener
-    ;;
-
-    let update ~old_input ~new_input:f state element =
-      (* if the callback function changes, cancel the old one and re-install *)
-      destroy old_input state element;
-      let new_state = init f element in
-      state.State.listeners <- new_state.listeners
-    ;;
-
-    let on_mount = `Do_nothing
-  end
-
-  include Hooks.Make (Impl)
-
-  let create phase ~f =
-    let input =
-      match phase with
-      | Phase.Capture -> { Capture_and_bubbling.capture = Some f; bubbling = None }
-      | Bubbling -> { capture = None; bubbling = Some f }
-    in
-    create input
-  ;;
-end
-
-module Mousedown = Make (struct
+module Mousedown = Event_listener.Make (struct
     type event = Dom_html.mouseEvent
 
     let event_kind = Dom_html.Event.mousedown
+    let target = Target.Window
   end)
 
-module Mouseup = Make (struct
+module Mouseup = Event_listener.Make (struct
     type event = Dom_html.mouseEvent
 
     let event_kind = Dom_html.Event.mouseup
+    let target = Target.Window
   end)
 
-module Mousemove = Make (struct
+module Mousemove = Event_listener.Make (struct
     type event = Dom_html.mouseEvent
 
     let event_kind = Dom_html.Event.mousemove
+    let target = Target.Window
   end)
 
-module Click = Make (struct
+module Click = Event_listener.Make (struct
     type event = Dom_html.mouseEvent
 
     let event_kind = Dom_html.Event.click
+    let target = Target.Window
   end)
 
-module Blur = Make (struct
+module Blur = Event_listener.Make (struct
     type event = Dom_html.focusEvent
 
     let event_kind = Dom_html.Event.blur
+    let target = Target.Window
   end)
 
-module Focusin = Make (struct
+module Focusin = Event_listener.Make (struct
     type event = Dom_html.focusEvent
 
     let event_kind = Dom_html.Event.make "focusin"
+    let target = Target.Window
   end)
 
-module Focusout = Make (struct
+module Focusout = Event_listener.Make (struct
     type event = Dom_html.focusEvent
 
     let event_kind = Dom_html.Event.make "focusout"
+    let target = Target.Window
   end)
 
-module Contextmenu = Make (struct
+module Contextmenu = Event_listener.Make (struct
     type event = Dom_html.mouseEvent
 
     let event_kind = Dom_html.Event.make "contextmenu"
+    let target = Target.Window
   end)
 
-module Keydown = Make (struct
+module Keydown = Event_listener.Make (struct
     type event = Dom_html.keyboardEvent
 
     let event_kind = Dom_html.Event.keydown
+    let target = Target.Window
   end)
 
-module Keyup = Make (struct
+module Keyup = Event_listener.Make (struct
     type event = Dom_html.keyboardEvent
 
     let event_kind = Dom_html.Event.keyup
+    let target = Target.Window
   end)
 
-module Visibilitychange = Make (struct
+module Visibilitychange = Event_listener.Make (struct
     type event = Dom_html.event
 
     let event_kind = Dom_html.Event.make "visibilitychange"
+    let target = Target.Window
   end)
 
-module Beforeunload = Make (struct
+module Beforeunload = Event_listener.Make (struct
     type event = Dom_html.event
 
     let event_kind = Dom_html.Event.make "beforeunload"
+    let target = Target.Window
   end)
 
 let mousedown ~phase ~f =
@@ -204,8 +122,8 @@ let keydown ~phase ~f =
 let keyup ~phase ~f = Keyup.create phase ~f |> Attr.create_hook "global-keyup-listener"
 
 class type event_with_string_return_value = object
-  (* Events with [returnValue] are impossible to properly type, so we make one that
-     is specialized for string, and cast our before_unload type to it. *)
+  (* Events with [returnValue] are impossible to properly type, so we make one that is
+     specialized for string, and cast our before_unload type to it. *)
   method returnValue : Js.js_string Js.t Js.writeonly_prop
 end
 
