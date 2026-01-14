@@ -488,6 +488,7 @@ let open_ = create ~here:[%here] "open" ""
 let start ~(here : [%call_pos]) x = create ~here "start" (Int.to_string x)
 let min ~(here : [%call_pos]) x = create_float ~here "min" x
 let max ~(here : [%call_pos]) x = create_float ~here "max" x
+let step ~(here : [%call_pos]) x = create_float ~here "step" x
 let min_date ~(here : [%call_pos]) x = create ~here "min" (Date.to_string x)
 let max_date ~(here : [%call_pos]) x = create ~here "max" (Date.to_string x)
 
@@ -527,14 +528,14 @@ module Focusin = Event_listener.Make (struct
     type event = Dom_html.focusEvent
 
     let event_kind = Dom_html.Event.make "focusin"
-    let target = Event_listener.Target.Window
+    let target = Event_listener.Target.Element
   end)
 
 module Focusout = Event_listener.Make (struct
     type event = Dom_html.focusEvent
 
     let event_kind = Dom_html.Event.make "focusout"
-    let target = Event_listener.Target.Window
+    let target = Event_listener.Target.Element
   end)
 
 let on_focusin handler =

@@ -94,6 +94,7 @@ val readonly : t
 val style : Css_gen.t -> t
 val min : here:[%call_pos] -> float -> t
 val max : here:[%call_pos] -> float -> t
+val step : here:[%call_pos] -> float -> t
 val min_date : here:[%call_pos] -> Date.t -> t
 val max_date : here:[%call_pos] -> Date.t -> t
 

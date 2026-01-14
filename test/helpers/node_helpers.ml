@@ -209,7 +209,19 @@ let bprint_element
     k, v |> [%sexp_of: Vdom.Attr.Hooks.For_testing.Extra.t] |> Sexp.to_string_mach)
   |> list_iter_filter ~f:(fun (k, v) ->
     bprint_aligned_indent ();
-    bprintf buffer "%s=%s" k v);
+    let event_listener =
+      let%bind.Option without_suffix = String.chop_suffix k ~suffix:"-listener" in
+      let local_name = String.chop_prefix without_suffix ~prefix:"element-" in
+      let global_name = String.chop_prefix without_suffix ~prefix:"global-" in
+      match local_name, global_name with
+      | None, None -> None
+      | Some name, _ -> Some (`Local name)
+      | _, Some name -> Some (`Global name)
+    in
+    match event_listener with
+    | None -> bprintf buffer "%s=%s" k v
+    | Some (`Local event_name) -> bprintf buffer "@on_%s" event_name
+    | Some (`Global event_name) -> bprintf buffer "@on_%s_global" event_name);
   handlers
   |> List.map ~f:(fun (k, _) -> k, "handler")
   |> list_iter_filter ~f:(fun (k, _) ->
@@ -690,6 +702,12 @@ module User_actions = struct
     ?meta_key_down
     node
     =
+    (* There are many fields that should be here according to spec that aren't. Feel free
+       to add more as you need them. *)
+    let left_click_fields =
+      let ident = Js.Unsafe.inject (Js.number_of_float 1.) in
+      [ "button", ident; "which", ident ]
+    in
     trigger
       ~event_name:"onmousedown"
       node
@@ -701,7 +719,7 @@ module User_actions = struct
            ?meta_key_down
            ~extra_event_fields
            ~include_modifier_keys:true
-           [])
+           left_click_fields)
   ;;
 
   let focus ?extra_event_fields node =

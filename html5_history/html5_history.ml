@@ -118,9 +118,9 @@ module T = struct
     in
     let popstate_bus =
       Bus.create_exn
-        Arity1
         ~on_subscription_after_first_write:Allow
         ~on_callback_raise:Error.raise
+        ()
     in
     let t = { payload_module; payload_bin_shape; popstate_bus; log_s } in
     let (_ : Dom_html.event_listener_id) =
@@ -290,9 +290,9 @@ module Opinionated = struct
       ; current_state
       ; changes_bus =
           Bus.create_exn
-            Arity1
             ~on_subscription_after_first_write:Allow
             ~on_callback_raise:Error.raise
+            ()
       }
     in
     let (_ : _ Bus.Subscriber.t) =
