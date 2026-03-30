@@ -6,6 +6,7 @@ bug-reports: "https://github.com/janestreet/virtual_dom/issues"
 dev-repo: "git+https://github.com/janestreet/virtual_dom.git"
 doc: "https://ocaml.janestreet.com/ocaml-core/latest/doc/virtual_dom/index.html"
 license: "MIT"
+x-maintenance-intent: ["(latest)"]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
@@ -16,18 +17,17 @@ depends: [
   "base"
   "core"
   "core_kernel"
-  "expect_test_helpers_async"
   "ppx_jane"
   "sexplib"
   "stdio"
-  "base64"                    {>= "3.4.0"}
-  "dune"                      {>= "3.17.0"}
-  "gen_js_api"                {>= "1.0.8"}
-  "js_of_ocaml"               {>= "6.0.0"}
-  "js_of_ocaml-ppx"           {>= "6.0.0"}
-  "lambdasoup"                {>= "0.6.3"}
-  "tyxml"                     {>= "4.3.0"}
-  "uri"                       {>= "3.0.0"}
+  "base64"          {>= "3.4.0"}
+  "dune"            {>= "3.17.0"}
+  "gen_js_api"      {>= "1.0.8"}
+  "js_of_ocaml"     {>= "6.0.0"}
+  "js_of_ocaml-ppx" {>= "6.0.0"}
+  "lambdasoup"      {>= "0.6.3"}
+  "tyxml"           {>= "4.3.0"}
+  "uri"             {>= "3.0.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "OCaml bindings for the virtual-dom library"

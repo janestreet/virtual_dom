@@ -34,6 +34,9 @@ type _ t +=
   | Stop_propagation
   | Stop_immediate_propagation
   | Prevent_default
+      [@deprecated
+        "[since 2026-02] use [event##preventDefault] instead, which is available on \
+         [Dom_html.event Js.t]"]
   | Open :
       { url : string
       ; target : Open_url_target.t
@@ -73,7 +76,9 @@ let () =
 let () =
   Hashtbl.add_exn
     Expert.handlers
-    ~key:Stdlib.Obj.Extension_constructor.(id (of_val Prevent_default))
+    ~key:
+      Stdlib.Obj.Extension_constructor.(
+        id (of_val (Prevent_default [@alert "-deprecated"])))
     ~data:(fun _ -> Option.iter !current_dom_event ~f:Dom.preventDefault)
 ;;
 

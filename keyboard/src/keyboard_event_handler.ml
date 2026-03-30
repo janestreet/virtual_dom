@@ -80,8 +80,11 @@ module Handler = struct
 
   type t = Keyboard_event.t -> unit Ui_effect.t [@@deriving sexp]
 
-  let prevent_default _ev = Effect.Prevent_default
-  let with_prevent_default t ev = Effect.Many [ Effect.Prevent_default; t ev ]
+  let prevent_default _ev = Effect.Prevent_default [@alert "-deprecated"]
+
+  let with_prevent_default t ev =
+    Effect.Many [ (Effect.Prevent_default [@alert "-deprecated"]); t ev ]
+  ;;
 
   let handle_by_case ?prevent_default ts ev =
     match List.find_map ts ~f:(fun (cond, t) -> Option.some_if (cond ev) t) with
@@ -90,7 +93,7 @@ module Handler = struct
       let event = t ev in
       (match prevent_default with
        | None -> event
-       | Some () -> Effect.Many [ event; Effect.Prevent_default ])
+       | Some () -> Effect.Many [ event; (Effect.Prevent_default [@alert "-deprecated"]) ])
   ;;
 
   let only_handle_if ?prevent_default cond t = handle_by_case ?prevent_default [ cond, t ]
@@ -136,7 +139,8 @@ module Action = struct
     | Disabled_key _, Disabled_key _ -> t1
     | Disabled_key _, Command command | Command command, Disabled_key _ ->
       let handler ev =
-        Vdom.Effect.Many [ Vdom.Effect.Prevent_default; command.handler ev ]
+        Vdom.Effect.Many
+          [ (Vdom.Effect.Prevent_default [@alert "-deprecated"]); command.handler ev ]
       in
       Command { command with handler }
     | Command command1, Command command2 ->
