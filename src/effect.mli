@@ -37,8 +37,15 @@ type 'a t +=
       (** [Stop_immediate_propagation] causes [sequence_as_sibling] to ignore next
           sequenced event. *)
   | Prevent_default
+      [@deprecated
+        "[since 2026-02] use [event##preventDefault] instead, which is available on \
+         [Dom_html.event Js.t]"]
       (** [Prevent_default] prevents the default browser action from occurring as a result
-          of this event *)
+          of this event. This property is deprecated, prefer [event##preventDefault] in
+          new code.
+
+          [Prevent_default] has a gotcha: it never returns, so anything chained on it
+          using [bind] will not run. It is not safe to remove from effect chains blindly. *)
   | Open :
       { url : string
       ; target : Open_url_target.t

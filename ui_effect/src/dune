@@ -3,4 +3,4 @@
  (public_name virtual_dom.ui_effect)
  (libraries base stdio)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

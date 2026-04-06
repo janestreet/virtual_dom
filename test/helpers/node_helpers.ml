@@ -645,10 +645,6 @@ let trigger_hook t ~type_id ~name ~f ~arg =
 ;;
 
 module User_actions = struct
-  let prevent_default = "preventDefault", Js.Unsafe.inject (Js.wrap_callback Fn.id)
-  let stop_propagation = "stopPropagation", Js.Unsafe.inject (Js.wrap_callback Fn.id)
-  let both_event_handlers = [ prevent_default; stop_propagation ]
-
   let build_event_object
     ?(shift_key_down = false)
     ?(ctrl_key_down = false)
@@ -659,6 +655,16 @@ module User_actions = struct
     event_specific_fields
     =
     let extra_event_fields = Option.value extra_event_fields ~default:[] in
+    let default_prevented_ref = ref (Js.bool false) in
+    (* We special-case this in [handler.ml] to get the value from the ref. *)
+    let default_prevented = "defaultPrevented", Js.Unsafe.inject default_prevented_ref in
+    let prevent_default =
+      ( "preventDefault"
+      , Js.Unsafe.inject
+          (Js.wrap_callback (fun () -> default_prevented_ref := Js.bool true)) )
+    in
+    let stop_propagation = "stopPropagation", Js.Unsafe.inject (Js.wrap_callback Fn.id) in
+    let default_properties = [ default_prevented; prevent_default; stop_propagation ] in
     let modifiers =
       if include_modifier_keys
       then
@@ -669,7 +675,7 @@ module User_actions = struct
         ]
       else []
     in
-    modifiers @ both_event_handlers @ extra_event_fields @ event_specific_fields
+    modifiers @ default_properties @ extra_event_fields @ event_specific_fields
   ;;
 
   let click_on
@@ -720,6 +726,33 @@ module User_actions = struct
            ~extra_event_fields
            ~include_modifier_keys:true
            left_click_fields)
+  ;;
+
+  let auxclick
+    ?extra_event_fields
+    ?shift_key_down
+    ?ctrl_key_down
+    ?alt_key_down
+    ?meta_key_down
+    node
+    ~button
+    =
+    let button_fields =
+      let button_val = Js.Unsafe.inject (Js.number_of_float (Float.of_int button)) in
+      [ "button", button_val ]
+    in
+    trigger
+      ~event_name:"onauxclick"
+      node
+      ~extra_fields:
+        (build_event_object
+           ?shift_key_down
+           ?ctrl_key_down
+           ?alt_key_down
+           ?meta_key_down
+           ~extra_event_fields
+           ~include_modifier_keys:true
+           button_fields)
   ;;
 
   let focus ?extra_event_fields node =

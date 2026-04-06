@@ -1,6 +1,6 @@
 (library
  (name ui_effect_of_deferred)
  (public_name virtual_dom.ui_effect_of_deferred)
- (libraries ui_effect async_kernel)
+ (libraries async_kernel ui_effect)
  (preprocess
   (pps ppx_jane)))

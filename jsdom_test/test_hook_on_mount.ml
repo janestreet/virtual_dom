@@ -233,43 +233,46 @@ module%test [@name "Bonsai event loop"] _ = struct
   ;;
 
   let%expect_test "basic hook, present from the start" =
-    let%bind.With handle =
-      let open Bonsai.Let_syntax in
-      Handle.with_ ~get_vdom:Fn.id (fun (local_ _graph) ->
-        return {%html|<div %{print_hook "hi!"}></div>|})
-    in
-    [%expect
-      {|
-      init
-      hi!
-      |}];
-    Handle.one_frame handle;
-    [%expect {| |}]
+    let open Bonsai.Let_syntax in
+    Handle.with_
+      ~get_vdom:Fn.id
+      (fun (local_ _graph) -> return {%html|<div %{print_hook "hi!"}></div>|})
+      (fun handle ->
+        [%expect
+          {|
+          init
+          hi!
+          |}];
+        Handle.one_frame handle;
+        [%expect {| |}]);
+    [%expect {| destroy |}]
   ;;
 
   let%expect_test "nested hook, present from the start" =
-    let%bind.With handle =
-      let open Bonsai.Let_syntax in
-      Handle.with_ ~get_vdom:Fn.id (fun (local_ _graph) ->
-        return {%html|<div %{nested_hook}></div>|})
-    in
-    [%expect
-      {|
-      init
-      outer
-      start inner patch
-      init
-      end inner patch
-      Inner Hook
-      |}];
-    Handle.one_frame handle;
-    [%expect {| |}]
+    let open Bonsai.Let_syntax in
+    Handle.with_
+      ~get_vdom:Fn.id
+      (fun (local_ _graph) -> return {%html|<div %{nested_hook}></div>|})
+      (fun handle ->
+        [%expect
+          {|
+          init
+          outer
+          start inner patch
+          init
+          end inner patch
+          Inner Hook
+          |}];
+        Handle.one_frame handle;
+        [%expect {| |}]);
+    [%expect {| destroy |}]
   ;;
 
   let%expect_test "nested hook, appears after mount, within a single frame." =
-    let%bind.With handle =
-      let open Bonsai.Let_syntax in
-      Handle.with_ ~get_vdom:Fn.id (fun (local_ graph) ->
+    let open Bonsai.Let_syntax in
+    Handle.with_
+      ~get_vdom:Fn.id
+      (fun (local_ graph) ->
         let show, toggle_show = Bonsai.toggle ~default_model:false graph in
         let subview =
           match%sub show with
@@ -283,37 +286,38 @@ module%test [@name "Bonsai event loop"] _ = struct
             %{subview}
           </div>
         |})
-    in
-    [%expect {| |}];
-    Handle.click_on handle ~selector:"#toggle";
-    [%expect {| |}];
-    Handle.one_frame handle;
-    [%expect
-      {|
-      init
-      outer
-      start inner patch
-      init
-      end inner patch
-      Inner Hook
-      |}];
-    Handle.click_on handle ~selector:"#toggle";
-    [%expect {| |}];
-    Handle.one_frame handle;
-    [%expect {| destroy |}];
-    (* Hook [on_mount] re-runs whenever re-mounted. *)
-    Handle.click_on handle ~selector:"#toggle";
-    [%expect {| |}];
-    Handle.one_frame handle;
-    [%expect
-      {|
-      init
-      outer
-      start inner patch
-      init
-      end inner patch
-      Inner Hook
-      |}]
+      (fun handle ->
+        [%expect {| |}];
+        Handle.click_on handle ~selector:"#toggle";
+        [%expect {| |}];
+        Handle.one_frame handle;
+        [%expect
+          {|
+          init
+          outer
+          start inner patch
+          init
+          end inner patch
+          Inner Hook
+          |}];
+        Handle.click_on handle ~selector:"#toggle";
+        [%expect {| |}];
+        Handle.one_frame handle;
+        [%expect {| destroy |}];
+        (* Hook [on_mount] re-runs whenever re-mounted. *)
+        Handle.click_on handle ~selector:"#toggle";
+        [%expect {| |}];
+        Handle.one_frame handle;
+        [%expect
+          {|
+          init
+          outer
+          start inner patch
+          init
+          end inner patch
+          Inner Hook
+          |}]);
+    [%expect {| destroy |}]
   ;;
 
   let widget =
@@ -463,34 +467,36 @@ module%test [@name "destroy"] _ = struct
   let%expect_test "if an element is created and then immediately destroyed, its hook's \
                    [on_mount]s will not run"
     =
-    let%bind.With handle =
-      let open Bonsai.Let_syntax in
-      Handle.with_ ~get_vdom:Fn.id (fun (local_ _graph) ->
+    let open Bonsai.Let_syntax in
+    Handle.with_
+      ~get_vdom:Fn.id
+      (fun (local_ _graph) ->
         return {%html|<div %{hook_that_creates_and_immediately_destroys}>oof</div>|})
-    in
-    [%expect
-      {|
-      init
-      outer
-      start inner patch: add
-      init
-      end inner patch: add
-      start inner patch: remove
-      destroy
-      end inner patch: remove
-      |}];
-    Handle.print_dom handle;
-    [%expect
-      {|
-      <html>
-        <head>
-          <meta charset="UTF-8"/>
-        </head>
-        <body>
-          <div tabindex="0" style="outline: none;"> oof </div>
-        </body>
-      </html>
-      |}]
+      (fun handle ->
+        [%expect
+          {|
+          init
+          outer
+          start inner patch: add
+          init
+          end inner patch: add
+          start inner patch: remove
+          destroy
+          end inner patch: remove
+          |}];
+        Handle.print_dom handle;
+        [%expect
+          {|
+          <html>
+            <head>
+              <meta charset="UTF-8"/>
+            </head>
+            <body>
+              <div tabindex="0" style="outline: none;"> oof </div>
+            </body>
+          </html>
+          |}]);
+    [%expect {| destroy |}]
   ;;
 end
 
