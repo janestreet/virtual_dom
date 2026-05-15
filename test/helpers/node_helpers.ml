@@ -678,6 +678,23 @@ module User_actions = struct
     modifiers @ default_properties @ extra_event_fields @ event_specific_fields
   ;;
 
+  let fake_current_target =
+    let fake_bounding_rect =
+      Js.Unsafe.obj
+        [| "top", Js.Unsafe.inject (Js.number_of_float 0.)
+         ; "left", Js.Unsafe.inject (Js.number_of_float 0.)
+         ; "bottom", Js.Unsafe.inject (Js.number_of_float 0.)
+         ; "right", Js.Unsafe.inject (Js.number_of_float 0.)
+         ; "width", Js.Unsafe.inject (Js.number_of_float 0.)
+         ; "height", Js.Unsafe.inject (Js.number_of_float 0.)
+        |]
+    in
+    Js.Unsafe.obj
+      [| ( "getBoundingClientRect"
+         , Js.Unsafe.inject (Js.wrap_callback (fun () -> fake_bounding_rect)) )
+      |]
+  ;;
+
   let click_on
     ?extra_event_fields
     ?shift_key_down
@@ -697,7 +714,7 @@ module User_actions = struct
            ?meta_key_down
            ~extra_event_fields
            ~include_modifier_keys:true
-           [])
+           [ "currentTarget", Js.Unsafe.inject fake_current_target ])
   ;;
 
   let mousedown
@@ -712,7 +729,10 @@ module User_actions = struct
        to add more as you need them. *)
     let left_click_fields =
       let ident = Js.Unsafe.inject (Js.number_of_float 1.) in
-      [ "button", ident; "which", ident ]
+      [ "button", ident
+      ; "which", ident
+      ; "currentTarget", Js.Unsafe.inject fake_current_target
+      ]
     in
     trigger
       ~event_name:"onmousedown"
@@ -739,7 +759,7 @@ module User_actions = struct
     =
     let button_fields =
       let button_val = Js.Unsafe.inject (Js.number_of_float (Float.of_int button)) in
-      [ "button", button_val ]
+      [ "button", button_val; "currentTarget", Js.Unsafe.inject fake_current_target ]
     in
     trigger
       ~event_name:"onauxclick"
@@ -827,7 +847,7 @@ module User_actions = struct
     let target =
       (* Similarly to [build_target] we inject a target field with some additional
          attributes that are relied upon -- in this case by
-         Bonsai_web_ui_form.Elements.checkbox, which is a common way to construct checkbox
+         Bonsai_web_form.Elements.checkbox, which is a common way to construct checkbox
          elements. *)
       Js.Unsafe.inject
         (object%js

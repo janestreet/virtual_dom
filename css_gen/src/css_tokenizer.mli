@@ -49,8 +49,8 @@ end
 
 val current : t -> Token.t
 
-(** Start and len of the current token. The eof token starts at String.length and has
-    size 0. *)
+(** Start and len of the current token. The eof token starts at String.length and has size
+    0. *)
 val slice : t -> int * int
 
 (** The textual representation of the current token. Note that it is exactly as given in

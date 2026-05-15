@@ -22,17 +22,17 @@ let test ?min_severity x =
 let on_click _ = Ui_effect.Ignore
 
 let%expect_test "basic success" =
-  test {%html|<div>Hello!</div>|};
+  test {%html.jsx|<div>Hello!</div>|};
   [%expect {| ok! |}]
 ;;
 
 let%expect_test "button success" =
-  test {%html|<button type="button" on_click=%{on_click}>Hello!</button>|};
+  test {%html.jsx|<button type="button" on_click=%{on_click}>Hello!</button>|};
   [%expect {| ok! |}]
 ;;
 
 let%expect_test "basic failure" =
-  test {%html|<div on_click=%{on_click}>Hello!</div>|};
+  test {%html.jsx|<div on_click=%{on_click}>Hello!</div>|};
   [%expect
     {|
     Linting Failures:
@@ -52,7 +52,7 @@ let%expect_test "basic failure" =
 
 let%expect_test "good tabindex" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div tabindex=%{0}>Hello!</div>
         <div tabindex=%{-1}>Hello!</div>
@@ -63,7 +63,7 @@ let%expect_test "good tabindex" =
 
 let%expect_test "bad tabindex" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div tabindex=%{0}>Hello!</div>
         <div tabindex=%{1}>Hello!</div>
@@ -90,7 +90,7 @@ let%expect_test "bad tabindex" =
 
 let%expect_test "bad event listener attribute" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div %{Vdom.Attr.create "onclick" ""}>Hello!</div>
         <div %{Vdom.Attr.create "onbeforeunload" ""}>Hello!</div>
@@ -119,7 +119,7 @@ let%expect_test "bad event listener attribute" =
 
 let%expect_test "bad target blank" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div class="unsafe">
           <a href="https://example.com" target="_blank">Example</a>
@@ -172,7 +172,7 @@ let%expect_test "bad target blank" =
 
 let%expect_test "whitespace in id" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div id=" some_id">Hello!</div>
         <div id="some_id ">Hello!</div>
@@ -197,13 +197,13 @@ let%expect_test "whitespace in id" =
 
 let%expect_test "duplicate ids" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div id="id">
-          Hello!
-          <div id="id">Hello!</div>
+          #{" Hello! "}
+          <div id="id">#{"Hello!"}</div>
         </div>
-        <div id="id">Hello!</div>
+        <div id="id">#{"Hello!"}</div>
       </div>
     |};
   [%expect
@@ -226,7 +226,7 @@ let%expect_test "duplicate ids" =
 
 let%expect_test "duplicate keys" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <%{Vdom.Node.div ~key:"key1"}>#1</>
         <%{Vdom.Node.div ~key:"key2"}>#2</>
@@ -252,7 +252,7 @@ let%expect_test "duplicate keys" =
 
 let%expect_test "button without type or invalid type" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <button type="butno" on_click=%{on_click}>Hello!</button>
         <button on_click=%{on_click}>Hello!</button>
@@ -279,7 +279,7 @@ let%expect_test "button without type or invalid type" =
 
 let%expect_test "clickable role without tabindex" =
   test
-    {%html|
+    {%html.jsx|
       <div>
         <div role="button">Hello!</div>
         <div role="button" tabindex=%{0}>Hello!</div>
@@ -306,34 +306,31 @@ let%expect_test "clickable role without tabindex" =
 
 let%expect_test "bunch of errors" =
   let bad_code =
-    {%html|
+    {%html.jsx|
       <div>
         <div>
-          Hi!
+          #{" Hi! "}
           <div on_click=%{on_click} id="best_id">
-            Hello!
-            <div id="best_id">Hello!</div>
+            #{" Hello! "}
+            <div id="best_id">#{"Hello!"}</div>
           </div>
-          <a href="http://example.com">Link</a>
-          More text
-          <div on_click=%{on_click}>Hello!</div>
-          Bye...
+          <a href="http://example.com">#{"Link"}</a>#{" More text "}
+          <div on_click=%{on_click}>#{"Hello!"}</div>
+          #{" Bye... "}
         </div>
         <div tabindex=%{2} %{Vdom.Attr.create "onclick" ""}></div>
-        <span id=" id1 id2 id3 id4">Hello!</span>
-        <a href="http://example.com" id="best_id">Link</a>
-        Wow, this is bad code...
+        <span id=" id1 id2 id3 id4">#{"Hello!"}</span
+        ><a href="http://example.com" id="best_id">#{"Link"}</a
+        >#{" Wow, this is bad code... "}
         <div>
-          <%{Vdom.Node.div ~key:"key1"}>#1</>
-          <%{Vdom.Node.div ~key:"key2"}>#2</>
-          <%{Vdom.Node.div ~key:"key3"}>#3</>
-          <%{Vdom.Node.div ~key:"key1"}>#1</>
+          <%{Vdom.Node.div ~key:"key1"}>#{"#1"}</><%{Vdom.Node.div ~key:"key2"}>#{"#2"}</><%{Vdom.Node.div ~key:"key3"}>#{"#3"}</><%{Vdom.Node.div ~key:"key1"}
+            >#{"#1"}</>
         </div>
-        <a href="mailto://example.com" target="_blank">Example</a>
+        <a href="mailto://example.com" target="_blank">#{"Example"}</a>
         <div>
-          <button type="butno" on_click=%{on_click}>Hello!</button>
-          <button on_click=%{on_click}>Hello!</button>
-          <div role="button">Hello!</div>
+          <button type="butno" on_click=%{on_click}>#{"Hello!"}</button
+          ><button on_click=%{on_click}>#{"Hello!"}</button>
+          <div role="button">#{"Hello!"}</div>
         </div>
       </div>
     |}

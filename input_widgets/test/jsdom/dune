@@ -1,0 +1,6 @@
+(library
+ (name vdom_input_widgets_jsdom_test)
+ (libraries bonsai_web core js_of_ocaml bonsai_web_test.jsdom
+   vdom_input_widgets virtual_dom)
+ (preprocess
+  (pps ppx_jane bonsai.ppx_bonsai js_of_ocaml-ppx ppx_with)))

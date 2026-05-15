@@ -45,7 +45,7 @@ let create_hook () =
 ;;
 
 let%expect_test "hook class shows up" =
-  let node = {%html|<div %{create_hook()}></div>|} in
+  let node = {%html.jsx|<div %{create_hook()}></div>|} in
   show node;
   {%expect|
     (Element ((tag_name div) (hooks ((add_class_on_init_hook ())))))
@@ -68,7 +68,7 @@ let%expect_test "hook class shows up" =
 let%expect_test "hook class is erased when class attrs are applied regardless of the \
                  order"
   =
-  let node = {%html|<div %{Attr.class_ "uh-oh"} %{create_hook()}></div>|} in
+  let node = {%html.jsx|<div %{Attr.class_ "uh-oh"} %{create_hook()}></div>|} in
   show node;
   {%expect|
     (Element
@@ -89,7 +89,7 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
     </html>
     |};
   (* Standard class attr *)
-  let node = {%html|<div %{create_hook()} %{Attr.class_ "uh-oh"}></div>|} in
+  let node = {%html.jsx|<div %{create_hook()} %{Attr.class_ "uh-oh"}></div>|} in
   show node;
   {%expect|
     (Element
@@ -109,7 +109,7 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
       </body>
     </html>
     |};
-  let node = {%html|<div %{create_hook()} %{Attr.class_ "uh-oh"}></div>|} in
+  let node = {%html.jsx|<div %{create_hook()} %{Attr.class_ "uh-oh"}></div>|} in
   show node;
   [%expect
     {|
@@ -131,13 +131,13 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
     </html>
     |}];
   (* PPX_CSS *)
-  let node = {%html|<div style="display: flex" %{create_hook()}></div>|} in
+  let node = {%html.jsx|<div style="display: flex" %{create_hook()}></div>|} in
   show node;
   {%expect|
     (Element
      ((tag_name div)
       (attributes
-       ((class test_vdom_hook_add_class__inline_class_hash_0ccd3487a8)))
+       ((class test_vdom_hook_add_class__inline_class_hash_2ebcad2a41)))
       (hooks ((add_class_on_init_hook ())))))
 
     ---------- Vdom ----------
@@ -154,13 +154,13 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
       </body>
     </html>
     |};
-  let node = {%html|<div %{create_hook()} style="display: flex"></div>|} in
+  let node = {%html.jsx|<div %{create_hook()} style="display: flex"></div>|} in
   show node;
   {%expect|
     (Element
      ((tag_name div)
       (attributes
-       ((class test_vdom_hook_add_class__inline_class_hash_553e50da47)))
+       ((class test_vdom_hook_add_class__inline_class_hash_12fd7c0623)))
       (hooks ((add_class_on_init_hook ())))))
 
     ---------- Vdom ----------
@@ -178,7 +178,7 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
     </html>
     |};
   (* PPX tailwind *)
-  let node = {%html|<div tailwind="flex" %{create_hook()}></div>|} in
+  let node = {%html.jsx|<div tailwind="flex" %{create_hook()}></div>|} in
   show node;
   {%expect|
     (Element
@@ -198,7 +198,7 @@ let%expect_test "hook class is erased when class attrs are applied regardless of
       </body>
     </html>
     |};
-  let node = {%html|<div %{create_hook()} tailwind="flex"></div>|} in
+  let node = {%html.jsx|<div %{create_hook()} tailwind="flex"></div>|} in
   show node;
   {%expect|
     (Element

@@ -537,12 +537,17 @@ let shift_string_and_keyboard_code_string t =
     | `Dont_display_shift -> "")
 ;;
 
-let to_string_hum t =
+let to_string_hum ?(capitalize_letter_keys = false) t =
   let open Core in
   let ctrl_str = if t.ctrl then "Ctrl+" else "" in
   let alt_str = if t.alt then "Alt+" else "" in
   let meta_str = if t.meta then "Meta+" else "" in
   let shift_str, keyboard_code_str = shift_string_and_keyboard_code_string t in
+  let keyboard_code_str =
+    if capitalize_letter_keys
+    then String.capitalize keyboard_code_str
+    else keyboard_code_str
+  in
   String.concat [ ctrl_str; alt_str; shift_str; meta_str; keyboard_code_str ]
 ;;
 
@@ -556,6 +561,44 @@ let%expect_test "" =
   [%expect {| Shift+a |}];
   print ~ctrl:() ~alt:() ~shift:() ~meta:() KeyA;
   [%expect {| Ctrl+Alt+Shift+Meta+a |}];
+  print Digit1;
+  [%expect {| 1 |}];
+  print ~ctrl:() Digit1;
+  [%expect {| Ctrl+1 |}];
+  print ~shift:() Digit1;
+  [%expect {| ! |}];
+  print Numpad1;
+  [%expect {| 1 |}];
+  print ~ctrl:() Numpad1;
+  [%expect {| Ctrl+1 |}];
+  print ~shift:() Numpad1;
+  [%expect {| Shift+1 |}];
+  print Comma;
+  [%expect {| , |}];
+  print ~shift:() Comma;
+  [%expect {| < |}];
+  print ~ctrl:() Comma;
+  [%expect {| Ctrl+, |}];
+  print ~ctrl:() ~shift:() Comma;
+  [%expect {| Ctrl+< |}];
+  print ~shift:() Equal;
+  [%expect {| + |}];
+  print ~shift:() ~alt:() Equal;
+  [%expect {| Alt++ |}]
+;;
+
+let%expect_test "to_string_hum ~capitalize_letter_keys:true" =
+  let print ?ctrl ?alt ?shift ?meta key =
+    printf
+      "%s\n"
+      (to_string_hum ~capitalize_letter_keys:true (create' ?ctrl ?alt ?shift ?meta key))
+  in
+  print KeyA;
+  [%expect {| A |}];
+  print ~shift:() KeyA;
+  [%expect {| Shift+A |}];
+  print ~ctrl:() ~alt:() ~shift:() ~meta:() KeyA;
+  [%expect {| Ctrl+Alt+Shift+Meta+A |}];
   print Digit1;
   [%expect {| 1 |}];
   print ~ctrl:() Digit1;

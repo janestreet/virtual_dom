@@ -36,7 +36,15 @@ val alt : t -> bool
 val shift : t -> bool
 val meta : t -> bool
 val of_event : Keyboard_event.t -> t
-val to_string_hum : t -> string
+
+(** [to_string_hum] returns a human-readable representation of the keystroke, e.g.,
+    "Ctrl+s" or "Shift+!".
+
+    - [?capitalize_letter_keys] Default [false]. When [true], letter keys are capitalized
+      in the output (e.g., "Ctrl+S" instead of "Ctrl+s"). Non-letter keys remain
+      unchanged. Shift is still displayed explicitly when needed (e.g., if the key combo
+      includes a [Shift] modifier it remains [Shift+A], not just [A]). *)
+val to_string_hum : ?capitalize_letter_keys:bool -> t -> string
 
 (** The first string is either "Shift+" or "", depending on whether "Shift" needs to be
     displayed to indicate the keystrokes. The second is the keyboard code itself. For

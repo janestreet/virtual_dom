@@ -397,8 +397,10 @@ module Entry : sig
     -> ?call_on_input_when:Call_on_input_when.t (** default [Text_changed] *)
     -> ?disabled:bool (** default false *)
     -> ?placeholder:string (** default blank *)
-    -> ?utc_offset:Time_ns.Span.t
-         (** If blank the browser local timezone is used. Max accuracy 1h. *)
+    -> ?zone:Timezone.t
+         (** The timezone used for converting between [Time_ns.t] and the local date/time
+             string shown in the browser widget. Defaults to the browser's local timezone
+             via [Timezone.local]. In tests, defaults to UTC. *)
     -> ?merge_behavior:Merge_behavior.t
     -> ?allow_updates_when_focused:[ `Never ]
          (** Whether or not to ignore changes to the value when the user is focused on the

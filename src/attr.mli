@@ -166,7 +166,7 @@ val on_change : (Dom_html.event Js.t -> string -> unit Effect.t) -> t
     selected files is passed.
 
     See Vdom_input_widgets.File_select, or, if you are a bonsai user,
-    Bonsai_web_ui_form.Elements.File_select, for a convenient API that wraps this. *)
+    Bonsai_web_form.Elements.File_select, for a convenient API that wraps this. *)
 val on_file_input : (Dom_html.event Js.t -> File.fileList Js.t -> unit Effect.t) -> t
 
 val on_cancel : (Dom_html.event Js.t -> unit Effect.t) -> t
