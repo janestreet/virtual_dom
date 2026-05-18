@@ -276,6 +276,22 @@ module Value_normalizing_hook = struct
                equal
                [| Unsafe.inject (Js.string a); Unsafe.inject (Js.string b) |])
       in
+      (* [Time_ns.Ofday.to_millisecond_string] (used as [Time_compat.Ofday.to_string])
+         produces "HH:mm:ss.SSS" while the browser's format varies based off the [step]
+         attribute (defaulting to "HH:mm" when [step] is unspecified), so the raw strings
+         often don't match even when they represent the same time. Comparing parsed values
+         avoids the unnecessary set.
+
+         This is actually necessary for correct behavior, because the browser's
+         type="time" input uses a segment-based UI where typing a digit starts a "waiting
+         for second digit" mode. If we set the value programmatically during that mode,
+         the browser exits it and each digit is treated as a complete entry, so two digit
+         entry becomes impossible. *)
+      let equal_time_value a b =
+        match Time_ns.Ofday.of_string a, Time_ns.Ofday.of_string b with
+        | a, b -> Time_ns.Ofday.equal a b
+        | exception _ -> false
+      in
       let should_set_value =
         match allow_updates_when_focused with
         | `Never -> if is_active element then `Should_not_update else `Should_update
@@ -314,6 +330,10 @@ module Value_normalizing_hook = struct
                 (match Js.to_string js_string with
                  | "number" ->
                    (match equal_numerical_value element_value new_value with
+                    | true -> `Should_not_update
+                    | false -> `Should_update)
+                 | "time" ->
+                   (match equal_time_value element_value new_value with
                     | true -> `Should_not_update
                     | false -> `Should_update)
                  | _ -> `Should_update)))
@@ -1090,7 +1110,7 @@ module Entry = struct
     ?call_on_input_when
     ?disabled
     ?placeholder
-    ?utc_offset
+    ?zone
     ?(merge_behavior = Merge_behavior.Merge)
     ?(allow_updates_when_focused = (`Never : [ `Never ]))
     ?key
@@ -1098,25 +1118,12 @@ module Entry = struct
     ~on_input
     ()
     =
-    let hours =
-      (* In tests, we use UTC as the local timezone (i.e. offset 0). This prevents changes
-         between test output around daylight savings time, and if [utc_offset] isn't
-         supplied, then callers should be indifferent to what offset gets used here. *)
+    let zone =
       match Core.am_running_test || Ppx_inline_test_lib.am_running with
-      | true -> 0
-      | false ->
-        Option.value_map
-          utc_offset
-          (* getTimezoneOffset returns the time zone difference, in minutes, from current
-             locale to UTC. Utc offset is the difference from UTC to current locale which
-             is where the minus comes from.
-
-             The minutes have to be converted to hours since that is the format
-             Time.Zone.of_utc_offset expects for the utc_offset. *)
-          ~default:((new%js Js_of_ocaml.Js.date_now)##getTimezoneOffset / -60)
-          ~f:(fun utc_offset -> Time_ns.Span.to_hr utc_offset |> Float.to_int)
+      | true -> Timezone.utc
+      | false -> Option.value zone ~default:(force Timezone.local)
     in
-    let (module Zoned_time) = Time_compat.zoned (Time_float.Zone.of_utc_offset ~hours) in
+    let (module Zoned_time) = Time_compat.zoned zone in
     stringable_input_opt
       ?extra_attrs
       ?call_on_input_when

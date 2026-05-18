@@ -236,7 +236,7 @@ module%test [@name "Bonsai event loop"] _ = struct
     let open Bonsai.Let_syntax in
     Handle.with_
       ~get_vdom:Fn.id
-      (fun (local_ _graph) -> return {%html|<div %{print_hook "hi!"}></div>|})
+      (fun (local_ _graph) -> return {%html.jsx|<div %{print_hook "hi!"}></div>|})
       (fun handle ->
         [%expect
           {|
@@ -252,7 +252,7 @@ module%test [@name "Bonsai event loop"] _ = struct
     let open Bonsai.Let_syntax in
     Handle.with_
       ~get_vdom:Fn.id
-      (fun (local_ _graph) -> return {%html|<div %{nested_hook}></div>|})
+      (fun (local_ _graph) -> return {%html.jsx|<div %{nested_hook}></div>|})
       (fun handle ->
         [%expect
           {|
@@ -276,11 +276,11 @@ module%test [@name "Bonsai event loop"] _ = struct
         let show, toggle_show = Bonsai.toggle ~default_model:false graph in
         let subview =
           match%sub show with
-          | true -> return {%html|<div %{nested_hook}></div>|}
+          | true -> return {%html.jsx|<div %{nested_hook}></div>|}
           | false -> return Vdom.Node.none
         in
         let%arr subview and toggle_show in
-        {%html|
+        {%html.jsx|
           <div>
             <button on_click=%{fun _ ->toggle_show} id="toggle">Toggle</button>
             %{subview}
@@ -365,7 +365,7 @@ module%test [@name "Bonsai event loop"] _ = struct
           | false -> return Vdom.Node.none
         in
         let%arr subview and toggle_show in
-        {%html|
+        {%html.jsx|
           <div>
             <button on_click=%{fun _ ->toggle_show} id="toggle">Toggle</button>
             %{subview}
@@ -471,7 +471,7 @@ module%test [@name "destroy"] _ = struct
     Handle.with_
       ~get_vdom:Fn.id
       (fun (local_ _graph) ->
-        return {%html|<div %{hook_that_creates_and_immediately_destroys}>oof</div>|})
+        return {%html.jsx|<div %{hook_that_creates_and_immediately_destroys}>oof</div>|})
       (fun handle ->
         [%expect
           {|
@@ -547,7 +547,7 @@ module%test [@name "via requestAnimationFrame"] _ = struct
       let open Bonsai.Let_syntax in
       Handle.with_ ~get_vdom:fst (fun (local_ graph) ->
         let layout, set_layout = Bonsai.state Layout.Standalone graph in
-        let elem = {%html|<div %{hook}>Has hook</div>|} in
+        let elem = {%html.jsx|<div %{hook}>Has hook</div>|} in
         let view =
           match%arr layout with
           | Standalone -> Vdom.Node.div [ elem ]

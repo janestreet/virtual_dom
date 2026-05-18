@@ -254,6 +254,7 @@ module Length = struct
     | `Rem of float
     | `Em of int
     | `Em_float of float
+    | `Lh of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int
@@ -270,6 +271,7 @@ module Length = struct
     | `Rem f -> [%string "%{f2s 2 f}rem"]
     | `Em i -> [%string "%{i#Int}em"]
     | `Em_float f -> [%string "%{f2s 2 f}em"]
+    | `Lh f -> [%string "%{f2s 2 f}lh"]
     | `Percent p -> [%string "%{f2s 2 (Percent.to_percentage p)}%"]
     | `Pt p -> [%string "%{f2s 2 p}pt"]
     | `Px i -> [%string "%{i#Int}px"]
@@ -286,6 +288,7 @@ module Length = struct
   let rem f = `Rem f
   let em i = `Em i
   let em_float f = `Em_float f
+  let lh f = `Lh f
   let percent p = `Percent p
   let pt f = `Pt f
   let px i = `Px i

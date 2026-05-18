@@ -2,6 +2,6 @@
  (name virtual_dom_test)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane ppx_html))
- (libraries core css_gen expect_test_helpers_core.expect_test_helpers_base
-   expect_test_helpers_core patdiff.expect_test_patdiff js_of_ocaml ui_effect
-   virtual_dom virtual_dom_test_helpers))
+ (libraries core css_gen expect_test_helpers_base expect_test_helpers_core
+   patdiff.expect_test_patdiff js_of_ocaml ui_effect virtual_dom
+   virtual_dom_test_helpers))

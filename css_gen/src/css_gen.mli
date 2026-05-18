@@ -191,6 +191,7 @@ module Length : sig
     | `Rem of float
     | `Em of int
     | `Em_float of float
+    | `Lh of float
     | `Percent of Percent.t
     | `Pt of float
     | `Px of int
@@ -211,6 +212,7 @@ module Length : sig
   val rem : float -> t
   val em : int -> t
   val em_float : float -> t
+  val lh : float -> t
   val percent : Percent.t -> t
   val pt : float -> t
   val px : int -> t
@@ -632,7 +634,7 @@ type fill_mode =
   | fill_mode css_global_values
   ]
 
-(** Note: You must include the [name]s \@keyframes in the stylesheet *)
+(** Note: You must include the [name]s @keyframes in the stylesheet *)
 val animation
   :  name:string
   -> duration:Time_ns.Span.t
