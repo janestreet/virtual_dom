@@ -42,9 +42,7 @@ module Token : sig
     | Comment
     | Eof
     | Error
-  [@@deriving sexp]
-
-  val equal : t -> t -> bool
+  [@@deriving sexp, equal ~localize]
 end
 
 val current : t -> Token.t

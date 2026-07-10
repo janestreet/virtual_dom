@@ -111,14 +111,25 @@ val rowspan : here:[%call_pos] -> int -> t
 val draggable : here:[%call_pos] -> bool -> t
 val tabindex : here:[%call_pos] -> int -> t
 val type_ : here:[%call_pos] -> string -> t
-val value : here:[%call_pos] -> string -> t
 
 (* The following 2 attributes apply only to TextAreas. *)
 val rows : here:[%call_pos] -> int -> t
 val cols : here:[%call_pos] -> int -> t
 
-(* "value" can be both an attribute and a property. *)
-val value_prop : here:[%call_pos] -> string -> t
+(** Set the component value as a property. *)
+val value : here:[%call_pos] -> string -> t
+
+(** [value_attr] is the attribute version of [value_prop]. For input-like nodes the value
+    will not be synced once the user has edited the input.
+
+    There are two situations where you might want [value_attr] over [value]:
+    1. You intentially want [value_attr] to not update the input once it's "dirty":
+       https://html.spec.whatwg.org/multipage/input.html#the-input-element
+
+    2. You need a query selector that targets the node via an attribute:
+       https://www.w3.org/TR/selectors-4/#attribute-selectors *)
+val value_attr : here:[%call_pos] -> string -> t
+
 val title : here:[%call_pos] -> string -> t
 val alt : here:[%call_pos] -> string -> t
 val src : here:[%call_pos] -> string -> t

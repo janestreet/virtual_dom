@@ -478,8 +478,8 @@ let autofocus ~(here : [%call_pos]) = function
 let allow ~(here : [%call_pos]) x = create ~here "allow" x
 let for_ ~(here : [%call_pos]) x = create ~here "for" x
 let type_ ~(here : [%call_pos]) x = create ~here "type" x
-let value ~(here : [%call_pos]) x = create ~here "value" x
-let value_prop ~(here : [%call_pos]) x = string_property ~here "value" x
+let value ~(here : [%call_pos]) x = string_property ~here "value" x
+let value_attr ~(here : [%call_pos]) x = create ~here "value" x
 let tabindex ~(here : [%call_pos]) x = create ~here "tabindex" (Int.to_string x)
 let title ~(here : [%call_pos]) x = create ~here "title" x
 let alt ~(here : [%call_pos]) x = create ~here "alt" x
@@ -636,7 +636,7 @@ let on_file_input handler =
   on Type_id.event "input" (fun ev ->
     Js.Opt.case ev##.target const_ignore (fun target ->
       Js.Opt.case (Dom_html.CoerceTo.input target) const_ignore (fun target ->
-        handler ev target##.files)))
+        Js.Opt.case target##.files const_ignore (fun files -> handler ev files))))
 ;;
 
 module Always_focus_hook = struct

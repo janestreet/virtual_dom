@@ -5,7 +5,8 @@ module Stable = struct
     (** (field * value) list. Where value should be escaped / quoted as necessary as per
         https://www.w3.org/TR/CSS21/syndata.html#rule-sets. *)
     type t = (string * string) list
-    [@@deriving sexp, compare, equal, bin_io, stable_witness, sexp_grammar]
+    [@@deriving
+      sexp, compare ~localize, equal ~localize, bin_io, stable_witness, sexp_grammar]
   end
 end
 
@@ -18,7 +19,7 @@ type 'a css_global_values =
   | `Var of string
   | `Var_with_default of string * 'a
   ]
-[@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+[@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
 let global_to_string_css (t : 'a css_global_values) ~(to_string_css : 'a -> string) =
   match t with
@@ -43,7 +44,8 @@ module Color = struct
         ; b : int
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
+      [@@deriving
+        sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar, fields ~getters]
 
       let create ~r ~g ~b ?a () = { r; g; b; a }
     end
@@ -55,7 +57,8 @@ module Color = struct
         ; l : Percent.t
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
+      [@@deriving
+        sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar, fields ~getters]
 
       let create ~h ~s ~l ?a () = { h; s; l; a }
     end
@@ -67,7 +70,8 @@ module Color = struct
         ; h : float
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
+      [@@deriving
+        sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar, fields ~getters]
 
       let create ~l ~c ~h ?a () = { l; c; h; a }
     end
@@ -79,7 +83,8 @@ module Color = struct
         ; h : float
         ; a : Percent.t option
         }
-      [@@deriving sexp, bin_io, compare, equal, sexp_grammar, fields ~getters]
+      [@@deriving
+        sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar, fields ~getters]
 
       let create ~l ~c ~h ?a () = { l; c; h; a }
     end
@@ -94,7 +99,7 @@ module Color = struct
       | `Light_dark of t * t
       | t css_global_values
       ]
-    [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+    [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
   end
 
   include T
@@ -263,7 +268,7 @@ module Length = struct
     | `Vw of Percent.t
     | t css_global_values
     ]
-  [@@deriving sexp, bin_io, compare]
+  [@@deriving sexp, bin_io, compare ~localize]
 
   let rec to_string_css = function
     | `Raw s -> s
@@ -302,7 +307,7 @@ module Auto_or_length = struct
     [ `Auto
     | Length.t
     ]
-  [@@deriving bin_io, compare, sexp]
+  [@@deriving bin_io, compare ~localize, sexp]
 
   let to_string_css = function
     | `Auto -> "auto"

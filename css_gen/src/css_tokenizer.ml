@@ -26,9 +26,7 @@ module Token = struct
     | Comment
     | Eof
     | Error
-  [@@deriving sexp, compare]
-
-  let equal = [%compare.equal: t]
+  [@@deriving sexp, compare ~localize, equal ~localize]
 end
 
 type t =
