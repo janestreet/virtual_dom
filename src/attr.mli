@@ -111,14 +111,25 @@ val rowspan : ?here:Stdlib.Lexing.position -> int -> t
 val draggable : ?here:Stdlib.Lexing.position -> bool -> t
 val tabindex : ?here:Stdlib.Lexing.position -> int -> t
 val type_ : ?here:Stdlib.Lexing.position -> string -> t
-val value : ?here:Stdlib.Lexing.position -> string -> t
 
 (* The following 2 attributes apply only to TextAreas. *)
 val rows : ?here:Stdlib.Lexing.position -> int -> t
 val cols : ?here:Stdlib.Lexing.position -> int -> t
 
-(* "value" can be both an attribute and a property. *)
-val value_prop : ?here:Stdlib.Lexing.position -> string -> t
+(** Set the component value as a property. *)
+val value : ?here:Stdlib.Lexing.position -> string -> t
+
+(** [value_attr] is the attribute version of [value_prop]. For input-like nodes the value
+    will not be synced once the user has edited the input.
+
+    There are two situations where you might want [value_attr] over [value]:
+    1. You intentially want [value_attr] to not update the input once it's "dirty":
+       https://html.spec.whatwg.org/multipage/input.html#the-input-element
+
+    2. You need a query selector that targets the node via an attribute:
+       https://www.w3.org/TR/selectors-4/#attribute-selectors *)
+val value_attr : ?here:Stdlib.Lexing.position -> string -> t
+
 val title : ?here:Stdlib.Lexing.position -> string -> t
 val alt : ?here:Stdlib.Lexing.position -> string -> t
 val src : ?here:Stdlib.Lexing.position -> string -> t

@@ -393,7 +393,7 @@ module Dropdown = struct
       (List.mapi values ~f:(fun index value ->
          Node.option
            ~attrs:
-             ([ Attr.value (Int.to_string index)
+             ([ Attr.value_attr (Int.to_string index)
               ; Attr.bool_property "selected" (equal value selected)
               ]
               @ extra_option_attrs value)
@@ -1183,7 +1183,7 @@ module Entry = struct
     ()
     =
     let (`Hex value_) = value in
-    [ Attr.(type_ "color" @ value_prop value_ @ extra_attr)
+    [ Attr.(type_ "color" @ value value_ @ extra_attr)
     ; Call_on_input_when.listener call_on_input_when (fun _ev s -> on_input (`Hex s))
     ]
     |> input_node ?disabled ~merge_behavior ?key

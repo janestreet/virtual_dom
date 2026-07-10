@@ -10,11 +10,11 @@ type 'a css_global_values =
   | `Var of string
   | `Var_with_default of string * 'a
   ]
-[@@deriving sexp, compare, sexp_grammar]
+[@@deriving sexp, compare ~localize, sexp_grammar]
 
 module Color : sig
   module RGBA : sig
-    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+    type t [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
     (** [create ~r ~g ~b ~a] creates a color that corresponds to rgba([r],[g],[b],[a])
 
@@ -35,7 +35,7 @@ module Color : sig
   end
 
   module HSLA : sig
-    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+    type t [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
     (** [create ~h ~s ~l ~a] creates a color that corresponds to hsla([h],[s],[l],[a])
 
@@ -57,7 +57,7 @@ module Color : sig
   end
 
   module LCHA : sig
-    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+    type t [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
     (** [create ~l ~c ~h ~a] creates a color that corresponds to lch([l], [c], [h], [a]).
 
@@ -78,7 +78,7 @@ module Color : sig
   end
 
   module OKLCHA : sig
-    type t [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+    type t [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
     (** [create ~l ~c ~h ~a] creates a color that corresponds to oklch([l], [c], [h],
         [a]).
@@ -109,7 +109,7 @@ module Color : sig
     | `Light_dark of t * t
     | t css_global_values
     ]
-  [@@deriving sexp, bin_io, compare, equal, sexp_grammar]
+  [@@deriving sexp, bin_io, compare ~localize, equal ~localize, sexp_grammar]
 
   module Hue_interpolation_method : sig
     type t =
@@ -200,7 +200,7 @@ module Length : sig
     | `Vw of Percent.t
     | t css_global_values
     ]
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare ~localize]
 
   val to_string_css : [< t ] -> string
 
@@ -226,12 +226,12 @@ module Auto_or_length : sig
     [ `Auto
     | Length.t
     ]
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare ~localize]
 
   val to_string_css : t -> string
 end
 
-type t [@@deriving sexp, compare, equal, bin_io]
+type t [@@deriving sexp, compare ~localize, equal ~localize, bin_io]
 
 (** Create a single property, value pair (a declaration in CSS parlance). The value must
     be a valid CSS literal. We do run a simple CSS parser on the value to validate this
@@ -658,7 +658,8 @@ val user_select : user_select -> t
 module Stable : sig
   module V1 : sig
     type nonrec t = t
-    [@@deriving sexp, compare, equal, bin_io, stable_witness, sexp_grammar]
+    [@@deriving
+      sexp, compare ~localize, equal ~localize, bin_io, stable_witness, sexp_grammar]
   end
 end
 

@@ -482,8 +482,8 @@ let autofocus ?(here = Stdlib.Lexing.dummy_pos) = function
 let allow ?(here = Stdlib.Lexing.dummy_pos) x = create ~here "allow" x
 let for_ ?(here = Stdlib.Lexing.dummy_pos) x = create ~here "for" x
 let type_ ?(here = Stdlib.Lexing.dummy_pos) x = create ~here "type" x
-let value ?(here = Stdlib.Lexing.dummy_pos) x = create ~here "value" x
-let value_prop ?(here = Stdlib.Lexing.dummy_pos) x = string_property ~here "value" x
+let value ?(here = Stdlib.Lexing.dummy_pos) x = string_property ~here "value" x
+let value_attr ?(here = Stdlib.Lexing.dummy_pos) x = create ~here "value" x
 
 let tabindex ?(here = Stdlib.Lexing.dummy_pos) x =
   create ~here "tabindex" (Int.to_string x)
@@ -647,7 +647,7 @@ let on_file_input handler =
   on Type_id.event "input" (fun ev ->
     Js.Opt.case ev##.target const_ignore (fun target ->
       Js.Opt.case (Dom_html.CoerceTo.input target) const_ignore (fun target ->
-        handler ev target##.files)))
+        Js.Opt.case target##.files const_ignore (fun files -> handler ev files))))
 ;;
 
 module Always_focus_hook = struct
