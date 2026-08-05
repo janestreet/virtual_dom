@@ -362,9 +362,9 @@ let both_parallel a b =
         callback (a, b)
       | _ -> ()
     in
-    let dispatch effect ref =
+    let dispatch effect_ ref =
       Expert.eval
-        effect
+        effect_
         ~f:(fun x ->
           ref := Some x;
           maybe_finalize ())

@@ -48,7 +48,7 @@ let%expect_test "Effect.both_parallel" =
   bisimulate_both_boths ~f:(fun both ~expect_diff:_ ->
     let fill_eff1, eff1 = Svar.create () in
     let fill_eff2, eff2 = Svar.create () in
-    let effect =
+    let effect_ =
       let%map a, b =
         both
           (let%map () = eff1 in
@@ -60,7 +60,7 @@ let%expect_test "Effect.both_parallel" =
       in
       printf "effect done: %d %d" a b
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff1 ();
     [%expect {| eff1 done |}];
     fill_eff2 ();
@@ -74,7 +74,7 @@ let%expect_test "Effect.both_parallel" =
 let%expect_test "Effect.both_parallel using let%map syntax" =
   let fill_eff1, eff1 = Svar.create () in
   let fill_eff2, eff2 = Svar.create () in
-  let effect =
+  let effect_ =
     let%map.Effect.Par a =
       let%map () = eff1 in
       print_endline "eff1 done";
@@ -86,7 +86,7 @@ let%expect_test "Effect.both_parallel using let%map syntax" =
     in
     printf "effect done: %d %d" a b
   in
-  Effect.Expert.handle effect ~on_exn:Base.raise;
+  Effect.Expert.handle effect_ ~on_exn:Base.raise;
   fill_eff1 ();
   [%expect {| eff1 done |}];
   fill_eff2 ();
@@ -100,7 +100,7 @@ let%expect_test "Effect.both_parallel using let%map syntax" =
 let%expect_test "Effect.both_parallel using let%bind syntax" =
   let fill_eff1, eff1 = Svar.create () in
   let fill_eff2, eff2 = Svar.create () in
-  let effect =
+  let effect_ =
     let%bind.Effect.Par a =
       let%map () = eff1 in
       print_endline "eff1 done";
@@ -112,7 +112,7 @@ let%expect_test "Effect.both_parallel using let%bind syntax" =
     in
     return (printf "effect done: %d %d" a b)
   in
-  Effect.Expert.handle effect ~on_exn:Base.raise;
+  Effect.Expert.handle effect_ ~on_exn:Base.raise;
   fill_eff1 ();
   [%expect {| eff1 done |}];
   fill_eff2 ();
@@ -126,7 +126,7 @@ let%expect_test "Effect.both_parallel using let%bind syntax" =
 let%expect_test "Effect.both_parallel using let%map syntax - filled in reverse" =
   let fill_eff1, eff1 = Svar.create () in
   let fill_eff2, eff2 = Svar.create () in
-  let effect =
+  let effect_ =
     let%map.Effect.Par a =
       let%map () = eff1 in
       print_endline "eff1 done";
@@ -138,7 +138,7 @@ let%expect_test "Effect.both_parallel using let%map syntax - filled in reverse" 
     in
     printf "effect done: %d %d" a b
   in
-  Effect.Expert.handle effect ~on_exn:Base.raise;
+  Effect.Expert.handle effect_ ~on_exn:Base.raise;
   fill_eff2 ();
   [%expect {| eff2 done |}];
   fill_eff1 ();
@@ -152,7 +152,7 @@ let%expect_test "Effect.both_parallel using let%map syntax - filled in reverse" 
 let%expect_test "Effect.both_parallel using let%bind syntax - filled in reverse" =
   let fill_eff1, eff1 = Svar.create () in
   let fill_eff2, eff2 = Svar.create () in
-  let effect =
+  let effect_ =
     let%bind.Effect.Par a =
       let%map () = eff1 in
       print_endline "eff1 done";
@@ -164,7 +164,7 @@ let%expect_test "Effect.both_parallel using let%bind syntax - filled in reverse"
     in
     return (printf "effect done: %d %d" a b)
   in
-  Effect.Expert.handle effect ~on_exn:Base.raise;
+  Effect.Expert.handle effect_ ~on_exn:Base.raise;
   fill_eff2 ();
   [%expect {| eff2 done |}];
   fill_eff1 ();
@@ -179,7 +179,7 @@ let%expect_test "Effect.both_parallel degenerate" =
   bisimulate_both_boths ~f:(fun both ~expect_diff ->
     let fill_eff1, eff1 = Degenerate_svar.create () in
     let fill_eff2, eff2 = Degenerate_svar.create () in
-    let effect =
+    let effect_ =
       let%map a, b =
         both
           (let%map () = eff1 in
@@ -191,7 +191,7 @@ let%expect_test "Effect.both_parallel degenerate" =
       in
       printf "effect done: %d %d" a b
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff1 ();
     [%expect {| eff1 done |}];
     fill_eff1 ();
@@ -214,7 +214,7 @@ let%expect_test "Effect.both_parallel already filled" =
     fill_eff1 ();
     let fill_eff2, eff2 = Svar.create () in
     fill_eff2 ();
-    let effect =
+    let effect_ =
       let%map a, b =
         both
           (let%map () = eff1 in
@@ -226,7 +226,7 @@ let%expect_test "Effect.both_parallel already filled" =
       in
       printf "effect done: %d %d" a b
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     [%expect
       {|
       eff1 done
@@ -239,7 +239,7 @@ let%expect_test "Effect.both_parallel out of order" =
   bisimulate_both_boths ~f:(fun both ~expect_diff ->
     let fill_eff1, eff1 = Svar.create () in
     let fill_eff2, eff2 = Svar.create () in
-    let effect =
+    let effect_ =
       let%map a, b =
         both
           (let%map () = eff1 in
@@ -251,7 +251,7 @@ let%expect_test "Effect.both_parallel out of order" =
       in
       printf "effect done: %d %d" a b
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff2 ();
     (* NOTE: This test shows that the effects in [all] are only filled in order, while
        both_parallel allows out-of-order effects to be filled earlier. *)
@@ -295,11 +295,11 @@ let%expect_test "Effect.all_parallel" =
       print_endline "eff3 done";
       3
     in
-    let effect =
+    let effect_ =
       let%map all = all [ eff1; eff2; eff3 ] in
       print_s [%message (all : int list)]
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff1 ();
     [%expect {| eff1 done |}];
     fill_eff2 ();
@@ -332,11 +332,11 @@ let%expect_test "Effect.all_parallel degenerate" =
       print_endline "eff3 done";
       3
     in
-    let effect =
+    let effect_ =
       let%map all = all [ eff1; eff2; eff3 ] in
       print_s [%message (all : int list)]
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff1 ();
     [%expect {| eff1 done |}];
     fill_eff1 ();
@@ -378,11 +378,11 @@ let%expect_test "Effect.all_parallel already filled" =
       print_endline "eff3 done";
       3
     in
-    let effect =
+    let effect_ =
       let%map all = all [ eff1; eff2; eff3 ] in
       print_s [%message (all : int list)]
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     [%expect
       {|
       eff1 done
@@ -412,11 +412,11 @@ let%expect_test "Effect.all_parallel out of order" =
       print_endline "eff3 done";
       3
     in
-    let effect =
+    let effect_ =
       let%map all = all [ eff1; eff2; eff3 ] in
       print_s [%message (all : int list)]
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff2 ();
     expect_diff
       ~parallel:(fun () -> [%expect {| eff2 done |}])
@@ -462,11 +462,11 @@ let%expect_test "Effect.all_parallel_unit sanity check" =
       let%bind () = eff3 in
       Effect.print_s [%message "eff3 done"]
     in
-    let effect =
+    let effect_ =
       let%bind () = all_unit [ eff1; eff2; eff3 ] in
       Effect.print_s [%message "all done!"]
     in
-    Effect.Expert.handle effect ~on_exn:Base.raise;
+    Effect.Expert.handle effect_ ~on_exn:Base.raise;
     fill_eff2 ();
     expect_diff
       ~parallel:(fun () -> [%expect {| "eff2 done" |}])
