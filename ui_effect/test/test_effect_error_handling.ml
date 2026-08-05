@@ -98,8 +98,8 @@ module%test [@name "Effects that raise"] _ = struct
       ; Effect.raise_s [%message "fourth in many raised"]
       ]
     in
-    let effect = Effect.Many effects in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.Many effects in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("handled by on_exn" (exn "second in many raised"))
@@ -277,14 +277,14 @@ module%test [@name "Effect.iter_errors"] _ = struct
   let print_iter_errors = print_iter_errors_str "seen by iter_errors"
 
   let%expect_test "iter_errors with no errors" =
-    let effect = Effect.iter_errors Effect.Ignore ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors Effect.Ignore ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| |}]
   ;;
 
   let%expect_test "iter_errors with one error" =
-    let effect = Effect.iter_errors raise_effect ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors raise_effect ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("seen by iter_errors" (exn "this is an exn!"))
@@ -293,8 +293,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
   ;;
 
   let%expect_test "iter_errors with sequential errors" =
-    let effect = Effect.iter_errors sequential_raise_effect ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors sequential_raise_effect ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("seen by iter_errors" (exn (which_exn 0)))
@@ -337,8 +337,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
 
   let%expect_test "on_exn raises" =
     (try
-       let effect = Effect.iter_errors raise_effect ~f:print_iter_errors in
-       Effect.Expert.handle effect ~on_exn:Base.raise
+       let effect_ = Effect.iter_errors raise_effect ~f:print_iter_errors in
+       Effect.Expert.handle effect_ ~on_exn:Base.raise
      with
      | exn -> print_s [%message "raised" (exn : Exn.t)]);
     [%expect
@@ -349,8 +349,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
   ;;
 
   let%expect_test "iter_errors with parallel errors" =
-    let effect = Effect.iter_errors parallel_raise_effect ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors parallel_raise_effect ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     (* Notice that the [iter_errors] handlers are not all called together - they are
        intermixed with their respective exn handlers. Since effects are implemented via
        callbacks (and not all effects are synchronous), I don't think there's a good way
@@ -374,8 +374,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
     let tried_effect =
       Effect.try_with parallel_raise_effect ~rest:`Raise |> Effect.ignore_m
     in
-    let effect = Effect.iter_errors tried_effect ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors tried_effect ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("seen by iter_errors" (exn (which_exn 1)))
@@ -399,8 +399,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
       Effect.try_with parallel_raise_effect ~rest:(`Call custom_on_further_exns)
       |> Effect.ignore_m
     in
-    let effect = Effect.iter_errors tried_effect ~f:print_iter_errors in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors tried_effect ~f:print_iter_errors in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("handled by try_with" (exn (which_exn 1)))
@@ -411,8 +411,8 @@ module%test [@name "Effect.iter_errors"] _ = struct
   ;;
 
   let%expect_test "iter_errors waits for [f]'s output to complete" =
-    let effect = Effect.iter_errors raise_effect ~f:(fun _ -> Effect.never) in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.iter_errors raise_effect ~f:(fun _ -> Effect.never) in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| |}]
   ;;
 end
@@ -422,14 +422,14 @@ module%test [@name "Effect.protect"] _ = struct
   let print_finally = print_finally_str "finally executed"
 
   let%expect_test "protect with successful effect" =
-    let effect = Effect.protect Effect.Ignore ~finally:print_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect Effect.Ignore ~finally:print_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| "finally executed" |}]
   ;;
 
   let%expect_test "protect with raising effect" =
-    let effect = Effect.protect raise_effect ~finally:print_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect raise_effect ~finally:print_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       "finally executed"
@@ -438,8 +438,8 @@ module%test [@name "Effect.protect"] _ = struct
   ;;
 
   let%expect_test "protect with parallel raising effect" =
-    let effect = Effect.protect parallel_raise_effect ~finally:print_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect parallel_raise_effect ~finally:print_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       "finally executed"
@@ -453,15 +453,15 @@ module%test [@name "Effect.protect"] _ = struct
 
   let%expect_test "protect with finally effect that raises" =
     let raising_finally = Effect.raise_s [%message "finally raised!"] in
-    let effect = Effect.protect Effect.Ignore ~finally:raising_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect Effect.Ignore ~finally:raising_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn "finally raised!")) |}]
   ;;
 
   let%expect_test "protect with both main and finally effects raising" =
     let raising_finally = Effect.raise_s [%message "finally raised!"] in
-    let effect = Effect.protect raise_effect ~finally:raising_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect raise_effect ~finally:raising_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("handled by on_exn" (exn "this is an exn!"))
@@ -501,8 +501,8 @@ module%test [@name "Effect.protect"] _ = struct
     let inner_finally = Effect.raise_s [%message "inner finally raised"] in
     let outer_finally = Effect.raise_s [%message "outer finally raised"] in
     let inner_effect = Effect.protect main_effect ~finally:inner_finally in
-    let effect = Effect.protect inner_effect ~finally:outer_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect inner_effect ~finally:outer_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     (* Note that the outer raise exn handler is called before the inner raise. We could
        call [on_further_exns] on the inner exn before the outer one to prevent this, but
        it would change the order of other things in unintuitive ways (e.g. [iter_errors]
@@ -517,12 +517,12 @@ module%test [@name "Effect.protect"] _ = struct
   ;;
 
   let%expect_test "protect with try_with" =
-    let effect =
+    let effect_ =
       Effect.protect
         (Effect.try_with raise_effect |> Effect.ignore_m)
         ~finally:print_finally
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| "finally executed" |}]
   ;;
 
@@ -531,12 +531,12 @@ module%test [@name "Effect.protect"] _ = struct
       print_s [%message "seen by iter_errors" (exn : Exn.t)];
       Effect.Ignore
     in
-    let effect =
+    let effect_ =
       Effect.protect
         (Effect.iter_errors parallel_raise_effect ~f:print_iter_errors)
         ~finally:print_finally
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("seen by iter_errors" (exn (which_exn 0)))
@@ -554,8 +554,8 @@ module%test [@name "Effect.protect"] _ = struct
   ;;
 
   let%expect_test "protect with never effect" =
-    let effect = Effect.protect Effect.never ~finally:print_finally in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect Effect.never ~finally:print_finally in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     (* The never effect doesn't complete, so finally should not execute *)
     [%expect {| |}]
   ;;
@@ -571,8 +571,8 @@ module%test [@name "Effect.protect"] _ = struct
   ;;
 
   let%expect_test "protect with multiple finally effects in parallel" =
-    let effect = Effect.protect Effect.Ignore ~finally:parallel_raise_effect in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.protect Effect.Ignore ~finally:parallel_raise_effect in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("handled by on_exn" (exn (which_exn 0)))
@@ -630,9 +630,9 @@ module%test [@name "Effect.protect"] _ = struct
 end
 
 module%test [@name "reraising should only wrap exns once"] _ = struct
-  let handle effect =
+  let handle effect_ =
     try
-      Effect.Expert.handle effect ~on_exn:(fun exn -> Exn.reraise exn "reraising...")
+      Effect.Expert.handle effect_ ~on_exn:(fun exn -> Exn.reraise exn "reraising...")
     with
     | exn -> print_s (Exn.sexp_of_t exn)
   ;;
@@ -675,26 +675,26 @@ end
 (* just to make sure we don't miss adding [try...with] anywhere *)
 module%test [@name "Raising at various places"] _ = struct
   let%expect_test "Raising inside bind function" =
-    let effect =
+    let effect_ =
       let%bind () = Effect.Ignore in
       failwith "this is a raised exn!"
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "this is a raised exn!"))) |}]
   ;;
 
   let%expect_test "Raising inside map function" =
-    let effect =
+    let effect_ =
       let%map () = Effect.Ignore in
       failwith "this is a raised exn!"
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "this is a raised exn!"))) |}]
   ;;
 
   let%expect_test "Raising inside lazy" =
-    let effect = Effect.lazy_ (lazy (failwith "this is a raised exn!")) in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.lazy_ (lazy (failwith "this is a raised exn!")) in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "this is a raised exn!"))) |}]
   ;;
 
@@ -716,31 +716,31 @@ module%test [@name "Raising at various places"] _ = struct
   ;;
 
   let%expect_test "Raising inside of_sync_fun" =
-    let effect = Effect.of_sync_fun (fun () -> failwith "sync fun raised!") () in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.of_sync_fun (fun () -> failwith "sync fun raised!") () in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "sync fun raised!"))) |}]
   ;;
 
   let%expect_test "Raising inside of_thunk" =
-    let effect = Effect.of_thunk (fun () -> failwith "thunk raised!") in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    let effect_ = Effect.of_thunk (fun () -> failwith "thunk raised!") in
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "thunk raised!"))) |}]
   ;;
 
   let%expect_test "Raising inside Expert.of_fun" =
-    let effect =
+    let effect_ =
       Effect.Expert.of_fun ~f:(fun ~callback:_ ~on_exn:_ -> failwith "callback raised!")
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect {| ("handled by on_exn" (exn (Failure "callback raised!"))) |}]
   ;;
 
   let%expect_test "Raising in iter_errors callback function" =
-    let effect =
+    let effect_ =
       Effect.iter_errors raise_effect ~f:(fun _ ->
         failwith "iter_errors callback raised!")
     in
-    Effect.Expert.handle effect ~on_exn ~on_further_exns;
+    Effect.Expert.handle effect_ ~on_exn ~on_further_exns;
     [%expect
       {|
       ("handled by on_exn" (exn "this is an exn!"))
@@ -755,12 +755,12 @@ module%test
      enclosing call to [of_thunk'] and co., but not [of_thunk] and co."] _ =
 struct
   let%expect_test "[handle] inside [of_thunk]" =
-    let effect =
+    let effect_ =
       Effect.of_thunk (fun () ->
         Effect.Expert.handle raise_effect ~on_exn:(fun exn ->
           Exn.reraise exn "No access to [on_exn], must raise!"))
     in
-    (try Effect.Expert.handle effect ~on_exn ~on_further_exns with
+    (try Effect.Expert.handle effect_ ~on_exn ~on_further_exns with
      | e -> print_s [%message (e : Exn.t)]);
     [%expect
       {|
@@ -771,10 +771,10 @@ struct
   ;;
 
   let%expect_test "[handle] inside [of_thunk']" =
-    let effect =
+    let effect_ =
       Effect.of_thunk' (fun () ~on_exn -> Effect.Expert.handle raise_effect ~on_exn)
     in
-    (try Effect.Expert.handle effect ~on_exn ~on_further_exns with
+    (try Effect.Expert.handle effect_ ~on_exn ~on_further_exns with
      | e -> print_s [%message (e : Exn.t)]);
     [%expect {| ("handled by on_exn" (exn "this is an exn!")) |}]
   ;;

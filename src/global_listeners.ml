@@ -135,7 +135,7 @@ let beforeunload ~phase ~f =
       event##.returnValue := Js.string "this string can be anything";
       Effect.Ignore
     | `Do_nothing -> Effect.Ignore
-    | `Custom_best_effort effect -> effect
+    | `Custom_best_effort effect_ -> effect_
   in
   Beforeunload.create phase ~f |> Attr.create_hook "global-beforeunload-listener"
 ;;
